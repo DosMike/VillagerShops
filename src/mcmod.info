@@ -1,0 +1,10 @@
+[{
+  "modid": "vshop",
+  "name": "VillagerShops",
+  "description": "Set up Mobs of any type as admin shop. Shops will use a Inventory-Menu to buy/sell items",
+  "version": "0.1",
+  "mcversion": "1.10.2",
+  "url": "https://github.com/DosMike/VillagerShops",
+  "authorList": [ "DosMike" ],
+  "useDependencyInformation": false
+}]
