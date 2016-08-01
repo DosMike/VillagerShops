@@ -74,7 +74,6 @@ public class VillagerShops {
 	
 	@Listener
 	public void onServerInit(GameInitializationEvent event) {
-		//Sponge.getServiceManager().setProvider(this, JobService.class, new DefaultJobService());
 	}
 	
 	@Listener
@@ -95,14 +94,14 @@ public class VillagerShops {
 	}
 	
 	@Listener
-    public void onPlayerInteractEntity(InteractEntityEvent.Primary event) {
+	public void onPlayerInteractEntity(InteractEntityEvent.Primary event) {
 		Optional<Player> cause = event.getCause().first(Player.class);
 		Entity target = event.getTargetEntity();
 		if (cause.isPresent())
 			event.setCancelled(InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.left));
 	}
 	@Listener
-    public void onPlayerInteractEntity(InteractEntityEvent.Secondary event) {
+	public void onPlayerInteractEntity(InteractEntityEvent.Secondary event) {
 		Optional<Player> cause = event.getCause().first(Player.class);
 		Entity target = event.getTargetEntity();
 		if (cause.isPresent())
