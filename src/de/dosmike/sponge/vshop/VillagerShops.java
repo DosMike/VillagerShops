@@ -1,7 +1,8 @@
-package com.github.dosmike.sponge.vshop;
+package de.dosmike.sponge.vshop;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -24,9 +25,16 @@ import org.spongepowered.api.event.entity.InteractEntityEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
+import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
+import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
+import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
+import org.spongepowered.api.item.inventory.Slot;
+import org.spongepowered.api.item.inventory.property.SlotIndex;
+import org.spongepowered.api.item.inventory.transaction.SlotTransaction;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.service.economy.EconomyService;
@@ -70,6 +78,7 @@ public class VillagerShops {
 	/// --- === Main Plugin stuff === --- \\\ 
 	
 	List<NPCguard> npcs = new LinkedList<NPCguard>();
+	/** remembers what player is viewing what shop as Player <-> Shop mapping */
 	Map<UUID, UUID> openShops = new HashMap<UUID, UUID>();
 	
 	@Listener
@@ -98,33 +107,120 @@ public class VillagerShops {
 		Optional<Player> cause = event.getCause().first(Player.class);
 		Entity target = event.getTargetEntity();
 		if (cause.isPresent())
-			event.setCancelled(InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.left));
+			if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.left))
+				event.setCancelled(true);
 	}
 	@Listener
 	public void onPlayerInteractEntity(InteractEntityEvent.Secondary event) {
 		Optional<Player> cause = event.getCause().first(Player.class);
 		Entity target = event.getTargetEntity();
 		if (cause.isPresent())
-			event.setCancelled(InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.right));
+			if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.right))
+					event.setCancelled(true);
 	}
 	
 	@Listener
 	public void onInventoryClosed(InteractInventoryEvent.Close event) {
 		Optional<Player> cause = event.getCause().first(Player.class);
 		if (cause.isPresent()) {
-			l("%s closed an inventory", cause.get().getName());
+			openShops.remove(cause.get().getUniqueId());
+//			l("%s closed an inventory", cause.get().getName());
 		} else {
-			l("An inventory was closed");
+//			l("An inventory was closed");
 		}
 	}
+	
+	//TODO + why this is important:
+	// in case a admin/plugin opens a inventory over another inventory we will still assume we're in the shop inventory
 	@Listener
 	public void onInventoryOpened(InteractInventoryEvent.Open event) {
 		Optional<Player> cause = event.getCause().first(Player.class);
 		if (cause.isPresent()) {
-			l("%s opened and inventory", cause.get().getName());
+//			openShops.remove(cause.get().getUniqueId());
+			l("%s opened and inventory %s", cause.get().getName(), event.getTargetInventory().getName());
 		} else {
-			l("An inventory was opened");
+			w("Can't get player opening inventory");
 		}
+	}
+	@Listener
+	public void onInventoryClick(ClickInventoryEvent event) {
+		Optional<Player> clicker = event.getCause().first(Player.class);
+		if (!clicker.isPresent()) return;
+		if (!openShops.containsKey(clicker.get().getUniqueId())) return;
+		
+		int slotIndex=-1;
+		boolean inTargetInventory=false;
+		
+		//small algorithm to determ in what inventory the event occurred
+		//thanks for this great API so far ;D
+		
+		//first find the target inventory, for me it's always 2, 5, 8,...
+		//rows high, so i can go through the sub inventories of the displayed
+		//inventory and just pick the one matching by size
+		Set<Inventory> inventoryset=new HashSet<>();
+		event.getTargetInventory().spliterator().forEachRemaining(ti -> {
+			inventoryset.add(ti);
+		});
+		Inventory target=null;
+		for (Inventory ti : inventoryset) {
+			if ((ti.capacity()/9+1)%3==0)
+				target = ti;
+		}
+		if (target==null) {
+			VillagerShops.w("Unable to find shop target inventory");
+		}
+		
+		//now for each action (that's probably just one) i get the slot
+		//because that's the only way to get the slot index
+		//now as we got that slot we check if the item in that slot
+		//is also in the target inventory.
+		//by this i can tell if the player clicked the top inventory or his own
+		ItemStackSnapshot isnap = event.getCursorTransaction().getOriginal();
+		for (SlotTransaction action : event.getTransactions()) {
+			action.setValid(false);
+			Slot thisSlot = action.getSlot();
+			if (isnap.isEmpty()) isnap = action.getOriginal();
+			for (SlotIndex si : thisSlot.getProperties(SlotIndex.class)) {
+				for (Inventory oneslot : target.slots()) {
+					if (oneslot.capacity()!=1) {
+						l("Slot exceeds capacity of 1!");
+					}
+					Optional<ItemStack> b = oneslot.peek();
+					if (b.isPresent() && (b.get().createSnapshot().equals(isnap)))
+						inTargetInventory=true;
+				}
+				if (inTargetInventory) {
+					slotIndex = si.getValue();
+					l("Found slot %d in target inventory", si.getValue());
+					break;
+				}
+			}
+			if (inTargetInventory) break;
+		}
+		
+		//thank's for reading this...
+		//if your head did not explode: congrats :D
+		//if you're a sponge dev, please add fromInventory()
+		// and toInventory() to the transaction... that's kinda what
+		// I'd expect from the transaction to provide the most ...
+		
+		//clear cursor
+		event.getCursorTransaction().setValid(false);
+		event.getCursorTransaction().setCustom(ItemStackSnapshot.NONE);
+		
+		if (!inTargetInventory) return;
+		
+		InteractionHandler.clickInventory(clicker.get(), slotIndex);
+
+		event.setCancelled(true);
+	}
+	
+	@Listener
+	public void onDropItem(DropItemEvent event) {
+		Optional<Player> clicker = event.getCause().first(Player.class);
+		if (!clicker.isPresent()) return;
+		if (!openShops.containsKey(clicker.get().getUniqueId())) return;
+		event.setCancelled(true);
 	}
 	
 	@SuppressWarnings("unchecked")	//if nobody plays with the config it works perfectly fine
@@ -211,7 +307,7 @@ public class VillagerShops {
 	}
 	
 	public void startTimers() {
-		Sponge.getScheduler().createAsyncExecutor(this).scheduleWithFixedDelay(
+		Sponge.getScheduler().createSyncExecutor(this).scheduleWithFixedDelay(
 				new Runnable() {
 					@Override
 					public void run() {
@@ -222,14 +318,22 @@ public class VillagerShops {
 				}, 100, 100, TimeUnit.MILLISECONDS);
 	}
 	
-	public int getNPCfromLocation(Location<World> loc2) {
+	/** returns the NPCguard index */
+	public Optional<NPCguard> getNPCfromLocation(Location<World> loc2) {
 		for (int i = 0; i < npcs.size(); i++) {
 			Location<World> loc1 = npcs.get(i).getLoc(); 
 			if (loc1.getBlockPosition().equals(loc2.getBlockPosition()) && loc1.getExtent().equals(loc2.getExtent())) {
-				return i;
+				return Optional.of(npcs.get(i));
 			}
 		}
-		return -1;
+		return Optional.empty();
+	}
+	public Optional<NPCguard> getNPCfromShopUUID(UUID uid) {
+		for (NPCguard shop : npcs) {
+			if (shop.getIdentifier().equals(uid)) 
+				return Optional.of(shop);
+		}
+		return Optional.empty();
 	}
 	
 	public boolean isNPCused(Entity ent) {

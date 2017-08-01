@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_jar" name="Sponge Plugin">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <!--define folder properties-->
+    <property name="dir.buildfile" value="."/>
+    <property name="dir.workspace" value="${dir.buildfile}/.."/>
+    <property name="dir.server" value="G:/Sonstige/VanillaSponge/server"/>
+    
+    <basename property="my.project.name" file="${basedir}" />
+    
+    <target name="create_jar">
+        <jar destfile="${dir.server}/mods/${my.project.name}.jar" filesetmanifest="mergewithoutmain">
+            <fileset dir="${dir.buildfile}/bin"/>
+        </jar>
+    </target>
+    <target name="run_server">
+    	<exec dir="${dir.server}" executable="cmd">
+    		<arg line="/c start cmd /c startServer.bat"/>
+    	</exec>
+    </target>
+    <target name="build_and_run" depends="create_jar">
+    	<antcall target="run_server"/>
+    </target>
+    <!--<target name="test">
+    	<echo message="> my.project.name=${my.project.name}" />
+    	<echo message="> destfile=${dir.server}/mods/${my.project.name}.jar" />
+    </target>-->
+</project>
