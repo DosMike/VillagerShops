@@ -1,16 +1,24 @@
 package de.dosmike.sponge.vshop;
 
+import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
+import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.InventoryArchetypes;
 import org.spongepowered.api.item.inventory.property.InventoryDimension;
 import org.spongepowered.api.item.inventory.property.InventoryTitle;
+import org.spongepowered.api.service.economy.Currency;
+import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColors;
 
 public class InvPrep {
+	
 	List<StockItem> items = new LinkedList<StockItem>();
 	
 	public void addItem(StockItem si) {
@@ -24,11 +32,14 @@ public class InvPrep {
 	public StockItem getItem(int index) {
 		return items.get(index);
 	}
+	public int size() {
+		return items.size();
+	}
 	
-	public Inventory getInventory() {
+	public Inventory getInventory(Text titled) {
 		Inventory inv = Inventory.builder().of(InventoryArchetypes.CHEST)
 //			.listener(type, listener)
-			.property("title", new InventoryTitle(Text.of("[vShop]")))
+			.property("inventorytitle", new InventoryTitle(Text.of(TextColors.DARK_AQUA, "[vShop] ", TextColors.RESET, titled==null?Text.of():titled)))
 			.property("inventorydimension", new InventoryDimension(9, (items.size()/9+1)*3-1))
 			.build(VillagerShops.getInstance());
 		
@@ -66,8 +77,41 @@ public class InvPrep {
 	 * use isSlotBuySell(int) to determ the actual action */
 	public int itemClicked(Player player, int index, int buySell) {
 		if (index<0 || index>=items.size() || buySell>1) return -1;
+		
+		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
+		if (!acc.isPresent()) return 0;
 		  
 		StockItem item = items.get(index);
-		return (buySell==0 ? item.buy(player) : item.sell(player));
+		Currency currency = item.getCurrency();
+		double amount;
+		double finalPrice;
+		
+		if (buySell==0) {
+			amount = item.buy(player);
+			finalPrice = item.getBuyPrice()*amount/(double)item.getItem().getQuantity();
+			acc.get().withdraw(
+					currency, 
+					BigDecimal.valueOf(finalPrice), 
+					Cause.builder().named("PURCHASED ITEMS", VillagerShops.getInstance()).build());
+		} else {
+			amount = item.sell(player);
+			finalPrice = item.getSellPrice()*amount/(double)item.getItem().getQuantity();
+			acc.get().deposit(
+					currency, 
+					BigDecimal.valueOf(finalPrice), 
+					Cause.builder().named("SOLD ITEMS", VillagerShops.getInstance()).build());
+		}
+		if (amount > 0) {
+			player.sendMessage(Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET, " (",
+					(buySell==0?Text.of(TextColors.RED, "-", String.format("%.2f", finalPrice)):Text.of(TextColors.GREEN, "+", String.format("%.2f", finalPrice))),
+					"): ", (buySell==0?"Buying ":"Selling "),
+					TextColors.YELLOW, (int)amount, "x ", TextColors.RESET, 
+					item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getItem().getTranslation().get()))
+					));
+		} else {
+			player.sendMessage(Text.of(TextColors.RED, "Not enough ", buySell==0?"money":"items"));
+		}
+		
+		return (int)amount;
 	}
 }

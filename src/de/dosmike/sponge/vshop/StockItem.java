@@ -1,27 +1,32 @@
 package de.dosmike.sponge.vshop;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
 public class StockItem {
-	ItemStack item;
-	Double sellprice=null, buyprice=null; //per single item in stack => stack price is item.quantity * price
+	private ItemStack item;
 	
-	public StockItem(ItemStack itemstack, Double sellfor, Double buyfor) {
+	private Currency currency; //currency to use
+	private Double sellprice=null, buyprice=null; //per single item in stack => stack price is item.quantity * price
+	
+	public StockItem(ItemStack itemstack, Double sellfor, Double buyfor, Currency currency) {
 		item = itemstack.copy();
-		sellprice = sellfor;
-		buyprice = buyfor;
+		if (sellfor!=null && sellfor>=0) sellprice = sellfor;
+		if (buyfor!=null && buyfor>=0) buyprice = buyfor;
+		this.currency = currency; 
 	}
 	
 	public ItemStack getItem() {
@@ -39,10 +44,15 @@ public class StockItem {
 	public void setSellPrice(Double price) {
 		sellprice = price;
 	}
+	/** the currency this item is handled in */
+	public Currency getCurrency() {
+		return currency;
+	}
 	
 	/** create a Item with custom description adding the sell-price for a stack with the present size */
 	public ItemStack getSellDisplayItem() {
-		Text cs = VillagerShops.getEconomy().getDefaultCurrency().getSymbol();
+		if (sellprice == null) return ItemStack.of(ItemTypes.AIR, 1); //nothing
+		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
 		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());
 		desc.add(Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", sellprice), cs, (item.getQuantity()>1? 
@@ -54,7 +64,8 @@ public class StockItem {
 	}
 	/** create a Item with custom description adding the buy-price for a stack with the present size */
 	public ItemStack getBuyDisplayItem() {
-		Text cs = VillagerShops.getEconomy().getDefaultCurrency().getSymbol();
+		if (buyprice == null) return ItemStack.of(ItemTypes.AIR, 1); //nothing
+		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
 		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());
 		desc.add(Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs, (item.getQuantity()>1? 
@@ -73,7 +84,9 @@ public class StockItem {
 		ItemStack copy = item.copy();
 		copy.setQuantity(quantity);
 		inv.offer(copy);
-		return item.getQuantity()-copy.getQuantity();
+		int c = copy.getQuantity();
+//		VillagerShops.l("Rejected "+c);
+		return quantity-c;
 	}
 	/** Try to add the represented itemstack to the target inventory without doing any economy changes.
 	 * This function tried to give as much of this item as represented by the itemstack
@@ -113,10 +126,12 @@ public class StockItem {
 	public int canAfford(Player player) {
 		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
 		if (!acc.isPresent()) return 0;
-		BigDecimal bd = acc.get().getBalance(VillagerShops.getEconomy().getDefaultCurrency());
-		BigDecimal num = bd.divide(new BigDecimal(buyprice/(double)item.getQuantity()));
-		int ammount = num.intValue();
-		return (ammount > item.getQuantity() ? item.getQuantity() : ammount);
+		BigDecimal bd = acc.get().getBalance(currency);
+		BigDecimal num = bd.divide(new BigDecimal(buyprice/(double)item.getQuantity()), 2, RoundingMode.HALF_DOWN);
+		int amount = num.intValue();
+		amount = (num.compareTo(BigDecimal.valueOf(item.getQuantity())) > 0 ? item.getQuantity() : amount);
+//		VillagerShops.l("Can afford "+amount);
+		return amount;
 	}
 	
 	/** checks how many of this item the player can afford with the default currency */
@@ -126,33 +141,11 @@ public class StockItem {
 	
 	/** @returns the ammount of actually purchased items */
 	public int buy(Player player) {
-		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
-		if (!acc.isPresent()) return 0;
-		
-		int res = offerTo(player.getInventory(), canAfford(player));
-		
-		double finalPrice = buyprice*res/(double)item.getQuantity();
-		acc.get().withdraw(
-				VillagerShops.getEconomy().getDefaultCurrency(), 
-				BigDecimal.valueOf(finalPrice), 
-				Cause.builder().named("PURCHASED ITEMS", VillagerShops.getInstance()).build());
-		
-		return res;
+		return offerTo(player.getInventory(), canAfford(player));
 	}
 	
 	/** @returns the ammount of actually sold items */
 	public int sell(Player player) {
-		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
-		if (!acc.isPresent()) return 0;
-		
-		int res = getFrom(player.getInventory(), canAccept(player));
-		
-		double finalPrice = sellprice*res/(double)item.getQuantity();
-		acc.get().deposit(
-				VillagerShops.getEconomy().getDefaultCurrency(), 
-				BigDecimal.valueOf(finalPrice), 
-				Cause.builder().named("SOLD ITEMS", VillagerShops.getInstance()).build());
-		
-		return res;
+		return getFrom(player.getInventory(), canAccept(player));
 	}
 }

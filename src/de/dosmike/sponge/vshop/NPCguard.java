@@ -16,10 +16,10 @@ import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.Living;
-import org.spongepowered.api.entity.living.Villager;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.entity.spawn.EntitySpawnCause;
 import org.spongepowered.api.event.cause.entity.spawn.SpawnTypes;
+import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Chunk;
 import org.spongepowered.api.world.Location;
@@ -28,17 +28,17 @@ import org.spongepowered.api.world.World;
 import com.flowpowered.math.vector.Vector3d;
 
 public class NPCguard {
-	Location<World> loc;
-	Vector3d rot;
-	UUID lastKnown;
-	InvPrep preparator;
-	Entity le = null;
-	EntityType npcType = EntityTypes.VILLAGER;
-	String variantName; Object variant;
-	Text displayName;
-	UUID ident; //for configs;
+	private Location<World> loc;
+	private Vector3d rot;
+	private UUID lastKnown;
+	private InvPrep preparator;
+	private Entity le = null;
+	private EntityType npcType = EntityTypes.VILLAGER;
+	private String variantName; private Object variant;
+	private Text displayName;
+	private UUID ident; //for configs;
 	
-	int lookAroundTicks=0;
+	private int lookAroundTicks=0;
 	
 	public NPCguard(UUID identifier) {
 		ident = identifier;
@@ -65,6 +65,9 @@ public class NPCguard {
 
 	public InvPrep getPreparator() {
 		return preparator;
+	}
+	public Inventory getInventory() {
+		return preparator.getInventory(displayName);
 	}
 
 	public void setPreparator(InvPrep preparator) {
@@ -123,7 +126,7 @@ public class NPCguard {
 				for (Entity ent : ents) {
 					if (( ent.isLoaded() && ent.getType().equals(npcType) && (ent.getUniqueId().equals(lastKnown) || 
 						( ent.getLocation().getExtent().equals(loc.getExtent()) && ent.getLocation().getPosition().distanceSquared(loc.getPosition())<1.5) ) ) &&
-						( !VillagerShops.getInstance().isNPCused(ent) &&
+						( !VillagerShops.isNPCused(ent) &&
 						  displayName.equals(ent.get(Keys.DISPLAY_NAME).orElse(null))))
 					{	//check if npc already belongs to a different shop
 							le = ent; le.setLocationAndRotation(loc, rot); break;

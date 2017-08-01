@@ -46,7 +46,8 @@ public class CustomInventoryWrapper {
 		}
 	}
 	
-	CustomInventoryWrapper(Inventory inventory) {
+	/** just public in case someone has a use for this */
+	public CustomInventoryWrapper(Inventory inventory) {
 		holder = inventory;
 	}
 	
@@ -62,13 +63,13 @@ public class CustomInventoryWrapper {
 	@Deprecated
 	public void getItemStack(int column, int row) {
 		//assuming fix width of 9
-		try {
-			Method getStackInSlot = cinv.getMethod("getStackInSlot", Integer.TYPE);
-			getStackInSlot.setAccessible(true);
-			getStackInSlot.invoke(holder, row*9+column);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		try {
+//			Method getStackInSlot = cinv.getMethod("getStackInSlot", Integer.TYPE);
+//			getStackInSlot.setAccessible(true);
+//			getStackInSlot.invoke(holder, row*9+column);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 	}
 	
 	public Inventory getInventory() {
