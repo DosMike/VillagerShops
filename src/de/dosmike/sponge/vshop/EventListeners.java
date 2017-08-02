@@ -1,34 +1,57 @@
 package de.dosmike.sponge.vshop;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.explosive.Explosive;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.entity.AttackEntityEvent;
 import org.spongepowered.api.event.entity.InteractEntityEvent;
 import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
 import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
+import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.item.inventory.Slot;
 import org.spongepowered.api.item.inventory.property.SlotIndex;
 import org.spongepowered.api.item.inventory.transaction.SlotTransaction;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.extent.Extent;
+
+import com.flowpowered.math.vector.Vector3i;
 
 public class EventListeners {
 
 	@Listener
-		public void onPlayerInteractEntity(InteractEntityEvent.Primary event) {
-			Optional<Player> cause = event.getCause().first(Player.class);
-			Entity target = event.getTargetEntity();
-			if (cause.isPresent())
-				if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.left))
-	//				event.setCancelled(true);
-					;//canceling this event throws some huge errors... so i wont, npcs will respawn
-		}
+	public void onPlayerInteractEntity(InteractEntityEvent.Primary event) {
+		Optional<Player> cause = event.getCause().first(Player.class);
+		Entity target = event.getTargetEntity();
+		if (cause.isPresent())
+			if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.left))
+//				event.setCancelled(true);
+				;//canceling this event throws some huge errors... so i wont, npcs will respawn
+	}
+	@Listener
+	public void onAttackEntity(AttackEntityEvent event) {
+		Optional<Player> cause = event.getCause().first(Player.class);
+		Entity target = event.getTargetEntity();
+		if (cause.isPresent()){
+			if (VillagerShops.getNPCfromLocation(target.getLocation()).isPresent()) {
+				event.setBaseOutputDamage(0);
+			}
+		}	
+	}
 
 	@Listener
 	public void onPlayerInteractEntity(InteractEntityEvent.Secondary event) {
@@ -129,5 +152,68 @@ public class EventListeners {
 		if (!VillagerShops.openShops.containsKey(clicker.get().getUniqueId())) return;
 		event.setCancelled(true);
 	}
+	
+	/** protect playershop crates */
+	
+	@Listener
+	public void onInteract(InteractBlockEvent event) {
+		Optional<Player> source = event.getCause().first(Player.class);
+		if (!source.isPresent()) return;
+		if (!event.getTargetBlock().getLocation().isPresent()) return;
+		Extent tex = event.getTargetBlock().getLocation().get().getExtent();
+		Vector3i tv3 = event.getTargetBlock().getPosition(); 
+		for (NPCguard g : VillagerShops.npcs)
+			if (g.playershopcontainer != null && 
+					g.playershopcontainer.getExtent().equals(tex) &&
+					g.playershopcontainer.getBlockPosition().equals(tv3)) {
+//				VillagerShops.l("Is Stock Container");
+				if (	( g.playershopholder!=null && !g.playershopholder.equals(source.get().getUniqueId()) ) &&
+						( !source.get().hasPermission("vshop.edit.admin")) ) {
+//					VillagerShops.l("But not yours!");
+					event.setCancelled(true);
+					return;
+				}
+			}
+	}
+	
+	@Listener
+	public void onExplosion(ExplosionEvent.Detonate event) {
+		Optional<Player> source = event.getCause().first(Player.class);
+		if (!source.isPresent() && event.getExplosion().getSourceExplosive().isPresent()) {
+			Explosive e = event.getExplosion().getSourceExplosive().get();
+			Optional<UUID> creator = e.getCreator();
+			if (creator.isPresent()) source = Sponge.getServer().getPlayer(creator.get());
+		}
+		
+		List<Location<World>> denied = new LinkedList<>();
+		for (NPCguard g : VillagerShops.npcs) {
+			if (g.playershopcontainer != null && 
+					event.getAffectedLocations().contains(g.playershopcontainer)) {
+					denied.add(g.playershopcontainer);
+			}
+		}
+		event.getAffectedLocations().removeAll(denied);
+	}
 
+	@Listener
+	public void onBlockBreak(ChangeBlockEvent.Break event) {
+//		if (event instanceof ChangeBlockEvent.Break) {
+		event.getTransactions().forEach(trans -> {
+			if (trans.getOriginal().getState().getType().equals(BlockTypes.CHEST)) {
+				Optional<Location<World>> w = trans.getOriginal().getLocation(); 
+				if (!w.isPresent()) return;
+				Extent tex = w.get().getExtent();
+				Vector3i tv3 = w.get().getBlockPosition(); 
+				for (NPCguard g : VillagerShops.npcs) {
+					if (g.playershopcontainer != null &&
+							g.playershopcontainer.getExtent().equals(tex) &&
+							g.playershopcontainer.getBlockPosition().equals(tv3)) {
+						trans.setValid(false);
+					}
+				}
+			}
+		});
+//		}
+	}
+	
 }

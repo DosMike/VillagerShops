@@ -73,45 +73,45 @@ public class InvPrep {
 		return y*9+x;
 	}
 	
-	/** tries to buy or sell the item at index and returns the ammount of actuall items bought/sold
-	 * use isSlotBuySell(int) to determ the actual action */
-	public int itemClicked(Player player, int index, int buySell) {
-		if (index<0 || index>=items.size() || buySell>1) return -1;
-		
-		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
-		if (!acc.isPresent()) return 0;
-		  
-		StockItem item = items.get(index);
-		Currency currency = item.getCurrency();
-		double amount;
-		double finalPrice;
-		
-		if (buySell==0) {
-			amount = item.buy(player);
-			finalPrice = item.getBuyPrice()*amount/(double)item.getItem().getQuantity();
-			acc.get().withdraw(
-					currency, 
-					BigDecimal.valueOf(finalPrice), 
-					Cause.builder().named("PURCHASED ITEMS", VillagerShops.getInstance()).build());
-		} else {
-			amount = item.sell(player);
-			finalPrice = item.getSellPrice()*amount/(double)item.getItem().getQuantity();
-			acc.get().deposit(
-					currency, 
-					BigDecimal.valueOf(finalPrice), 
-					Cause.builder().named("SOLD ITEMS", VillagerShops.getInstance()).build());
-		}
-		if (amount > 0) {
-			player.sendMessage(Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET, " (",
-					(buySell==0?Text.of(TextColors.RED, "-", String.format("%.2f", finalPrice)):Text.of(TextColors.GREEN, "+", String.format("%.2f", finalPrice))),
-					"): ", (buySell==0?"Buying ":"Selling "),
-					TextColors.YELLOW, (int)amount, "x ", TextColors.RESET, 
-					item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getItem().getTranslation().get()))
-					));
-		} else {
-			player.sendMessage(Text.of(TextColors.RED, "Not enough ", buySell==0?"money":"items"));
-		}
-		
-		return (int)amount;
-	}
+//	/** tries to buy or sell the item at index and returns the ammount of actuall items bought/sold
+//	 * use isSlotBuySell(int) to determ the actual action */
+//	public int itemClicked(Player player, int index, int buySell) {
+//		if (index<0 || index>=items.size() || buySell>1) return -1;
+//		
+//		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
+//		if (!acc.isPresent()) return 0;
+//		  
+//		StockItem item = items.get(index);
+//		Currency currency = item.getCurrency();
+//		double amount;
+//		double finalPrice;
+//		
+//		if (buySell==0) {
+//			amount = item.buy(player);
+//			finalPrice = item.getBuyPrice()*amount/(double)item.getItem().getQuantity();
+//			acc.get().withdraw(
+//					currency, 
+//					BigDecimal.valueOf(finalPrice), 
+//					Cause.builder().named("PURCHASED ITEMS", VillagerShops.getInstance()).build());
+//		} else {
+//			amount = item.sell(player);
+//			finalPrice = item.getSellPrice()*amount/(double)item.getItem().getQuantity();
+//			acc.get().deposit(
+//					currency, 
+//					BigDecimal.valueOf(finalPrice), 
+//					Cause.builder().named("SOLD ITEMS", VillagerShops.getInstance()).build());
+//		}
+//		if (amount > 0) {
+//			player.sendMessage(Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET, " (",
+//					(buySell==0?Text.of(TextColors.RED, "-", String.format("%.2f", finalPrice)):Text.of(TextColors.GREEN, "+", String.format("%.2f", finalPrice))),
+//					"): ", (buySell==0?"Buying ":"Selling "),
+//					TextColors.YELLOW, (int)amount, "x ", TextColors.RESET, 
+//					item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getType().getTranslation().get()))
+//					));
+//		} else {
+//			player.sendMessage(Text.of(TextColors.RED, "Not enough ", buySell==0?"money":"items"));
+//		}
+//		
+//		return (int)amount;
+//	}
 }

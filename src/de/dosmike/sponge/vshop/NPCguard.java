@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.Career;
 import org.spongepowered.api.data.type.Careers;
@@ -37,6 +39,8 @@ public class NPCguard {
 	private String variantName; private Object variant;
 	private Text displayName;
 	private UUID ident; //for configs;
+	UUID playershopholder = null;
+	Location<World> playershopcontainer = null;
 	
 	private int lookAroundTicks=0;
 	
@@ -114,6 +118,42 @@ public class NPCguard {
 	
 	public Entity getLe() {
 		return le;
+	}
+	/** by setting a owner id this will try to turn into a player shop.<br>
+	 * If there's no chest below the shop this will throw a IllegalStateException.<br>
+	 * If the argument is null the playershop accociation is lifted */
+	public void setPlayerShop(UUID owner) throws IllegalStateException {
+		if (owner == null) {
+			playershopholder = null;
+			playershopcontainer = null;
+			return;
+		}
+		Location<World> scan = getLoc().sub(0, 0.5, 0);
+		if (!scan.getBlockType().equals(BlockTypes.CHEST)) 
+			scan = scan.sub(0, 1, 0);
+		if (!scan.getBlockType().equals(BlockTypes.CHEST))
+			throw new IllegalStateException("Shop is not placed above a chest");
+		
+		playershopholder = owner;
+		playershopcontainer = scan;
+	}
+	public boolean isShopOwner(UUID player) {
+		return playershopholder==null?false:playershopholder.equals(player);
+	}
+	public Optional<Inventory> getStockInventory() {
+		if (playershopholder==null) return Optional.empty();
+		try {
+			if (!playershopcontainer.getBlockType().equals(BlockTypes.CHEST))
+				throw new RuntimeException("ContainerBlock not Chest");
+			TileEntityCarrier chest = (TileEntityCarrier) playershopcontainer.getTileEntity().get();
+			return Optional.of(chest.getInventory());
+		} catch (Exception e) {
+			VillagerShops.w("Could not receive container for Playershop at " + loc.getExtent().getName() + " " + loc.getBlockPosition());
+			return Optional.empty();
+		}
+	}
+	public Optional<UUID> getShopOwner() {
+		return playershopholder==null?Optional.empty():Optional.of(playershopholder);
 	}
 
 	public void tick() {

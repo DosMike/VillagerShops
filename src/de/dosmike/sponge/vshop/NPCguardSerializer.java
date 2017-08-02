@@ -1,5 +1,6 @@
 package de.dosmike.sponge.vshop;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +35,10 @@ public class NPCguardSerializer implements TypeSerializer<NPCguard> {
 		rootNode.getNode("entitytype").setValue(npc.getNpcType().getName());
 		rootNode.getNode("variant").setValue(npc.getVariantName());
 		rootNode.getNode("displayName").setValue(TextSerializers.FORMATTING_CODE.serialize(npc.getDisplayName()));
+		if (npc.playershopholder!=null)
+			rootNode.getNode("playershop").setValue(npc.playershopholder.toString());
+		if (npc.playershopcontainer!=null)
+			rootNode.getNode("stocklocation").setValue(tokenLocationWorld, npc.playershopcontainer);
 	}
 	
 	@Override
@@ -42,12 +47,17 @@ public class NPCguardSerializer implements TypeSerializer<NPCguard> {
 		InvPrep ip = new InvPrep();
 		
 		ip.items = cfg.getNode("items").getValue(tokenListStockItem);
+		if (ip.items==null) ip.items = new LinkedList<>();
 		npc.setPreparator(ip);
 	    npc.setLoc(cfg.getNode("location").getValue(tokenLocationWorld));
 	    npc.setRot(new Vector3d(0.0, cfg.getNode("rotation").getDouble(0.0), 0.0 ));
 	    npc.setNpcType((EntityType)FieldResolver.getFinalStaticByName(EntityTypes.class, cfg.getNode("entitytype").getString("VILLAGER")));
 	    npc.setVariant(cfg.getNode("variant").getString("NONE"));
 		npc.setDisplayName(TextSerializers.FORMATTING_CODE.deserialize(cfg.getNode("displayName").getString("VillagerShop")));
+		String tmp = cfg.getNode("playershop").getString(null);
+		if (tmp != null && !tmp.isEmpty())
+			npc.playershopholder=UUID.fromString(tmp);
+		npc.playershopcontainer=cfg.getNode("stocklocation").getValue(tokenLocationWorld);
 		return npc;
 	}
 }
