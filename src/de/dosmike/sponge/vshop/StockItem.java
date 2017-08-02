@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
@@ -122,30 +123,67 @@ public class StockItem {
 		return getFrom(inv, item.getQuantity());
 	}
 	
-	/** checks how many of this item the player can afford with the default currency maxing out at the quantity given by the represented itemstack */
-	public int canAfford(Player player) {
-		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
+	/** About Money: checks how many of this item the player can afford with the default currency maxing out at the quantity given by the represented itemstack */
+	public int canAfford(UUID player, double price) {
+		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player);
 		if (!acc.isPresent()) return 0;
+//		VillagerShops.l(acc.get().getDisplayName()+ " has " + acc.get().getBalance(currency).toPlainString());
 		BigDecimal bd = acc.get().getBalance(currency);
-		BigDecimal num = bd.divide(new BigDecimal(buyprice/(double)item.getQuantity()), 2, RoundingMode.HALF_DOWN);
+		BigDecimal num = bd.divide(new BigDecimal(price/(double)item.getQuantity()), 2, RoundingMode.HALF_DOWN);
 		int amount = num.intValue();
 		amount = (num.compareTo(BigDecimal.valueOf(item.getQuantity())) > 0 ? item.getQuantity() : amount);
 //		VillagerShops.l("Can afford "+amount);
 		return amount;
 	}
 	
-	/** checks how many of this item the player can afford with the default currency */
-	public int canAccept(Player player) {
+	/** About Money: checks how many of this item the player can afford with the default currency */
+	public int canAccept(UUID player) {
 		return item.getQuantity();	//there's no way to check how much money a account can hold
+	} 
+	
+	/** @returns the ammount of actually purchased items, -1 if the stock is empty */
+	public ShopResult buy(Player player, NPCguard shop) {
+		Optional<Inventory> stock = shop.getStockInventory();
+		if (!stock.isPresent()) {
+			int amount = canAfford(player.getUniqueId(), buyprice);
+			if (amount == 0) return ShopResult.CUSTOMER_LOW_BALANCE;
+			amount = offerTo(player.getInventory(), amount);
+			if (amount == 0) return ShopResult.CUSTOMER_INVENTORY_FULL;
+			return ShopResult.OK(amount);
+		} else {
+			//let's say we could afford 5 apples from a shelf
+			int amount = canAfford(player.getUniqueId(), buyprice);
+			if (amount == 0) return ShopResult.CUSTOMER_LOW_BALANCE;
+			int took = getFrom(stock.get(), amount); //we take all the apples we can afford
+			if (took < 1 && amount > 0) return ShopResult.SHOPOWNER_MISSING_ITEMS;
+			int stocked = offerTo(player.getInventory(), took);		//and try so put them in our backpack, but only 3 fit
+			offerTo(stock.get(), took-stocked);	//so we put the other 2 apples back on the shelf
+			if (stocked == 0) return ShopResult.CUSTOMER_INVENTORY_FULL;
+			else return ShopResult.OK(stocked);
+		}
 	}
 	
-	/** @returns the ammount of actually purchased items */
-	public int buy(Player player) {
-		return offerTo(player.getInventory(), canAfford(player));
-	}
-	
-	/** @returns the ammount of actually sold items */
-	public int sell(Player player) {
-		return getFrom(player.getInventory(), canAccept(player));
+	/** @returns the ammount of actually sold items, -1 if the stock is full or other can't afford */
+	public ShopResult sell(Player player, NPCguard shop) {
+		Optional<Inventory> stock = shop.getStockInventory();
+		if (!stock.isPresent()) {
+			int amount = getFrom(player.getInventory(), canAccept(player.getUniqueId()));
+			if (amount == 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
+			else return ShopResult.OK(amount);
+		} else {
+			//let's say we have 5 apples, the shelf owner might be able to afford 4
+			int amount;
+			if (shop.getShopOwner().isPresent()) { //there might be a stock, but no owner in the future
+				amount = canAfford(shop.getShopOwner().get(), sellprice);
+				if (amount < 1) return ShopResult.SHOPOWNER_LOW_BALANCE;
+			} else amount = canAccept(player.getUniqueId());
+			 
+			int took = getFrom(player.getInventory(), amount); //we want to put them on a shelf
+			if (took == 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
+			int stocked = offerTo(stock.get(), took);		//and we stuff them onto the shelf, but only 3 fit
+			offerTo(player.getInventory(), took-stocked);	//so we take the other 2 apples back
+			if (stocked == 0) return ShopResult.SHOPOWNER_INVENTORY_FULL;
+			else return ShopResult.OK(stocked);
+		}
 	}
 }

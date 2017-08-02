@@ -51,6 +51,13 @@ static void register() {
 					if (!(src instanceof Player)) { src.sendMessage(Text.of("Fek off!")); return CommandResult.success(); }
 					Player player = (Player)src;
 					
+					if (!player.hasPermission("vshop.edit.admin") &&
+							!player.hasPermission("vshop.edit.player")) {
+						player.sendMessage(Text.of(TextColors.RED, "You do not have permission to do this!"));
+						return CommandResult.success();
+					}
+					boolean playershop = !player.hasPermission("vshop.edit.admin"); 
+					
 					String var = (String) args.getOne("Skin").orElse("none");
 					String name = (String) args.getOne("Name").orElse("VillagerShop");
 					Text displayName = TextSerializers.FORMATTING_CODE.deserialize(name);
@@ -62,6 +69,14 @@ static void register() {
 						src.sendMessage(Text.of(TextColors.RED, "[vShop] Invalid EntityType (use tab to auto-complete)"));
 						return CommandResult.success();
 					}
+					if (playershop) {
+						String entityPermission = npc.getNpcType().getId();
+						entityPermission = "vshop.create."+entityPermission.replace(':', '.').replace("_", "").replace("-", "");
+						if (!player.hasPermission(entityPermission)) {
+							src.sendMessage(Text.of(TextColors.RED, "[vShop] This EntityType requires permission "+entityPermission));
+							return CommandResult.success();
+						}
+					}
 					npc.setVariant(var);
 					if (!var.equalsIgnoreCase("none") && npc.getVariant() == null) {
 						src.sendMessage(Text.of(TextColors.RED, "[vShop] No such Style/Variant found for ", npc.getNpcType().getName(), "\nUse NONE or 0 to get the default Style/Variant"));
@@ -71,6 +86,14 @@ static void register() {
 					npc.setPreparator(prep);
 					npc.setLoc(player.getLocation());
 					npc.setRot(new Vector3d(0, player.getHeadRotation().getY(), 0));
+					try {
+						npc.setPlayerShop(player.getUniqueId());
+					} catch (Exception e) {
+						if (playershop) {
+							src.sendMessage(Text.of(TextColors.RED, "[vShop] You need to put a container below your playershop!"));
+							return CommandResult.success();
+						}
+					}
 					VillagerShops.npcs.add(npc);
 					
 					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] Created a new shop called ", TextColors.RESET, displayName));
@@ -96,6 +119,12 @@ static void register() {
 					if (!npc.isPresent()) {
 						src.sendMessage(Text.of(TextColors.RED, "[vShop] There is no shop at your location!"));
 					} else {
+						if (!player.hasPermission("vshop.edit.admin") &&
+								!npc.get().isShopOwner(player.getUniqueId())) {
+							player.sendMessage(Text.of(TextColors.RED, "You do not have permission to do this!"));
+							return CommandResult.success();
+						}
+						
 						InvPrep prep = npc.get().getPreparator();
 						
 						Double buyFor, sellFor;
@@ -124,9 +153,9 @@ static void register() {
 						}
 						
 						Optional<ItemStack> item = player.getItemInHand(HandTypes.MAIN_HAND);
-						if (!item.isPresent() || item.get().getItem().equals(ItemTypes.AIR))
+						if (!item.isPresent() || item.get().getType().equals(ItemTypes.AIR))
 							item = player.getItemInHand(HandTypes.OFF_HAND);
-						if (!item.isPresent() || item.get().getItem().equals(ItemTypes.AIR)) {
+						if (!item.isPresent() || item.get().getType().equals(ItemTypes.AIR)) {
 							src.sendMessage(Text.of(TextColors.RED, "[vShop] Please hold the exact item you want to sell in your hand"));
 							return CommandResult.success();
 						}
@@ -135,7 +164,7 @@ static void register() {
 
 						src.sendMessage(Text.of(
 								TextColors.GREEN, "[vShop] Added ", 
-								TextColors.RESET, item.get().get(Keys.DISPLAY_NAME).orElse(Text.of(item.get().getItem().getTranslation().get())),
+								TextColors.RESET, item.get().get(Keys.DISPLAY_NAME).orElse(Text.of(item.get().getType().getTranslation().get())),
 								TextColors.GREEN, " to the shop at position ", prep.size()
 								));
 					}
@@ -160,6 +189,11 @@ static void register() {
 					if (!npc.isPresent()) {
 						src.sendMessage(Text.of(TextColors.RED, "[vShop] There is no shop at your location!"));
 					} else {
+						if (!player.hasPermission("vshop.edit.admin") &&
+								!npc.get().isShopOwner(player.getUniqueId())) {
+							player.sendMessage(Text.of(TextColors.RED, "You do not have permission to do this!"));
+							return CommandResult.success();
+						}
 						Integer index = (Integer) args.getOne("Index").get();
 						if (index < 1 || index > npc.get().getPreparator().size()) {
 							src.sendMessage(Text.of(TextColors.RED, "[vShop] A item at the specified index does not exist"));
@@ -175,6 +209,7 @@ static void register() {
 				}
 			}).build());
 	children.put(Arrays.asList("delete"), CommandSpec.builder()
+			//TODO check permissions
 			.arguments(
 					GenericArguments.none()
 			) .executor(new CommandExecutor() {
@@ -190,6 +225,11 @@ static void register() {
 					if (!npc.isPresent()) {
 						src.sendMessage(Text.of(TextColors.RED, "[vShop] There is no shop at your location!"));
 					} else {
+						if (!player.hasPermission("vshop.edit.admin") &&
+								!npc.get().isShopOwner(player.getUniqueId())) {
+							player.sendMessage(Text.of(TextColors.RED, "You do not have permission to do this!"));
+							return CommandResult.success();
+						}
 						VillagerShops.terminateNPCs();
 						File f = new File("config/vshop/"+npc.get().getIdentifier().toString()+".conf");
 						if (f.exists() && f.isFile()) f.delete();
@@ -202,6 +242,7 @@ static void register() {
 				}
 			}).build());
 	children.put(Arrays.asList("save"), CommandSpec.builder()
+			.permission("vshop.edit.admin")
 			.arguments(
 					GenericArguments.none()
 			) .executor(new CommandExecutor() {
@@ -213,6 +254,7 @@ static void register() {
 				}
 			}).build());
 	children.put(Arrays.asList("reload"), CommandSpec.builder()
+			.permission("vshop.edit.admin")
 			.arguments(
 					GenericArguments.none()
 			) .executor(new CommandExecutor() {
@@ -246,14 +288,13 @@ static void register() {
 			.description(Text.of("/vshop <CREATE|ADD|REMOVE|DELETE|SAVE|RELOAD> <options>"))
 			.extendedDescription(Text.of(
 					"ALWAYS STAND AT THE SHOP LOCATION! Options for:\n" + 
-					"CREATE - <EntityType> <Skin> [Name] (Skin is NONE or any valid skin for this Mob)\n" + 
+					"CREATE - <EntityType> <Skin> [Name] (Admin Shops, Skin is NONE or any valid skin for this Mob)\n" +
 					"ADD - <-|BuyPrice> <-|SellPrice> [Currency] (Hold ItemStack, - will disable that option, one required)\n" +
 					"REMOVE - <INDEX> (Count through items in shop inventory, start with 1)\n" +
 					"DELETE - (No arguments)\n" +
 					"SAVE - (No arguments)\n" +
 					"RELOAD - (No arguments)\n"
 					))
-			.permission("vshop.edit.admin")
 			.children(children)
 			.build()
 			, "vshop");
@@ -268,7 +309,7 @@ static void register() {
 		
 		//Scanning for a target
 		Double dist = 0.0;
-		Vector3d src = source.getLocation().getPosition().add(0, 1.6, 0); //about head height
+		Vector3d src = source.getLocation().getPosition().add(0, 1.62, 0); //about head height
 		dir = dir.normalize().div(10); //scan step in times block
 		Double curdist;
 		List<Entity> marked;

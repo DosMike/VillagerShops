@@ -40,7 +40,7 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 
-@Plugin(id="vshop", name="VillagerShops", version="0.2", authors={"DosMike"})
+@Plugin(id="vshop", name="VillagerShops", version="1.0", authors={"DosMike"})
 public class VillagerShops {
 	
 	public static void main(String[] args) { System.err.println("This plugin can not be run as executable!"); }
