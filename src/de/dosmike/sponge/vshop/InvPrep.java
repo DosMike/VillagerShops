@@ -1,19 +1,12 @@
 package de.dosmike.sponge.vshop;
 
-import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
-import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.InventoryArchetypes;
 import org.spongepowered.api.item.inventory.property.InventoryDimension;
 import org.spongepowered.api.item.inventory.property.InventoryTitle;
-import org.spongepowered.api.service.economy.Currency;
-import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
@@ -40,7 +33,7 @@ public class InvPrep {
 		Inventory inv = Inventory.builder().of(InventoryArchetypes.CHEST)
 //			.listener(type, listener)
 			.property("inventorytitle", new InventoryTitle(Text.of(TextColors.DARK_AQUA, "[vShop] ", TextColors.RESET, titled==null?Text.of():titled)))
-			.property("inventorydimension", new InventoryDimension(9, (items.size()/9+1)*3-1))
+			.property("inventorydimension", new InventoryDimension(9, (int)Math.ceil((double)items.size()/9.0)*3-1))
 			.build(VillagerShops.getInstance());
 		
 		//for some reason this class is no longer in the API, preventing any access i desire

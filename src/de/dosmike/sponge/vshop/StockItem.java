@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.economy.Currency;
@@ -52,7 +51,7 @@ public class StockItem {
 	
 	/** create a Item with custom description adding the sell-price for a stack with the present size */
 	public ItemStack getSellDisplayItem() {
-		if (sellprice == null) return ItemStack.of(ItemTypes.AIR, 1); //nothing
+		if (sellprice == null) return ItemStack.of(FieldResolver.emptyHandItem(), 1); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
 		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());
@@ -65,7 +64,7 @@ public class StockItem {
 	}
 	/** create a Item with custom description adding the buy-price for a stack with the present size */
 	public ItemStack getBuyDisplayItem() {
-		if (buyprice == null) return ItemStack.of(ItemTypes.AIR, 1); //nothing
+		if (buyprice == null) return ItemStack.of(FieldResolver.emptyHandItem(), 1); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
 		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());

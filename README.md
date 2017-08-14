@@ -1,6 +1,10 @@
 VillagerShops
 =====
 
+### [This plugin requires LangSwitch](https://github.com/DosMike/LangSwitch)
+
+Feel free to open an issue on the git to share your translations
+
 Description:
 -----
 
@@ -12,7 +16,7 @@ You can also name the shop mobs and set the variant (Villager profession).<br>
 *Please note that you require any economy Plugin for this to work*<br>
 <sub>Let's just never mention the Bukkit-version...</sub>
 
-Latest Version: 1.0 (2016-08-02)
+Latest Version: 1.1 (2017-08-14)<br>
 (Written, compiled and tested for spongevanilla-1.12-7.0.0-BETA-306)
 
 Commands
@@ -39,5 +43,3 @@ Player Shops
 In order to create a player shop you'll have to first place a chest (regular) below the block you want the shop to be. This can either be directly below or with a one block spacing.
 
 The chest should be protected from punching, explosions and is only accessible for the owner. Double chest wont even care for the other half, neither stock nor protection wise.
-
-Thanks for the read, DosMike

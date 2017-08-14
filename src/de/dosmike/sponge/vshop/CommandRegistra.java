@@ -1,6 +1,5 @@
 package de.dosmike.sponge.vshop;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -24,7 +23,6 @@ import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
@@ -34,9 +32,12 @@ import org.spongepowered.api.world.World;
 
 import com.flowpowered.math.vector.Vector3d;
 
-public class CommandRegistra {
-static void register() {
+import de.dosmike.sponge.languageservice.API.PluginTranslation;
 
+public class CommandRegistra {
+	static PluginTranslation lang;
+static void register() {
+	lang = VillagerShops.getTranslator();
 	Map<List<String>, CommandSpec> children;
 	
 	children = new HashMap<>();
@@ -48,12 +49,15 @@ static void register() {
 			) .executor(new CommandExecutor() {
 				@Override
 				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
-					if (!(src instanceof Player)) { src.sendMessage(Text.of("Fek off!")); return CommandResult.success(); }
+					
+					if (!(src instanceof Player)) { src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]"))); return CommandResult.success(); }
 					Player player = (Player)src;
 					
 					if (!player.hasPermission("vshop.edit.admin") &&
 							!player.hasPermission("vshop.edit.player")) {
-						player.sendMessage(Text.of(TextColors.RED, "You do not have permission to do this!"));
+						player.sendMessage(Text.of(TextColors.RED,
+								lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
+						
 						return CommandResult.success();
 					}
 					boolean playershop = !player.hasPermission("vshop.edit.admin"); 
@@ -66,20 +70,23 @@ static void register() {
 					InvPrep prep = new InvPrep();
 					npc.setNpcType((EntityType) args.getOne("EntityType").orElse(null));
 					if (npc.getNpcType() == null) {
-						src.sendMessage(Text.of(TextColors.RED, "[vShop] Invalid EntityType (use tab to auto-complete)"));
+						player.sendMessage(Text.of(TextColors.RED, "[vShop] ", 
+								lang.local("cmd.create.invalidtype").resolve(player).orElse("[invalid type]")));
 						return CommandResult.success();
 					}
 					if (playershop) {
 						String entityPermission = npc.getNpcType().getId();
 						entityPermission = "vshop.create."+entityPermission.replace(':', '.').replace("_", "").replace("-", "");
 						if (!player.hasPermission(entityPermission)) {
-							src.sendMessage(Text.of(TextColors.RED, "[vShop] This EntityType requires permission "+entityPermission));
+							player.sendMessage(Text.of(TextColors.RED, "[vShop] ", 
+									lang.local("cmd.create.entitypermission").replace("%permission%", entityPermission).resolve(player).orElse("[entity permission missing]") ));
 							return CommandResult.success();
 						}
 					}
 					npc.setVariant(var);
 					if (!var.equalsIgnoreCase("none") && npc.getVariant() == null) {
-						src.sendMessage(Text.of(TextColors.RED, "[vShop] No such Style/Variant found for ", npc.getNpcType().getName(), "\nUse NONE or 0 to get the default Style/Variant"));
+						player.sendMessage(Text.of(TextColors.RED, "[vShop] ", 
+								lang.local("cmd.create.invalidvariant").replace("%variant%", npc.getNpcType().getName()).resolve(player).orElse("[invalid variant]")));
 						return CommandResult.success();
 					}
 					npc.setDisplayName(displayName);
@@ -90,13 +97,15 @@ static void register() {
 						npc.setPlayerShop(player.getUniqueId());
 					} catch (Exception e) {
 						if (playershop) {
-							src.sendMessage(Text.of(TextColors.RED, "[vShop] You need to put a container below your playershop!"));
+							player.sendMessage(Text.of(TextColors.RED, "[vShop] ", 
+									lang.local("cmd.create.playershop.missingcontainer").resolve(player).orElse("[no chest below]")));
 							return CommandResult.success();
 						}
 					}
 					VillagerShops.npcs.add(npc);
 					
-					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] Created a new shop called ", TextColors.RESET, displayName));
+					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ", 
+							lang.localText("cmd.create.success").replace("%name%", Text.of(TextColors.RESET, displayName)).resolve(player).orElse(Text.of("[success]")) ));
 					
 					return CommandResult.success();
 				}
@@ -109,7 +118,7 @@ static void register() {
 			) .executor(new CommandExecutor() {
 				@Override
 				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
-					if (!(src instanceof Player)) { src.sendMessage(Text.of("Player only!")); return CommandResult.success(); }
+					if (!(src instanceof Player)) { src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]"))); return CommandResult.success(); }
 					Player player = (Player)src;
 					
 					Optional<Entity> ent = getEntityLookingAt(player, 5.0);
@@ -117,11 +126,13 @@ static void register() {
 					
 					Optional<NPCguard> npc = VillagerShops.getNPCfromLocation(loc);
 					if (!npc.isPresent()) {
-						src.sendMessage(Text.of(TextColors.RED, "[vShop] There is no shop at your location!"));
+						src.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+								lang.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
 					} else {
 						if (!player.hasPermission("vshop.edit.admin") &&
 								!npc.get().isShopOwner(player.getUniqueId())) {
-							player.sendMessage(Text.of(TextColors.RED, "You do not have permission to do this!"));
+							player.sendMessage(Text.of(TextColors.RED, 
+									lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
 							return CommandResult.success();
 						}
 						
@@ -132,40 +143,47 @@ static void register() {
 						try {
 							buyFor = parse.equals("-")?null:Double.parseDouble(parse); 
 						} catch (Exception e) {
-							src.sendMessage(Text.of(TextColors.RED, "[vShop] The BuyPrice was not '-' or a decimal"));
+							player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+									lang.local("cmd.add.buyprice").resolve(player).orElse("[No buy price]")));
 							return CommandResult.success();
 						}
 						parse = args.getOne("SellPrice").orElse("-").toString();
 						try {
 							sellFor = parse.equals("-")?null:Double.parseDouble(parse); 
 						} catch (Exception e) {
-							src.sendMessage(Text.of(TextColors.RED, "[vShop] The SellPrice was not '-' or a decimal"));
+							player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+									lang.local("cmd.add.sellprice").resolve(player).orElse("[No sell price]")));
 							return CommandResult.success();
 						}
 						
 						if (buyFor == null && sellFor == null) {
-							src.sendMessage(Text.of(TextColors.RED, "[vShop] You need to specify at lease one of BuyPrice and SellPrice"));
+							player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+									lang.local("cmd.add.noprice").resolve(player).orElse("[No price]")));
 							return CommandResult.success();
 						}
 						if ((buyFor != null && buyFor < 0) || (sellFor != null && sellFor < 0)) {
-							src.sendMessage(Text.of(TextColors.RED, "[vShop] Prices may not be negative"));
+							player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+									lang.local("cmd.add.negativeprice").resolve(player).orElse("[Negative price]")));
 							return CommandResult.success();
 						}
 						
 						Optional<ItemStack> item = player.getItemInHand(HandTypes.MAIN_HAND);
-						if (!item.isPresent() || item.get().getType().equals(ItemTypes.AIR))
+						if (!item.isPresent() || FieldResolver.getType(item.get()).equals(FieldResolver.emptyHandItem()))
 							item = player.getItemInHand(HandTypes.OFF_HAND);
-						if (!item.isPresent() || item.get().getType().equals(ItemTypes.AIR)) {
-							src.sendMessage(Text.of(TextColors.RED, "[vShop] Please hold the exact item you want to sell in your hand"));
+						if (!item.isPresent() || FieldResolver.getType(item.get()).equals(FieldResolver.emptyHandItem())) {
+							player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+									lang.local("cmd.add.itemisair").resolve(player).orElse("[Item is air]")));
 							return CommandResult.success();
 						}
 						VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
 						prep.addItem(new StockItem(item.get(), sellFor, buyFor, VillagerShops.getInstance().CurrencyByName((String) args.getOne("Currency").orElse(null))));
 
-						src.sendMessage(Text.of(
-								TextColors.GREEN, "[vShop] Added ", 
-								TextColors.RESET, item.get().get(Keys.DISPLAY_NAME).orElse(Text.of(item.get().getType().getTranslation().get())),
-								TextColors.GREEN, " to the shop at position ", prep.size()
+						player.sendMessage(Text.of(
+								TextColors.GREEN, "[vShop] ",
+									lang.localText("cmd.add.success")
+									.replace("%item%", Text.of( TextColors.RESET, item.get().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.get()).getTranslation().get())), TextColors.GREEN ))
+									.replace("%pos%", prep.size())
+									.resolve(player).orElse(Text.of("[item added]"))
 								));
 					}
 					
@@ -179,7 +197,7 @@ static void register() {
 			) .executor(new CommandExecutor() {
 				@Override
 				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
-					if (!(src instanceof Player)) { src.sendMessage(Text.of("Player only!")); return CommandResult.success(); }
+					if (!(src instanceof Player)) { src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]"))); return CommandResult.success(); }
 					Player player = (Player)src;
 					
 					Optional<Entity> ent = getEntityLookingAt(player, 5.0);
@@ -187,21 +205,27 @@ static void register() {
 					
 					Optional<NPCguard> npc = VillagerShops.getNPCfromLocation(loc);
 					if (!npc.isPresent()) {
-						src.sendMessage(Text.of(TextColors.RED, "[vShop] There is no shop at your location!"));
+						player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+								lang.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
 					} else {
 						if (!player.hasPermission("vshop.edit.admin") &&
 								!npc.get().isShopOwner(player.getUniqueId())) {
-							player.sendMessage(Text.of(TextColors.RED, "You do not have permission to do this!"));
+							player.sendMessage(Text.of(TextColors.RED, 
+									lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
 							return CommandResult.success();
 						}
 						Integer index = (Integer) args.getOne("Index").get();
 						if (index < 1 || index > npc.get().getPreparator().size()) {
-							src.sendMessage(Text.of(TextColors.RED, "[vShop] A item at the specified index does not exist"));
+							player.sendMessage(Text.of(TextColors.RED, "[vShop] ", 
+									lang.local("cmd.remove.invalidindex").resolve(player).orElse("[invalid index]")));
 						} else {
 							VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
 							npc.get().getPreparator().removeIndex(index-1);
 							
-							src.sendMessage(Text.of(TextColors.GREEN, "[vShop] Removed item at position ", index, " from the shop"));
+							player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
+									lang.local("cmd.remove.success")
+									.replace("%pos%", index)
+									.resolve(player).orElse("[success]")));
 						}
 					}
 					
@@ -215,7 +239,7 @@ static void register() {
 			) .executor(new CommandExecutor() {
 				@Override
 				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
-					if (!(src instanceof Player)) { src.sendMessage(Text.of("Player only!")); return CommandResult.success(); }
+					if (!(src instanceof Player)) { src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]"))); return CommandResult.success(); }
 					Player player = (Player)src;
 					
 					Optional<Entity> ent = getEntityLookingAt(player, 5.0);
@@ -223,19 +247,20 @@ static void register() {
 					
 					Optional<NPCguard> npc = VillagerShops.getNPCfromLocation(loc);
 					if (!npc.isPresent()) {
-						src.sendMessage(Text.of(TextColors.RED, "[vShop] There is no shop at your location!"));
+						src.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+								lang.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
 					} else {
 						if (!player.hasPermission("vshop.edit.admin") &&
 								!npc.get().isShopOwner(player.getUniqueId())) {
-							player.sendMessage(Text.of(TextColors.RED, "You do not have permission to do this!"));
+							player.sendMessage(Text.of(TextColors.RED, 
+									lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
 							return CommandResult.success();
 						}
 						VillagerShops.terminateNPCs();
-						File f = new File("config/vshop/"+npc.get().getIdentifier().toString()+".conf");
-						if (f.exists() && f.isFile()) f.delete();
 						VillagerShops.npcs.remove(npc.get());
 						VillagerShops.startTimers();
-						src.sendMessage(Text.of(TextColors.GREEN, "[vShop] Shop deleted!"));
+						src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
+								lang.local("cmd.deleted").resolve(player).orElse("[deleted]")));
 					}
 					
 					return CommandResult.success();
@@ -249,7 +274,8 @@ static void register() {
 				@Override
 				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
 					VillagerShops.getInstance().saveConfigs();
-					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] Shops saved!"));
+					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
+							lang.local("cmd.saved").resolve(src).orElse("[saved]")));
 					return CommandResult.success();
 				}
 			}).build());
@@ -263,7 +289,8 @@ static void register() {
 					VillagerShops.terminateNPCs();
 					VillagerShops.getInstance().loadConfigs();
 					VillagerShops.startTimers();
-					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] Reload complete!"));
+					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
+							lang.local("cmd.reloaded").resolve(src).orElse("[reloaded]")));
 					return CommandResult.success();
 				}
 			}).build());
@@ -285,16 +312,8 @@ static void register() {
 
 
 	Sponge.getCommandManager().register(VillagerShops.getInstance(), CommandSpec.builder()
-			.description(Text.of("/vshop <CREATE|ADD|REMOVE|DELETE|SAVE|RELOAD> <options>"))
-			.extendedDescription(Text.of(
-					"ALWAYS STAND AT THE SHOP LOCATION! Options for:\n" + 
-					"CREATE - <EntityType> <Skin> [Name] (Admin Shops, Skin is NONE or any valid skin for this Mob)\n" +
-					"ADD - <-|BuyPrice> <-|SellPrice> [Currency] (Hold ItemStack, - will disable that option, one required)\n" +
-					"REMOVE - <INDEX> (Count through items in shop inventory, start with 1)\n" +
-					"DELETE - (No arguments)\n" +
-					"SAVE - (No arguments)\n" +
-					"RELOAD - (No arguments)\n"
-					))
+			.description(Text.of(lang.local("cmd.description.short").toString()))
+			.extendedDescription(Text.of(lang.local("cmd.description.long").replace("\\n", "\n").toString()))
 			.children(children)
 			.build()
 			, "vshop");

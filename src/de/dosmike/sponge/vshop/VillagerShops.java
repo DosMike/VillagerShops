@@ -33,6 +33,8 @@ import org.spongepowered.api.world.World;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 
+import de.dosmike.sponge.languageservice.API.LanguageService;
+import de.dosmike.sponge.languageservice.API.PluginTranslation;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -40,7 +42,7 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 
-@Plugin(id="vshop", name="VillagerShops", version="1.0", authors={"DosMike"})
+@Plugin(id="vshop", name="VillagerShops", version="1.1", authors={"DosMike"})
 public class VillagerShops {
 	
 	public static void main(String[] args) { System.err.println("This plugin can not be run as executable!"); }
@@ -49,12 +51,17 @@ public class VillagerShops {
 	public static VillagerShops getInstance() { return instance; }
 	
 	private EconomyService economyService = null;
+	private PluginTranslation translator = null;
 	@Listener
 	public void onChangeServiceProvider(ChangeServiceProviderEvent event) {
 		if (event.getService().equals(EconomyService.class)) {
-			economyService = (EconomyService) event.getNewProviderRegistration().getProvider();
+			economyService = (EconomyService) event.getNewProvider();
+		} else if (event.getService().equals(LanguageService.class)) {
+			LanguageService languageService = (LanguageService) event.getNewProvider();
+			translator = languageService.registerTranslation(this); //add this plugin to langswitch
 		}
 	}
+	public static PluginTranslation getTranslator() { return instance.translator; }
 	public static EconomyService getEconomy() { return instance.economyService; }
 	
 	@Inject
@@ -82,6 +89,8 @@ public class VillagerShops {
 	
 	@Listener
 	public void onServerInit(GameInitializationEvent event) {
+		instance = this;
+		
 		customSerializer.registerType(TypeToken.of(StockItem.class), new StockItemSerializer());
 		customSerializer.registerType(TypeToken.of(NPCguard.class), new NPCguardSerializer());
 		
@@ -90,8 +99,6 @@ public class VillagerShops {
 	
 	@Listener
 	public void onServerStart(GameStartedServerEvent event) {
-		instance = this;
-		
 		CommandRegistra.register();
 		
 		loadConfigs();

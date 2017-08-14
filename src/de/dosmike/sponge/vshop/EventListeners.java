@@ -20,7 +20,6 @@ import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
 import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
-import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.item.inventory.Slot;
 import org.spongepowered.api.item.inventory.property.SlotIndex;
@@ -115,8 +114,9 @@ public class EventListeners {
 		ItemStackSnapshot isnap = event.getCursorTransaction().getFinal();
 		for (SlotTransaction action : event.getTransactions()) {
 			Slot thisSlot = action.getSlot();
-			if (isnap.isEmpty()) isnap = action.getOriginal();
-			if (isnap.isEmpty() || isnap.getType().equals(ItemTypes.AIR)) continue; //can't buy/sell air mofo 
+			
+			if (FieldResolver.itemStackEmpty(isnap)) isnap = action.getOriginal();
+			if (FieldResolver.itemStackEmpty(isnap) || isnap.getType().equals(FieldResolver.emptyHandItem())) continue; //can't buy/sell air mofo 
 			for (SlotIndex si : thisSlot.getProperties(SlotIndex.class)) {
 				InvPrep p = g.getPreparator();
 				slotIndex = si.getValue();

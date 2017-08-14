@@ -1,6 +1,12 @@
 package de.dosmike.sponge.vshop;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+import org.spongepowered.api.item.ItemType;
+import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 
 public class FieldResolver {
 	
@@ -25,5 +31,42 @@ public class FieldResolver {
 //			e.printStackTrace();
 			return null;
 		}
+	}
+
+	/** getting item type API independent */
+	static ItemType getType(ItemStack item) {
+		Method m=null;
+		try {
+			m = item.getClass().getMethod("getType");
+		} catch (Exception e) {
+			try {
+				m = item.getClass().getMethod("getItem");
+			} catch (Exception e1) {
+				throw new RuntimeException("Unable to get ItemStack.getType() Method");
+			}
+		}
+		if (!m.getReturnType().equals(ItemType.class)) throw new RuntimeException("Unable to get ItemStack.getType() Method");
+		try {
+			return (ItemType) m.invoke(item);
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to invoke ItemStack.getType() Method");
+		}
+	}
+	static ItemType emptyHandItem() {
+		ItemType air = (ItemType) getFinalStaticByName(ItemTypes.class, "air");
+		if (air == null) air = (ItemType) getFinalStaticByName(ItemTypes.class, "none");
+		return air;
+	}
+	static boolean itemStackEmpty(ItemStackSnapshot item) {
+		try {
+			return (boolean) ItemStackSnapshot.class.getMethod("isEmpty").invoke(item);
+		} catch (Exception e) {
+			try {
+				return (int)ItemStackSnapshot.class.getMethod("getCount").invoke(item) ==0;
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+		return true;
 	}
 }

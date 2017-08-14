@@ -1,0 +1,29 @@
+permission.missing:You do not have permission to do this!
+cmd.description.short:/vshop <CREATE|ADD|REMOVE|DELETE|SAVE|RELOAD> <options>
+cmd.description.long:Always look at the shop you want to edit! Options for:\nCREATE - <EntityType> <Skin> [Name] (Admin Shops, Skin is NONE or any valid skin for this Mob)\nADD - <-|BuyPrice> <-|SellPrice> [Currency] (Hold ItemStack, - will disable that option, one required)\nREMOVE - <INDEX> (Count through items in shop inventory, start with 1)\nDELETE - (No arguments)\nSAVE - (No arguments)\nRELOAD - (No arguments)
+cmd.playeronly:This command can only be run by players
+cmd.common.notarget:There is no shop where you're looking!
+cmd.create.invalidtype:Invalid EntityType (use tab to auto-complete)
+cmd.create.entitypermission:This EntityType requires permission %permission%
+cmd.create.invalidvariant:No such Style/Variant found for %variant% - Use NONE or 0 to get the default Style/Variant
+cmd.create.playershop.missingcontainer:You need to put a container below your playershop!
+cmd.create.success:Created a new shop called %name%
+cmd.add.buyprice:The BuyPrice was not '-' or a decimal
+cmd.add.sellprice:The SellPrice was not '-' or a decimal
+cmd.add.noprice:You need to specify at lease one of BuyPrice and SellPrice
+cmd.add.negativeprice:Prices may not be negative
+cmd.add.itemisair:Please hold the exact item you want to sell in your hand
+cmd.add.success:Added %item% to the shop at position %pos%
+cmd.remove.invalidindex:A item at the specified index does not exist
+cmd.remove.success:Removed item at position %pos% from the shop
+cmd.deleted:Shop deleted!
+cmd.saved:Shops saved!
+cmd.reloaded:Reload complete!
+shop.buy.message:%balance% (%payed%): Buying %amount%x %item%
+shop.sell.message:%balance% (%payed%): Selling %amount%x %item%
+shop.customer.lowbalance:You do not have enough money
+shop.shopowner.lowbalance:The shop owner ran out of money
+shop.customer.missingitems:You do not have enough items
+shop.shopowner.missingitems:The items is currently out of stock
+shop.customer.inventoryfull:You can not carry any more items
+shop.shopowner.inventoryfull:The shop can not stock more items

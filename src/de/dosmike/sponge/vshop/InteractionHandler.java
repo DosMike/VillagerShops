@@ -44,12 +44,12 @@ public class InteractionHandler {
 //		int column=slot%9, row=slot/9;
 		
 		if (!VillagerShops.openShops.containsKey(source.getUniqueId())) {
-			VillagerShops.l("No openShop");
+//			VillagerShops.l("No openShop");
 			return false;
 		}
 		Optional<NPCguard> shop = VillagerShops.getNPCfromShopUUID(VillagerShops.openShops.get(source.getUniqueId()));
 		if (!shop.isPresent()) {
-			VillagerShops.l("No NPCguard");
+//			VillagerShops.l("No NPCguard");
 			return false;
 		}
 		InvPrep stock = shop.get().getPreparator();
@@ -96,13 +96,15 @@ public class InteractionHandler {
 						BigDecimal.valueOf(finalPrice), 
 						Cause.builder().named("PLAYER SHOP ITEMS SOLD", VillagerShops.getInstance()).build());
 				
-				player.sendMessage(Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET, " (",
-						TextColors.RED, "-", String.format("%.2f", finalPrice), TextColors.RESET, 
-						"): Buying ", TextColors.YELLOW, result.getTradedItems(), "x ", TextColors.RESET, 
-						item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getType().getTranslation().get()))
+				player.sendMessage(VillagerShops.getTranslator().localText("shop.buy.message")
+						.replace("%balance%", Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET))
+						.replace("%payed%", Text.of(TextColors.RED, "-", String.format("%.2f", finalPrice), TextColors.RESET)) 
+						.replace("%amount%", Text.of(TextColors.YELLOW, result.getTradedItems(), TextColors.RESET))
+						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getTranslation().get())) ))
+						.resolve(player).orElse(Text.of("[items bought]")
 						));
 			} else {
-				player.sendMessage(result.getMessage());
+				player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
 			}
 		} else {
 			result = item.sell(player, shop);
@@ -117,13 +119,15 @@ public class InteractionHandler {
 						BigDecimal.valueOf(finalPrice), 
 						Cause.builder().named("PLAYER SHOP ITEMS BOUGHT", VillagerShops.getInstance()).build());
 				
-				player.sendMessage(Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET, " (",
-						TextColors.GREEN, "+", String.format("%.2f", finalPrice), TextColors.RESET, 
-						"): Selling ", TextColors.YELLOW, result.getTradedItems(), "x ", TextColors.RESET, 
-						item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getType().getTranslation().get()))
+				player.sendMessage(VillagerShops.getTranslator().localText("shop.sell.message")
+						.replace("%balance%", Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET))
+						.replace("%payed%", Text.of(TextColors.GREEN, "+", String.format("%.2f", finalPrice), TextColors.RESET)) 
+						.replace("%amount%", Text.of(TextColors.YELLOW, result.getTradedItems(), TextColors.RESET))
+						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getTranslation().get())) ))
+						.resolve(player).orElse(Text.of("[items bought]")
 						));
 			} else {
-				player.sendMessage(result.getMessage());
+				player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
 			}
 		}
 		
