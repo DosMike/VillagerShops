@@ -3,11 +3,14 @@ package de.dosmike.sponge.vshop;
 import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.item.inventory.Container;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.text.Text;
@@ -28,6 +31,7 @@ public class InteractionHandler {
 //			VillagerShops.l("NPC: " + npc.get().getDisplayName().toPlain());
 //			if (side == Button.right) {
 				if (npc.get().getPreparator().size()>0) {
+					npc.get().updateStock();
 					source.openInventory(npc.get().getInventory(), Cause.builder().named("PLUGIN (Shop Opened)", VillagerShops.getInstance()).build());
 					VillagerShops.openShops.put(source.getUniqueId(), npc.get().getIdentifier());
 //				}
@@ -52,15 +56,23 @@ public class InteractionHandler {
 //			VillagerShops.l("No NPCguard");
 			return false;
 		}
-		InvPrep stock = shop.get().getPreparator();
 		
-		int type = stock.isSlotBuySell(slot);
-		int index = stock.slotToIndex(slot);
+		int type = InvPrep.isSlotBuySell(slot);
+		int index = InvPrep.slotToIndex(slot);
 		if (type < 2) {
 //			stock.itemClicked(source, index, type);
 			shopItemClicked(shop.get(), source, index, type);
 //			ItemStack item = stock.getItem(index).getItem();
 //			source.sendMessage(Text.of("You ", type==0?"bought":"sold", " ", itemcount, " ", item.get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getTranslation()))));
+			
+			Sponge.getScheduler().createSyncExecutor(VillagerShops.instance).schedule(()-> {
+				Optional<Container> stockinv = source.getOpenInventory();
+				if (stockinv.isPresent()) {
+					//is the first child (not clean coding, but working, so whatever)
+					shop.get().updateStock();
+					shop.get().getPreparator().updateInventory(stockinv.get().iterator().next());
+				}
+			},21,TimeUnit.MILLISECONDS);
 		}
 		
 		return true;

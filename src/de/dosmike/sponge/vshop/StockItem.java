@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.Inventory;
@@ -22,11 +23,14 @@ public class StockItem {
 	private Currency currency; //currency to use
 	private Double sellprice=null, buyprice=null; //per single item in stack => stack price is item.quantity * price
 	
-	public StockItem(ItemStack itemstack, Double sellfor, Double buyfor, Currency currency) {
+	private int maxStock=0, stocked=0;
+	
+	public StockItem(ItemStack itemstack, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
 		item = itemstack.copy();
 		if (sellfor!=null && sellfor>=0) sellprice = sellfor;
 		if (buyfor!=null && buyfor>=0) buyprice = buyfor;
 		this.currency = currency; 
+		maxStock = stockLimit;
 	}
 	
 	public ItemStack getItem() {
@@ -48,9 +52,22 @@ public class StockItem {
 	public Currency getCurrency() {
 		return currency;
 	}
+	public int getMaxStock() {
+		return maxStock;
+	}
+	public int getStocked() {
+		return maxStock>0?stocked:item.getQuantity();
+	}
+	
+	public void updateStock(Inventory container) {
+		Inventory result = container.queryAny(item);
+		int count = 0;
+		for (Inventory s : result.slots()) count += s.totalItems();
+		stocked = Math.min(maxStock, count);
+	}
 	
 	/** create a Item with custom description adding the sell-price for a stack with the present size */
-	public ItemStack getSellDisplayItem() {
+	public ItemStack getSellDisplayItem(int patchedSlot) {
 		if (sellprice == null) return ItemStack.of(FieldResolver.emptyHandItem(), 1); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
@@ -58,12 +75,16 @@ public class StockItem {
 		desc.add(Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", sellprice), cs, (item.getQuantity()>1? 
 				Text.of(String.format(" (á %.2f", sellprice/(double)item.getQuantity()), cs, ')')
 				:"") ));
+		if (maxStock>0) 
+			desc.add(Text.of(TextColors.GRAY, String.format("In Stock: %d/%d", getStocked(), maxStock))); 
 		
 		dis.offer(Keys.ITEM_LORE, desc);
-		return dis;
+		
+		return ItemStack.builder().fromContainer(
+                dis.toContainer().set(DataQuery.of("UnsafeData", "slotnum"), patchedSlot) ).build();
 	}
 	/** create a Item with custom description adding the buy-price for a stack with the present size */
-	public ItemStack getBuyDisplayItem() {
+	public ItemStack getBuyDisplayItem(int patchedSlot) {
 		if (buyprice == null) return ItemStack.of(FieldResolver.emptyHandItem(), 1); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
@@ -71,9 +92,13 @@ public class StockItem {
 		desc.add(Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs, (item.getQuantity()>1? 
 				Text.of(String.format(" (á %.2f", buyprice/(double)item.getQuantity()), cs, ')')
 				:"") ));
+		if (maxStock>0) 
+			desc.add(Text.of(TextColors.GRAY, String.format("In Stock: %d/%d", getStocked(), maxStock)));
 		
 		dis.offer(Keys.ITEM_LORE, desc);
-		return dis;
+
+		return ItemStack.builder().fromContainer(
+                dis.toContainer().set(DataQuery.of("UnsafeData", "slotnum"), patchedSlot) ).build();
 	}
 	
 	/** Try to add the represented itemstack to the target inventory without doing any economy changes.
@@ -116,10 +141,11 @@ public class StockItem {
 		return quantity-ammountLeft;
 	}
 	
-	/** Tries to take the represented item with the given quantity from the inventory
+	/** Tries to take the represented item with the given quantity from the inventory.
+	 * If the item has max stock, it will get the minimum of remaining stock and available items. 
 	 * @returns the amount of items taken out of the inventory */
 	public int getFrom(Inventory inv) {
-		return getFrom(inv, item.getQuantity());
+		return getFrom(inv, maxStock<=0?item.getQuantity():Math.min(item.getQuantity(), maxStock-stocked));
 	}
 	
 	/** About Money: checks how many of this item the player can afford with the default currency maxing out at the quantity given by the represented itemstack */
@@ -176,6 +202,8 @@ public class StockItem {
 				amount = canAfford(shop.getShopOwner().get(), sellprice);
 				if (amount < 1) return ShopResult.SHOPOWNER_LOW_BALANCE;
 			} else amount = canAccept(player.getUniqueId());
+			if (maxStock>0) amount = Math.min(amount, maxStock-stocked); //if the stock is limited we do not want to exceed the limit for this item
+			if (amount < 1) return ShopResult.SHOPOWNER_INVENTORY_FULL; // if we can't sell any items NOW, the stock limit most likely was reached
 			 
 			int took = getFrom(player.getInventory(), amount); //we want to put them on a shelf
 			if (took == 0) return ShopResult.CUSTOMER_MISSING_ITEMS;

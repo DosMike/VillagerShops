@@ -21,8 +21,12 @@ import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.entity.spawn.EntitySpawnCause;
 import org.spongepowered.api.event.cause.entity.spawn.SpawnTypes;
+import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
 import org.spongepowered.api.item.inventory.Inventory;
+import org.spongepowered.api.item.inventory.InventoryArchetypes;
+import org.spongepowered.api.item.inventory.property.InventoryTitle;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Chunk;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -55,8 +59,23 @@ public class NPCguard {
 		return loc;
 	}
 
+	/** function to move existing shop for convenience as API */
+	public void move(Location<World> newLoc) {
+		Optional<Chunk> c = loc.getExtent().getChunkAtBlock(loc.getBiomePosition());
+		if (!c.isPresent()) 
+			throw new RuntimeException("Chunk for shop not available!");
+		Chunk chunk = c.get();
+		if (!chunk.isLoaded()) {
+			if (!chunk.loadChunk(false)) 
+				throw new RuntimeException("Unable to load chunk for shop to remove old entity");
+		}
+		chunk.getEntity(le.getUniqueId()).ifPresent(ent->{
+			if (ent instanceof Living) ent.remove();
+		});
+		loc = newLoc;
+	}
 	public void setLoc(Location<World> loc) {
-		this.loc = new Location<World>(loc.getExtent(), loc.getBlockX()+0.5, loc.getBlockY(), loc.getBlockZ()+0.5);
+		this.loc = new Location<World>(loc.getExtent(), loc.getBlockX()+0.5, loc.getY(), loc.getBlockZ()+0.5);
 	}
 
 	public Vector3d getRot() {
@@ -71,7 +90,17 @@ public class NPCguard {
 		return preparator;
 	}
 	public Inventory getInventory() {
-		return preparator.getInventory(displayName);
+		ShopInventoryListener sil = new ShopInventoryListener(this);
+		Inventory.Builder builder = Inventory.builder().of(InventoryArchetypes.CHEST)
+				.property("inventorytitle", new InventoryTitle(Text.of(TextColors.DARK_AQUA, "[vShop] ", TextColors.RESET, displayName==null?Text.of():displayName)))
+				.listener(ClickInventoryEvent.class, sil);
+		Inventory inv = preparator.getInventory(builder);
+		return inv;
+	}
+	
+	/** recounts items in the shop container for playershops */
+	public void updateStock() {
+		getStockInventory().ifPresent(inv->preparator.updateStock(inv));
 	}
 
 	public void setPreparator(InvPrep preparator) {

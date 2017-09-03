@@ -4,11 +4,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.InventoryArchetypes;
 import org.spongepowered.api.item.inventory.property.InventoryDimension;
-import org.spongepowered.api.item.inventory.property.InventoryTitle;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.item.inventory.property.SlotIndex;
+import org.spongepowered.api.item.inventory.type.OrderedInventory;
 
 public class InvPrep {
 	
@@ -29,10 +27,8 @@ public class InvPrep {
 		return items.size();
 	}
 	
-	public Inventory getInventory(Text titled) {
-		Inventory inv = Inventory.builder().of(InventoryArchetypes.CHEST)
-//			.listener(type, listener)
-			.property("inventorytitle", new InventoryTitle(Text.of(TextColors.DARK_AQUA, "[vShop] ", TextColors.RESET, titled==null?Text.of():titled)))
+	public Inventory getInventory(Inventory.Builder ib) {
+		Inventory inv = ib
 			.property("inventorydimension", new InventoryDimension(9, (int)Math.ceil((double)items.size()/9.0)*3-1))
 			.build(VillagerShops.getInstance());
 		
@@ -43,8 +39,8 @@ public class InvPrep {
 		int row=0, col=0;
 		for (int i = 0; i < items.size(); i++) {
 			
-			cinv.setItemStack(col, row,   items.get(i).getBuyDisplayItem());
-			cinv.setItemStack(col, row+1, items.get(i).getSellDisplayItem());
+			cinv.setItemStack(col, row,   items.get(i).getBuyDisplayItem(row*9+col));
+			cinv.setItemStack(col, row+1, items.get(i).getSellDisplayItem((row+1)*9+col));
 			
 			if (++col>=9) { col=0; row+=3; }
 		}
@@ -53,17 +49,39 @@ public class InvPrep {
 	}
 	
 	/** @returns 0 for buy, 1 for sell, 2 for spacer */
-	public int isSlotBuySell(int inventoryIndex) {
+	public static int isSlotBuySell(int inventoryIndex) {
 		return ((int)(inventoryIndex/9))%3;
 	}
 	
 	/** @return the items index for the given inventory slot or -1 if the slot is a spacer */
-	public int slotToIndex(int inventorySlot) {
+	public static int slotToIndex(int inventorySlot) {
 		int y = (int)(inventorySlot/9);
 		int a = y%3; y/=3;
 		if (a==2) return -1;
 		int x = inventorySlot%9;
 		return y*9+x;
+	}
+	
+	public void updateStock(Inventory container) {
+		for (StockItem item : items) item.updateStock(container);
+	}
+	
+	/** dealing with open inventories this will target a OrderedInventory 
+	 * (more precisely a OrderedInventoryAdapter at runtime) */
+	public void updateInventory(Inventory view) {
+		if (!(view instanceof OrderedInventory)) {
+			VillagerShops.w("Can't update view");
+			return;
+		}
+		OrderedInventory oi = (OrderedInventory)view;
+		int row=0, col=0;
+		for (int i = 0; i < items.size(); i++) {
+			
+			oi.set(new SlotIndex(row*9+col),		items.get(i).getBuyDisplayItem(row*9+col));
+			oi.set(new SlotIndex((row+1)*9+col),	items.get(i).getSellDisplayItem((row+1)*9+col));
+			
+			if (++col>=9) { col=0; row+=3; }
+		}
 	}
 	
 //	/** tries to buy or sell the item at index and returns the ammount of actuall items bought/sold

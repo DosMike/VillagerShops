@@ -4,10 +4,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.TileEntity;
+import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.explosive.Explosive;
 import org.spongepowered.api.entity.living.player.Player;
@@ -16,14 +17,9 @@ import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.entity.AttackEntityEvent;
 import org.spongepowered.api.event.entity.InteractEntityEvent;
-import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
 import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
-import org.spongepowered.api.item.inventory.Slot;
-import org.spongepowered.api.item.inventory.property.SlotIndex;
-import org.spongepowered.api.item.inventory.transaction.SlotTransaction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.extent.Extent;
@@ -60,6 +56,19 @@ public class EventListeners {
 			if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.right))
 					event.setCancelled(true);
 	}
+	
+	@Listener
+	public void onPlayerInteractBlock(InteractBlockEvent.Secondary event) {
+		Optional<Player> cause = event.getCause().first(Player.class);
+		Optional<Location<World>> location = event.getTargetBlock().getLocation();
+		if (cause.isPresent() && location.isPresent()) {
+			Optional<TileEntity> entity = location.get().getTileEntity();
+			if (entity.isPresent() && entity.get() instanceof TileEntityCarrier) {
+				if (ChestLinkManager.linkChest(cause.get(), (TileEntityCarrier) entity.get()))
+					event.setCancelled(true);
+			}
+		}
+	}
 
 	@Listener
 		public void onInventoryClosed(InteractInventoryEvent.Close event) {
@@ -87,8 +96,8 @@ public class EventListeners {
 			}
 		}
 
-	@Listener
-	public void onInventoryClick(ClickInventoryEvent event) {
+	//@Listener //DISABLED, the inventory should have it's own listener
+	/*public void onInventoryClick(ClickInventoryEvent event) {
 		Optional<Player> clicker = event.getCause().first(Player.class);
 		if (!clicker.isPresent()) return;
 		if (!VillagerShops.openShops.containsKey(clicker.get().getUniqueId())) return;
@@ -120,8 +129,8 @@ public class EventListeners {
 			for (SlotIndex si : thisSlot.getProperties(SlotIndex.class)) {
 				InvPrep p = g.getPreparator();
 				slotIndex = si.getValue();
-				int i = p.slotToIndex(slotIndex);
-				int a = p.isSlotBuySell(slotIndex);
+				int i = InvPrep.slotToIndex(slotIndex);
+				int a = InvPrep.isSlotBuySell(slotIndex);
 				if (a > 1 || i >= p.items.size()) continue;
 				StockItem s = p.getItem(i);
 				if ((a==0 && s.getBuyDisplayItem().createSnapshot().equals(isnap)) ||
@@ -143,7 +152,7 @@ public class EventListeners {
 				}, 50, TimeUnit.MILLISECONDS);
 		}
 		event.setCancelled(true);
-	}
+	}*/
 
 	@Listener
 	public void onDropItem(DropItemEvent event) {

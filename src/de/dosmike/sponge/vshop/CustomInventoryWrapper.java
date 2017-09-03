@@ -1,8 +1,11 @@
 package de.dosmike.sponge.vshop;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.spongepowered.api.item.inventory.Inventory;
+import org.spongepowered.api.item.inventory.InventoryProperty;
 import org.spongepowered.api.item.inventory.ItemStack;
 
 /** for some reason this class is no longer in the API, preventing any access i desire
@@ -12,6 +15,7 @@ public class CustomInventoryWrapper {
 	Inventory holder;
 	static Method setItemStack;
 	static Method getItemStack;
+	static Method getProperties;
 	
 	static {
 		try {
@@ -29,7 +33,20 @@ public class CustomInventoryWrapper {
 							VillagerShops.w("Found multiple Signatures for setItemStack!");
 						}
 					}
-				}// ItemStack getItemStack(int) shares sig with ItemStack removeItemStack(int)
+				}
+				
+				if (m.getName().equalsIgnoreCase("getProperties")) {
+					if (args.length== 0) {
+						if (getProperties == null) {
+							getProperties = m;
+							getProperties.setAccessible(true);
+						} else {
+							VillagerShops.w("Found multiple Signatures for getProperties!");
+						}
+					}
+				}
+				
+				// ItemStack getItemStack(int) shares sig with ItemStack removeItemStack(int)
 				
 				//sig dump
 				/*
@@ -46,6 +63,10 @@ public class CustomInventoryWrapper {
 		}
 	}
 	
+	public static boolean isInstanceOf(Inventory inv) {
+		return cinv.isInstance(inv);
+	}
+	
 	/** just public in case someone has a use for this */
 	public CustomInventoryWrapper(Inventory inventory) {
 		holder = inventory;
@@ -54,7 +75,9 @@ public class CustomInventoryWrapper {
 	public void setItemStack(int column, int row, ItemStack item) {
 		//assuming fix width of 9
 		try {
-			setItemStack.invoke(holder, row*9+column, item);
+			int num = row*9+column;
+			
+			setItemStack.invoke(holder, num, item);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -74,5 +97,14 @@ public class CustomInventoryWrapper {
 	
 	public Inventory getInventory() {
 		return holder;
+	}
+	
+	public Map<String, InventoryProperty<?, ?>> getProperties() {
+		try {
+			return (Map<String, InventoryProperty<?, ?>>) getProperties.invoke(holder);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new HashMap<>();
 	}
 }

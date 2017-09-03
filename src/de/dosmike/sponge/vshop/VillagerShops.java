@@ -1,5 +1,6 @@
 package de.dosmike.sponge.vshop;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -42,7 +43,7 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 
-@Plugin(id="vshop", name="VillagerShops", version="1.1", authors={"DosMike"})
+@Plugin(id="vshop", name="VillagerShops", version="1.2", authors={"DosMike"})
 public class VillagerShops {
 	
 	public static void main(String[] args) { System.err.println("This plugin can not be run as executable!"); }
@@ -83,7 +84,7 @@ public class VillagerShops {
 	static Map<UUID, UUID> openShops = new HashMap<UUID, UUID>();
 	
 	@Inject
-	@DefaultConfig(sharedRoot = true)
+	@DefaultConfig(sharedRoot = false)
 	private ConfigurationLoader<CommentedConfigurationNode> configManager;
 	public static TypeSerializerCollection customSerializer = TypeSerializers.getDefaultSerializers().newChild();
 	
@@ -117,6 +118,19 @@ public class VillagerShops {
 	public void loadConfigs() {
 		npcs.clear();
 		
+		//move legacy config
+		File lc = new File("config/vhop.conf");
+		if (lc.exists() && lc.isFile()) {
+			w("Found legacy config, moving config/vshop.conf to config/cshop/vshop.conf");
+			try {
+				File nfc = new File("config/vshop/vshop.conf");
+				nfc.getParentFile().mkdirs();
+				lc.renameTo(nfc);
+			} catch (Exception e) {
+				logger.error("VillagerShops was unable to move your config to the new location - You'll have to do this manually or your shops won't load!");
+			}
+		}
+		
 		ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
 		try {
 			ConfigurationNode root = configManager.load(options);
@@ -143,8 +157,7 @@ public class VillagerShops {
 	}
 	
 	public static void terminateNPCs() {
-		Set<Task> tasks = Sponge.getScheduler().getScheduledTasks(instance);
-		for (Task t : tasks) t.cancel();
+		stopTimers();
 
 		closeShopInventories();
 		
@@ -153,6 +166,10 @@ public class VillagerShops {
 			if (e != null) e.remove();
 		}
 		//npcs.clear();
+	}
+	public static void stopTimers() {
+		Set<Task> tasks = Sponge.getScheduler().getScheduledTasks(instance);
+		for (Task t : tasks) t.cancel();
 	}
 	
 	public static void startTimers() {

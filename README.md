@@ -22,12 +22,14 @@ Latest Version: 1.1 (2017-08-14)<br>
 Commands
 -----
 
-For delete, add and remove, please aim at the Mob
+For every command but create, please look at the shop
 
-- `/vshop create <EntityType> NONE [DisplayName]`
+- `/vshop create [--at <World/X/Y/Z/Rotation>] <EntityType> [--skin <Skin>] [DisplayName]`
 - `/vshop delete` (deletes shop)
-- `/vshop add <-|BuyPrice> <-|SellPrice> [Currency]`
+- `/vshop add [-l <Limit>] <-|BuyPrice> <-|SellPrice> [Currency]`
 - `/vshop remove <Index>` (removes item from shop)
+- `/vshop link`
+- `/vshop identify` or `/vshop id`
 - `/vshop save`
 - `/vshop reload`
 
@@ -37,6 +39,7 @@ Permissions
 - `vshop.edit.player` is required to create your player shop
 - the add, remove and delete command are always available for shops you own
 - `vshop.create.<ENTITYTYPE>` is required for each entity type a player should be allowed to create, where colons are replaced with dots and dashed are taken out. so for example `minecraft:villager`s would require `vshop.create.minecraft.villager`
+- ``
 
 Player Shops
 -----
