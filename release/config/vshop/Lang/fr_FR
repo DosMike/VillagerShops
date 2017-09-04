@@ -1,0 +1,43 @@
+permission.missing:&cVous n'avez pas la permission pour cette action !
+cmd.description.short:§e/vshop §f<commande> <options>
+cmd.description.long:§eIl faut toujours regarder le shop à modifier. §fOptions :\n§aCREATE §e: §f<entité> §7[Nom] §7--skin <Skin> §7--at <Position>\n§eLe skin doit être une §fvariante §edu skin de l'entité §7(voir wiki)\n§eExemple §e: /vshop create §dminecraft:villager §fMichel §e--skin §fcleric\n§eCréera un §dvillageois prêtre §enommé §fMichel\n§eFormat de la position : §fmonde/x/y/z/rotation\n§aADD §e: §f<§6~ §fOU §6Prix d'achat§f> <§6~ §fOU §6Prix de vente§f> §7-l <limite> §7[Monnaie]\n§eL'objet §7(ou le stack) §een main sera mis en vente\n§eUne tilde "§f~§e" comme prix désactivera l'achat ou la vente\n§eL'option §f-l §elimite le stock maximum pour un shop\n§aREMOVE §e: §f<Nombre>\n§eCompte les objets dans le shop, commence par 1\n§aDELETE §e: §7(Pas d'arguments)\n§aLINK §e: §7(Pas d'arguments)\n§eEnsuite il faut ouvrir un coffre pour le relier à un shop.\n§eRéutiliser la commande pour annuler.\n§aIDENTIFY / ID §e: §7(Pas d'arguments)\n§aSAVE §e: §7(Pas d'arguments)\n§aRELOAD §e: §7(Pas d'arguments)
+cmd.playeronly:§cCette commande doit être exécutée par un joueur !
+cmd.common.notarget:§cIl n'y a pas de shop dans votre direction !
+cmd.create.invalidtype:§cEntité non valide §7(touche tab pour l'auto-complétion)
+cmd.create.entitypermission:§cCe type d'entité requiert la permission §f%permission%
+cmd.create.invalidvariant:§cAucune variante trouvée pour §f%variant% §e- Utilisez §fNONE §eou §f0 §epour avoir le skin par défaut
+cmd.create.playershop.§cmissingcontainer:§cIl faut placer un coffre sous le shop !
+cmd.create.invalidpos:§cLa position doit être formatée ainsi : §fmonde§e/§FX§e/§fY§e/§fZ§e/§fROTATION
+cmd.create.invalidworld:§cLe monde spécifié est introuvable
+cmd.create.playershop.success:§eLe shop "%name%" vient d'être créé
+cmd.create.playershop.limit:§eVous ne pouvez pas créer plus de §f%limit% §eshops
+cmd.create.success:§eNouvel admin shop créé avec le nom §f%name%
+cmd.add.limit.adminshop:§cVous ne pouvez pas ajouter de limite au stock d'un shop admin
+cmd.add.buyprice:§cLe prix d'achat n'était pas '§f~§e' ou §eun nombre
+cmd.add.sellprice:§cLe prix de vente n'était pas '§f~§e' ou §eun nombre
+cmd.add.noprice:§cVous devez spécifier au moins un prix d'§fachat §cou de §fvente
+cmd.add.negativeprice:§cLes prix ne peuvent pas être négatifs
+cmd.add.itemisair:§cVous devez tenir l'objet à vendre dans votre main
+cmd.add.success:§eL'objet §f%item% §ea été rajouté au shop positionné en %pos%
+cmd.remove.invalidindex:§cL'objet à la position donné n'existe pas
+cmd.remove.success:§eL'objet numéro §f%pos% §e a été retiré du shop
+cmd.identify.adminshop:§6Le Serveur
+cmd.identify.response:§eUn §f%type% §enommé §f%name% §e[%id%]\n§eCe shop appartient à §f%owner%
+cmd.link.cancelled:§cLe lien a été annulé
+cmd.link.adminshop:§cVous ne pouvez pas lien un shop admin à un coffre
+cmd.link.notyourshop:§cVous ne pouvez pas relier des coffres qui ne sont pas à vous !
+cmd.link.hitachest:§eOouvrez le coffre que vous voulez relier à ce shop (§f/vshop link §epour annuler)
+cmd.link.nochest:§eVous ne pouvez lier que des coffres normaux
+cmd.link.missingshop:§cImpossible de trouver le shop à relier à ce coffre
+cmd.link.success:§eCe coffre est maintenant reliée au shop. L'ancien conteneur n'est plus protégé !
+cmd.deleted:Le shop a été supprimé !
+cmd.saved:§eLes shops ont été enregistrés
+cmd.reloaded:§cConfiguration rechargée !
+shop.buy.message:§e%balance% (%payed%): Achat de §f%amount% §ex §f%item%
+shop.sell.message:§e%balance% (%payed%): vente de §f%amount% §ex §f%item%
+shop.customer.lowbalance:§cVous n'avez pas assez d'argent
+shop.shopowner.lowbalance:§cLe gérant du shop n'a plus assez d'argent
+shop.customer.missingitems:§cVous n'avez pas assez d'objets
+shop.shopowner.missingitems:§cL'objet n'est pas en stock
+shop.customer.inventoryfull:§cVous ne pouvez pas porter plus d'objets
+shop.shopowner.inventoryfull:§cLe shop n'a plus de place
