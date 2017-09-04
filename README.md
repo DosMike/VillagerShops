@@ -39,7 +39,14 @@ Permissions
 - `vshop.edit.player` is required to create your player shop
 - the add, remove and delete command are always available for shops you own
 - `vshop.create.<ENTITYTYPE>` is required for each entity type a player should be allowed to create, where colons are replaced with dots and dashed are taken out. so for example `minecraft:villager`s would require `vshop.create.minecraft.villager`
-- ``
+- `vshop.edit.identify` for `/vshop identify`
+- `vshop.edit.linkchest` for `/vshop link`
+
+Options
+-----
+With LuckPerms you can set options like `/lp user DosMike meta set KEY VALUE`
+
+- `vshop.option.playershop.limit` Number of player-shops one is allowed to have
 
 Player Shops
 -----
