@@ -19,6 +19,7 @@ import org.spongepowered.api.event.entity.AttackEntityEvent;
 import org.spongepowered.api.event.entity.InteractEntityEvent;
 import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
+import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -225,4 +226,9 @@ public class EventListeners {
 //		}
 	}
 	
+	
+	@Listener
+	public void onPlayerDisconnect(ClientConnectionEvent.Disconnect event) {
+		ChestLinkManager.cancel(event.getTargetEntity());
+	}
 }

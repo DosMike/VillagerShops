@@ -200,17 +200,17 @@ static void register() {
 								limit = args.<Integer>getOne("limit").orElse(0);
 							}
 						}
-						String parse = args.getOne("BuyPrice").orElse("-").toString();
+						String parse = args.getOne("BuyPrice").orElse("~").toString();
 						try {
-							buyFor = parse.equals("-")?null:Double.parseDouble(parse); 
+							buyFor = parse.equals("~")?null:Double.parseDouble(parse); 
 						} catch (Exception e) {
 							player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
 									lang.local("cmd.add.buyprice").resolve(player).orElse("[No buy price]")));
 							return CommandResult.success();
 						}
-						parse = args.getOne("SellPrice").orElse("-").toString();
+						parse = args.getOne("SellPrice").orElse("~").toString();
 						try {
-							sellFor = parse.equals("-")?null:Double.parseDouble(parse); 
+							sellFor = parse.equals("~")?null:Double.parseDouble(parse); 
 						} catch (Exception e) {
 							player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
 									lang.local("cmd.add.sellprice").resolve(player).orElse("[No sell price]")));

@@ -12,8 +12,14 @@ import org.spongepowered.api.data.type.Career;
 import org.spongepowered.api.data.type.Careers;
 import org.spongepowered.api.data.type.HorseColor;
 import org.spongepowered.api.data.type.HorseColors;
+import org.spongepowered.api.data.type.LlamaVariant;
+import org.spongepowered.api.data.type.LlamaVariants;
 import org.spongepowered.api.data.type.OcelotType;
 import org.spongepowered.api.data.type.OcelotTypes;
+import org.spongepowered.api.data.type.ParrotVariant;
+import org.spongepowered.api.data.type.ParrotVariants;
+import org.spongepowered.api.data.type.RabbitType;
+import org.spongepowered.api.data.type.RabbitTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
@@ -124,15 +130,26 @@ public class NPCguard {
 	
 	/** MAY NOT BE CALLED BEFORE setNpcType() */
 	public void setVariant(String fieldName) {
-		if (fieldName.equalsIgnoreCase("none")) {
-			variant = null;
-		}if (npcType.equals(EntityTypes.HORSE)) {
-			variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(HorseColors.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(HorseColors.class, fieldName);
-		} else if (npcType.equals(EntityTypes.OCELOT)) {
-			variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(OcelotTypes.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(OcelotTypes.class, fieldName);
-		} else if (npcType.equals(EntityTypes.VILLAGER)) {
-			variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(Careers.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(Careers.class, fieldName);
-		} else {
+		try {
+			if (fieldName.equalsIgnoreCase("none")) {
+				variant = null;
+			}if (npcType.equals(EntityTypes.HORSE)) {
+				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(HorseColors.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(HorseColors.class, fieldName);
+			} else if (npcType.equals(EntityTypes.OCELOT)) {
+				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(OcelotTypes.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(OcelotTypes.class, fieldName);
+			} else if (npcType.equals(EntityTypes.VILLAGER)) {
+				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(Careers.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(Careers.class, fieldName);
+			} else if (npcType.equals(EntityTypes.LLAMA)) {
+				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(LlamaVariants.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(LlamaVariants.class, fieldName);
+			} else if (npcType.equals(EntityTypes.RABBIT)) {
+				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(RabbitTypes.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(RabbitTypes.class, fieldName);
+			} else if (npcType.equals(EntityTypes.PARROT)) {
+				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(ParrotVariants.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(ParrotVariants.class, fieldName);
+			} else {
+				variantName = "NONE";
+				variant = null;
+			}
+		} catch (Exception e) { //ignore non existant fields due to lower version
 			variantName = "NONE";
 			variant = null;
 		}
@@ -207,6 +224,7 @@ public class NPCguard {
 //				    if (ent.isPresent()) {
 //				        Entity shop = ent.get();
 				        shop.offer(Keys.AI_ENABLED, false);
+				        shop.offer(Keys.IS_SILENT, true);
 				        
 				        //setting variant. super consistent ;D
 				        if (variant != null)
@@ -218,6 +236,12 @@ public class NPCguard {
 									shop.tryOffer(Keys.OCELOT_TYPE, (OcelotType)variant);
 								} else if (npcType.equals(EntityTypes.VILLAGER)) {
 									shop.tryOffer(Keys.CAREER, (Career)variant);
+								} else if (npcType.equals(EntityTypes.LLAMA)) {
+									shop.tryOffer(Keys.LLAMA_VARIANT, (LlamaVariant)variant);
+								} else if (npcType.equals(EntityTypes.RABBIT)) {
+									shop.tryOffer(Keys.RABBIT_TYPE, (RabbitType)variant);
+								} else if (npcType.equals(EntityTypes.PARROT)) {
+									shop.tryOffer(Keys.PARROT_VARIANT, (ParrotVariant)variant);
 								}
 					        } catch (Exception e) { System.err.println("Variant no longer suported! Did the EntityType change?"); }
 				        

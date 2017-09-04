@@ -63,4 +63,7 @@ public class ChestLinkManager {
 		}
 		return true;
 	}
+	public static void cancel(Player player) {
+		activeLinker.remove(player.getUniqueId());
+	}
 }

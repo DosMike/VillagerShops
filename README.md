@@ -26,7 +26,7 @@ For every command but create, please look at the shop
 
 - `/vshop create [--at <World/X/Y/Z/Rotation>] <EntityType> [--skin <Skin>] [DisplayName]`
 - `/vshop delete` (deletes shop)
-- `/vshop add [-l <Limit>] <-|BuyPrice> <-|SellPrice> [Currency]`
+- `/vshop add [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency]`
 - `/vshop remove <Index>` (removes item from shop)
 - `/vshop link`
 - `/vshop identify` or `/vshop id`
