@@ -1,13 +1,18 @@
 permission.missing:You do not have permission to do this!
-cmd.description.short:/vshop <CREATE|ADD|REMOVE|DELETE|SAVE|RELOAD> <options>
-cmd.description.long:Always look at the shop you want to edit! Options for:\nCREATE - <EntityType> <Skin> [Name] (Admin Shops, Skin is NONE or any valid skin for this Mob)\nADD - <-|BuyPrice> <-|SellPrice> [Currency] (Hold ItemStack, - will disable that option, one required)\nREMOVE - <INDEX> (Count through items in shop inventory, start with 1)\nDELETE - (No arguments)\nSAVE - (No arguments)\nRELOAD - (No arguments)
+cmd.description.short:/vshop <command> <options>
+cmd.description.long:Always look at the shop you want to edit! Options for:\nCREATE : --at <Position> <EntityType> --skin <Skin> [Name]\n    Skin is supposed to be a valid skin for this Mob\n    Position is formatted like: world/x/y/z/rotation\nADD : -l <Limit> <-|BuyPrice> <-|SellPrice> [Currency] (Hold ItemStack)\n    - as Price will disable that option, one required\n    The l flag can limit the maximum stock of this item for player-shops\nREMOVE : <Index>\n    Count through items in shop inventory, start with 1\nDELETE : (No arguments)\nLINK : (No arguments)\n    Afterwards you need to open a chest to link a player-shop to it. Use again to cancel.IDENTIFY / ID : (No arguments)\nSAVE : (No arguments)\nRELOAD : (No arguments)
 cmd.playeronly:This command can only be run by players
 cmd.common.notarget:There is no shop where you're looking!
 cmd.create.invalidtype:Invalid EntityType (use tab to auto-complete)
 cmd.create.entitypermission:This EntityType requires permission %permission%
 cmd.create.invalidvariant:No such Style/Variant found for %variant% - Use NONE or 0 to get the default Style/Variant
 cmd.create.playershop.missingcontainer:You need to put a container below your playershop!
-cmd.create.success:Created a new shop called %name%
+cmd.create.invalidpos:The positions needs to be formatted like WORLD/X/Y/Z/ROTATION
+cmd.create.invalidworld:Such a world does not exist
+cmd.create.playershop.success:Created a new player shop called %name%
+cmd.create.playershop.limit:You may not create more than %limit% shops
+cmd.create.success:Created a new admin shop called %name%
+cmd.add.limit.adminshop:You can't add stock limits to an admin-shop 
 cmd.add.buyprice:The BuyPrice was not '-' or a decimal
 cmd.add.sellprice:The SellPrice was not '-' or a decimal
 cmd.add.noprice:You need to specify at lease one of BuyPrice and SellPrice
@@ -16,6 +21,15 @@ cmd.add.itemisair:Please hold the exact item you want to sell in your hand
 cmd.add.success:Added %item% to the shop at position %pos%
 cmd.remove.invalidindex:A item at the specified index does not exist
 cmd.remove.success:Removed item at position %pos% from the shop
+cmd.identify.adminshop:the Server
+cmd.identify.response:A %type% called %name% [%id%]\nThis shop is owned by %owner%
+cmd.link.cancelled:Linking cancelled
+cmd.link.adminshop:You can't link an admin-shop to a chest 
+cmd.link.notyourshop:You may only relink containers for shops you own
+cmd.link.hitachest:Open the chest you want to link to this shop. Use '/vshop link' again to cancel
+cmd.link.nochest:You can only link to standard chests
+cmd.link.missingshop:Couldn't find the shop supposed to link this chest to
+cmd.link.success:This chest is now linked to the shop. The old container is no longer protected!
 cmd.deleted:Shop deleted!
 cmd.saved:Shops saved!
 cmd.reloaded:Reload complete!

@@ -1,29 +1,43 @@
 permission.missing:Dir fehlen die Rechte, um diesen Befehl zu verwenden!
-cmd.description.short:/vshop <CREATE|ADD|REMOVE|DELETE|SAVE|RELOAD> <optionen>
-cmd.description.long:Schaue immer auf den shop, den du bearbeiten willst! Optionen für:\nCREATE - <EntityType> <Skin> [Name] (Admin Shops, Skin kann NONE oder ein gültiger Skin für diesen Mob sein)\nADD - <-|KaufPreis> <-|VerkaufsPreis> [Währung] (Halte den ItemStack, - deaktiviert diese Option, eine benötigt)\nREMOVE - <INDEX> (Zähle die items im Shop-Inventar, beginnend mit 1)\nDELETE - (Keine Optionen)\nSAVE - (Keine Optionen)\nRELOAD - (Keine Optionen)
-cmd.playeronly:Diesen Befehl können nur Spieler ausführen
+cmd.description.short:/vshop <befehl> <optionen>
+cmd.description.long:Schaue immer auf den shop, den du bearbeiten willst! Optionen fÃ¼r:\nCREATE : --at <Position> <EntityType> --skin <Skin> [Name]\n    Skin sollte ein gÃ¼ltiger Skin fÃ¼r diesen Mob sein\n    Position hat folgenden Aufbau: Welt/x/y/z/Drehung\nADD : -l <Limit> <-|KaufPreis> <-|VerkaufsPreis> [WÃ¤hrung] (Halte den ItemStack)\n    - als Preis deaktiviert diese Option, eine benÃ¶tigt\n    Die l-Flag kann den maximalen Vorrat fÃ¼r Player-Shops begrenzen\nREMOVE : <Index>\n    ZÃ¤hle die items im Shop-Inventar, beginnend mit 1\nDELETE : (Keine Optionen)\nLINK : (Keine Optionen)\n    Danach muss du eine Kiste Ã¶ffnen, um diese mit dem Player-Shop zu verlinken.\n    Nochmal verwenden um den Vorgang abzubrechen.\nIDENTIFY / ID : (Keine Optionen)\nSAVE : (Keine Optionen)\nRELOAD : (Keine Optionen)
+cmd.playeronly:Diesen Befehl kÃ¶nnen nur Spieler ausfÃ¼hren
 cmd.common.notarget:Du siehst gerade keinen Shop an!
-cmd.create.invalidtype:Ungültiger EntityType (verwende Tab zur Auto-Vervollständigung)
-cmd.create.entitypermission:Dieser EntityType benötigt die Berechtigung %permission%
-cmd.create.invalidvariant:Diese(n) Skin/Variante gibt es nicht für %variant% - Verwende NONE oder 0 für die standart Variante
+cmd.create.invalidtype:UngÃ¼ltiger EntityType (verwende Tab zur Auto-VervollstÃ¤ndigung)
+cmd.create.entitypermission:Dieser EntityType benÃ¶tigt die Berechtigung %permission%
+cmd.create.invalidvariant:Diese(n) Skin/Variante gibt es nicht fÃ¼r %variant% - Verwende NONE oder 0 fÃ¼r die standart Variante
 cmd.create.playershop.missingcontainer:Du must eine Kiste unter deinen Playershop stellen!
-cmd.create.success:Ein neuer Shop mit dem Namen %name% wurde erstellt
+cmd.create.invalidpos:Die Position benÃ¶tigt folgendes Format: WELT/X/Y/Z/DREHUNG
+cmd.create.invalidworld:Die angegebene Welt existiert nicht
+cmd.create.playershop.success:Ein neuer Player-Shop namens %name% wurde erstellt
+cmd.create.playershop.limit:Du darfst nicht mehr als %limit% Shops erstellen
+cmd.create.success:Ein neuer Admin-Shop namens %name% wurde erstellt
+cmd.add.limit.adminshop:Du kannst den Vorrat in einem Admin-Shop nicht begrenzen
 cmd.add.buyprice:Der KaufPreis war nicht '-' oder eine Zahl
 cmd.add.sellprice:Der VerkaufsPreis war nicht '-' oder eine Zahl
-cmd.add.noprice:Du musst mindestens einen Betrag für KaufsPreis oder VerkaufsPreis angeben!
-cmd.add.negativeprice:Preise können nicht negativ sein
-cmd.add.itemisair:Bite halte das Item, das du hinzufügen möchtest in deiner Hand
-cmd.add.success:Item %item% wurde an Position %pos% dem Shop hinzugefügt
+cmd.add.noprice:Du musst mindestens einen Betrag fÃ¼r KaufsPreis oder VerkaufsPreis angeben!
+cmd.add.negativeprice:Preise kÃ¶nnen nicht negativ sein
+cmd.add.itemisair:Bite halte das Item, das du hinzufÃ¼gen mÃ¶chtest in deiner Hand
+cmd.add.success:Item %item% wurde an Position %pos% dem Shop hinzugefÃ¼gt
+cmd.identify.adminshop:dem Server
+cmd.identify.response:Ein %type% namens %name% [%id%]\nDieser Shop gehÃ¶rt %owner%
+cmd.link.cancelled:Linking abgebrochen
+cmd.link.adminshop:Du kannst einem Admin-Shop keine Kiste zuweisen 
+cmd.link.notyourshop:Du darfst nur neue Kontainer an Shops zuweisen, die dir gehÃ¶ren
+cmd.link.hitachest:Ã–ffne die Kiste, mit der du diesen Shop verbinden willst. Verwende '/vshop link' erneut um den Vofgang abzubrechen
+cmd.link.nochest:Du kannst nur einzelne Standart-Kisten zuweisen 
+cmd.link.missingshop:Konnte den Shop nicht finden, dem der Kontainer zugewiesen werden sollte!
+cmd.link.success:Dieser Kontainer ist nun mit dem Shop verbinden. Der alte Kontainer wird nicht mehr geschÃ¼tzt!
 cmd.remove.invalidindex:An der angegebenen Position existiert kein Item
 cmd.remove.success:Item an der Position %pos% wurde vom Shop entfernt
-cmd.deleted:Shop gelöscht!
+cmd.deleted:Shop gelÃ¶scht!
 cmd.saved:Shops gespeichert!
 cmd.reloaded:Reload komplett!
 shop.buy.message:%balance% (%payed%): %amount%x %item% gekauft
 shop.sell.message:%balance% (%payed%): %amount%x %item% verkauft
 shop.customer.lowbalance:Du hast nicht genug Geld
 shop.shopowner.lowbalance:Der Shop-Besitzer hat nicht mehr genug Geld
-shop.customer.missingitems:Du hast nicht genügend Items
-shop.shopowner.missingitems:Dieses Item ist im Shop niicht mehr vorrätig
+shop.customer.missingitems:Du hast nicht genÃ¼gend Items
+shop.shopowner.missingitems:Dieses Item ist im Shop niicht mehr vorrÃ¤tig
 shop.customer.inventoryfull:Du kannst keines dieser Items mehr tragen
 shop.shopowner.inventoryfull:Der Shop kann keine weiteren Items lagern
