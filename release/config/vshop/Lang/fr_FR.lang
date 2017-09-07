@@ -1,0 +1,43 @@
+permission.missing:Vous n'avez pas la permission pour cette action!
+cmd.description.short:/vshop <commande> <options>
+cmd.description.long:Il faut toujours regarder le shop à modifier. Options :\nCREATE : <entité> [Nom] --skin <Skin> --at <Position>\nLe skin doit être une variante du skin de l'entité (voir wiki)\nExemple : /vshop create minecraft:villager Michel --skin cleric\nCréera un villageois prêtre nommé Michel\nFormat de la position : monde/x/y/z/rotation\nADD : <~ OU Prix d'achat> <~ OU Prix de vente> -l <limite> [Monnaie]\nL'objet (ou le stack) en main sera mis en vente\nUne tilde "~" comme prix désactivera l'achat ou la vente\nL'option -l limite le stock maximum pour un shop\nREMOVE : <Nombre>\nCompte les objets dans le shop, commence par 1\nDELETE : (Pas d'arguments)\nLINK : (Pas d'arguments)\nEnsuite il faut ouvrir un coffre pour le relier à un shop.\nRéutiliser la commande pour annuler.\nIDENTIFY / ID : (Pas d'arguments)\nSAVE : (Pas d'arguments)\nRELOAD : (Pas d'arguments)
+cmd.playeronly:Cette commande doit être exécutée par un joueur!
+cmd.common.notarget:Il n'y a pas de shop dans votre direction!
+cmd.create.invalidtype:Entité non valide (touche tab pour l'auto-complétion)
+cmd.create.entitypermission:Ce type d'entité requiert la permission %permission%
+cmd.create.invalidvariant:Aucune variante trouvée pour %variant% - Utilisez NONE ou 0 pour avoir le skin par défaut
+cmd.create.playershop.missingcontainer:Il faut placer un coffre sous le shop!
+cmd.create.invalidpos:La position doit être formatée ainsi : monde/X/Y/Z/ROTATION
+cmd.create.invalidworld:Le monde spécifié est introuvable
+cmd.create.playershop.success:Le shop "%name%" vient d'être créé
+cmd.create.playershop.limit:Vous ne pouvez pas créer plus de %limit% shops
+cmd.create.success:Nouvel admin shop créé avec le nom %name%
+cmd.add.limit.adminshop:Vous ne pouvez pas ajouter de limite au stock d'un shop admin
+cmd.add.buyprice:Le prix d'achat n'était pas '~' ou un nombre
+cmd.add.sellprice:Le prix de vente n'était pas '~' ou un nombre
+cmd.add.noprice:Vous devez spécifier au moins un prix d'achat ou de vente
+cmd.add.negativeprice:Les prix ne peuvent pas être négatifs
+cmd.add.itemisair:Vous devez tenir l'objet à vendre dans votre main
+cmd.add.success:L'objet %item% a été rajouté au shop positionné en %pos%
+cmd.remove.invalidindex:L'objet à la position donné n'existe pas
+cmd.remove.success:L'objet numéro %pos% a été retiré du shop
+cmd.identify.adminshop:Le Serveur
+cmd.identify.response:Un %type% nommé %name% [%id%]\nCe shop appartient à %owner%
+cmd.link.cancelled:Le lien a été annulé
+cmd.link.adminshop:Vous ne pouvez pas lien un shop admin à un coffre
+cmd.link.notyourshop:Vous ne pouvez pas relier des coffres qui ne sont pas à vous!
+cmd.link.hitachest:Oouvrez le coffre que vous voulez relier à ce shop (/vshop link pour annuler)
+cmd.link.nochest:Vous ne pouvez lier que des coffres normaux
+cmd.link.missingshop:Impossible de trouver le shop à relier à ce coffre
+cmd.link.success:Ce coffre est maintenant reliée au shop. L'ancien conteneur n'est plus protégé!
+cmd.deleted:Le shop a été supprimé!
+cmd.saved:Les shops ont été enregistrés
+cmd.reloaded:Configuration rechargée!
+shop.buy.message:%balance% (%payed%): Achat de %amount% x %item%
+shop.sell.message:%balance% (%payed%): vente de %amount% x %item%
+shop.customer.lowbalance:Vous n'avez pas assez d'argent
+shop.shopowner.lowbalance:Le gérant du shop n'a plus assez d'argent
+shop.customer.missingitems:Vous n'avez pas assez d'objets
+shop.shopowner.missingitems:L'objet n'est pas en stock
+shop.customer.inventoryfull:Vous ne pouvez pas porter plus d'objets
+shop.shopowner.inventoryfull:Le shop n'a plus de place
