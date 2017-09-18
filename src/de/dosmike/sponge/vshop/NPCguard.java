@@ -256,17 +256,15 @@ public class NPCguard {
 		} else if (le != null) {
 			if (!le.isLoaded() || !chunk.isPresent() || !chunk.get().isLoaded()) {
 				le = null;	//allowing minecraft to free the resources
+			} else  if (le.isRemoved() || le.get(Keys.HEALTH).orElse(1.0)<=0) { 
+				le = null;
 			} else {
-				if (le.isRemoved() || le.get(Keys.HEALTH).orElse(1.0)<=0) { 
-					le = null;
-				}else {
-					le.setLocationAndRotation(loc, rot);
-					if (le instanceof Living) {
-						if ((++lookAroundTicks>15 && VillagerShops.rng.nextInt(10) == 0) || lookAroundTicks>100) {
-							Living mo = (Living)le;
-							lookAroundTicks = 0;
-							mo.setHeadRotation(new Vector3d(VillagerShops.rng.nextFloat()*30-14, rot.getY()+VillagerShops.rng.nextFloat()*60-30, 0.0));
-						}
+				le.setLocationAndRotation(loc, rot);
+				if (le instanceof Living) {
+					if ((++lookAroundTicks>15 && VillagerShops.rng.nextInt(10) == 0) || lookAroundTicks>100) {
+						Living mo = (Living)le;
+						lookAroundTicks = 0;
+						mo.setHeadRotation(new Vector3d(VillagerShops.rng.nextFloat()*30-14, rot.getY()+VillagerShops.rng.nextFloat()*60-30, 0.0));
 					}
 				}
 			}

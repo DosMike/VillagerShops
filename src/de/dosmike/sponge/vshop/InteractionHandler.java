@@ -34,8 +34,8 @@ public class InteractionHandler {
 					npc.get().updateStock();
 					source.openInventory(npc.get().getInventory(), Cause.builder().named("PLUGIN (Shop Opened)", VillagerShops.getInstance()).build());
 					VillagerShops.openShops.put(source.getUniqueId(), npc.get().getIdentifier());
-//				}
-			}
+				}
+//			}
 			
 			return true;
 		}

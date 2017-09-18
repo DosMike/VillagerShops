@@ -11,11 +11,12 @@ import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.explosive.Explosive;
+import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
-import org.spongepowered.api.event.entity.AttackEntityEvent;
+import org.spongepowered.api.event.entity.DamageEntityEvent;
 import org.spongepowered.api.event.entity.InteractEntityEvent;
 import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
@@ -29,7 +30,7 @@ import com.flowpowered.math.vector.Vector3i;
 
 public class EventListeners {
 
-	@Listener
+	/*@Listener
 	public void onPlayerInteractEntity(InteractEntityEvent.Primary event) {
 		Optional<Player> cause = event.getCause().first(Player.class);
 		Entity target = event.getTargetEntity();
@@ -37,8 +38,7 @@ public class EventListeners {
 			if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.left))
 //				event.setCancelled(true);
 				;//canceling this event throws some huge errors... so i wont, npcs will respawn
-	}
-	@Listener
+	}@Listener
 	public void onAttackEntity(AttackEntityEvent event) {
 		Optional<Player> cause = event.getCause().first(Player.class);
 		Entity target = event.getTargetEntity();
@@ -47,6 +47,15 @@ public class EventListeners {
 				event.setBaseOutputDamage(0);
 			}
 		}	
+	}*/
+	
+	@Listener
+	public void onAttackEntity(DamageEntityEvent event) {
+		if (event.isCancelled()) return;
+		if (!(event.getTargetEntity() instanceof Living)) return;
+		Living target = (Living)event.getTargetEntity();
+		
+		if (VillagerShops.isNPCused(target)) event.setCancelled(true);
 	}
 
 	@Listener

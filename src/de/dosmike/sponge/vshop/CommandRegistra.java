@@ -437,7 +437,7 @@ static void register() {
 			.children(children)
 			.build()
 			, "vshop");
-}
+	}
 
 	/** EntityRay :D
 	 * Made this public so other plugins may use this for API purposes

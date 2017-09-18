@@ -43,7 +43,7 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 
-@Plugin(id="vshop", name="VillagerShops", version="1.3", authors={"DosMike"})
+@Plugin(id="vshop", name="VillagerShops", version="1.3.1", authors={"DosMike"})
 public class VillagerShops {
 	
 	public static void main(String[] args) { System.err.println("This plugin can not be run as executable!"); }
@@ -204,7 +204,8 @@ public class VillagerShops {
 	
 	public static boolean isNPCused(Entity ent) {
 		for (NPCguard npc : npcs) {
-			if (ent.equals(npc.getLe()))
+			//if (ent.equals(npc.getLe()))
+			if (npc.getLe() != null && npc.getLe().isLoaded() && ent.getUniqueId().equals(npc.getLe().getUniqueId()))
 				return true;
 		}
 		return false;
