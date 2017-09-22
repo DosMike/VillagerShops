@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.apache.commons.lang3.StringUtils;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
@@ -134,17 +133,17 @@ public class NPCguard {
 			if (fieldName.equalsIgnoreCase("none")) {
 				variant = null;
 			}if (npcType.equals(EntityTypes.HORSE)) {
-				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(HorseColors.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(HorseColors.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(HorseColors.class, fieldName);
 			} else if (npcType.equals(EntityTypes.OCELOT)) {
-				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(OcelotTypes.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(OcelotTypes.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(OcelotTypes.class, fieldName);
 			} else if (npcType.equals(EntityTypes.VILLAGER)) {
-				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(Careers.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(Careers.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(Careers.class, fieldName);
 			} else if (npcType.equals(EntityTypes.LLAMA)) {
-				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(LlamaVariants.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(LlamaVariants.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(LlamaVariants.class, fieldName);
 			} else if (npcType.equals(EntityTypes.RABBIT)) {
-				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(RabbitTypes.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(RabbitTypes.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(RabbitTypes.class, fieldName);
 			} else if (npcType.equals(EntityTypes.PARROT)) {
-				variant = StringUtils.isNumeric(fieldName) ? FieldResolver.getFinalStaticByIndex(ParrotVariants.class, Integer.parseInt(fieldName)) : FieldResolver.getFinalStaticByName(ParrotVariants.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(ParrotVariants.class, fieldName);
 			} else {
 				variantName = "NONE";
 				variant = null;
@@ -197,6 +196,9 @@ public class NPCguard {
 			VillagerShops.w("Could not receive container for Playershop at " + loc.getExtent().getName() + " " + loc.getBlockPosition());
 			return Optional.empty();
 		}
+	}
+	public Optional<Location<World>> getStockContainer() {
+		return playershopholder==null?Optional.empty():Optional.of(playershopcontainer);
 	}
 	public Optional<UUID> getShopOwner() {
 		return playershopholder==null?Optional.empty():Optional.of(playershopholder);

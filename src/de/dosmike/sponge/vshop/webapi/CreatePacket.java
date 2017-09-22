@@ -13,6 +13,7 @@ import org.spongepowered.api.world.World;
 import com.flowpowered.math.vector.Vector3d;
 
 import de.dosmike.sponge.vshop.API;
+import de.dosmike.sponge.vshop.NPCguard;
 import valandur.webapi.WebAPI;
 import valandur.webapi.api.cache.world.ICachedWorld;
 import valandur.webapi.shadow.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -61,11 +62,11 @@ public class CreatePacket {
 	}
 	
 	/** returns true on success */
-	public boolean execute() {
+	public NPCguard execute() {
 		Optional<EntityType> type = getEntityType();
 		Optional<Location<World>> location = getLocation();
 		if (type.isPresent() && location.isPresent())
 			return API.create(type.get(), variation, getName(), location.get(), rotation);
-		else return false;
+		else return null;
 	}
 }

@@ -83,6 +83,10 @@ public class InvPrep {
 			if (++col>=9) { col=0; row+=3; }
 		}
 	}
+
+	public void setItem(int index, StockItem element) {
+		items.set(index, element);
+	}
 	
 //	/** tries to buy or sell the item at index and returns the ammount of actuall items bought/sold
 //	 * use isSlotBuySell(int) to determ the actual action */

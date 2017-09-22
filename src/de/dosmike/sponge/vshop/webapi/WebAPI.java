@@ -1,11 +1,13 @@
 package de.dosmike.sponge.vshop.webapi;
 
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
-
-import org.spongepowered.api.text.serializer.TextSerializers;
 
 import de.dosmike.sponge.vshop.API;
 import de.dosmike.sponge.vshop.NPCguard;
+import de.dosmike.sponge.vshop.StockItem;
 import de.dosmike.sponge.vshop.VillagerShops;
 import valandur.webapi.api.annotation.WebAPIEndpoint;
 import valandur.webapi.api.annotation.WebAPIServlet;
@@ -17,8 +19,8 @@ import valandur.webapi.shadow.org.eclipse.jetty.http.HttpMethod;
 @WebAPIServlet(basePath = "vshop")
 public class WebAPI extends WebAPIBaseServlet {
 	
-	@WebAPIEndpoint(method = HttpMethod.POST, path = "/create", perm = "vshop.webapi.edit")
-    public void createShop(IServletData data) {
+	@WebAPIEndpoint(method = HttpMethod.POST, path = "", perm = "vshop.webapi.edit")
+    public void create(IServletData data) {
 		CreatePacket query = data.getRequestBody(CreatePacket.class).orElse(null);
 		if (query==null) {
             data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid query: " + data.getLastParseError().getMessage());
@@ -34,35 +36,128 @@ public class WebAPI extends WebAPIBaseServlet {
             return;
 		}
 		
-		if (!query.execute()) {
+		NPCguard npc = query.execute();
+		if (npc==null) {
 			data.sendError(HttpServletResponse.SC_CONFLICT, "The API could not process your request");
             return;
 		}
+		data.addJson("uuid", npc.getIdentifier(), true);
 		data.addJson("ok", true, false);
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.GET, path = "/list", perm = "vshop.webapi.edit")
+	@WebAPIEndpoint(method = HttpMethod.GET, path = "", perm = "vshop.webapi.edit")
     public void info(IServletData data) {
-		data.addJson("shops", API.list(), true);
+		Set<SimpleVShopPacket> list = new HashSet<>();
+		API.list().forEachRemaining(npc->{
+			list.add(new SimpleVShopPacket(npc));
+		});
+		data.addJson("shops", list, true);
 		
 		data.addJson("ok", true, false);
 	}
-	@WebAPIEndpoint(method = HttpMethod.GET, path = "/info", perm = "vshop.webapi.edit")
-    public void info2(IServletData data, UUID shopID) {
+	
+	
+	@WebAPIEndpoint(method = HttpMethod.DELETE, path = "/:uuid", perm = "vshop.webapi.edit")
+    public void deleteShop(IServletData data, UUID shopID) {
 		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 		if (shop == null) {
-            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shop.toString());
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
             return;
 		}
-		
-		data.addJson("displayName", TextSerializers.FORMATTING_CODE.serialize(shop.getDisplayName()), true);
-		data.addJson("type", shop.getNpcType().toString(), true);
-		data.addJson("variant", shop.getVariant().toString(), true);
-		data.addJson("location", shop.getLoc().getExtent(), true);
-		data.addJson("rotation", shop.getRot().getY(), true);
-		data.addJson("owner", shop.getShopOwner().orElse(null), true);
+		API.delete(shop);
 		
 		data.addJson("ok", true, false);
 	}
 	
+	@WebAPIEndpoint(method = HttpMethod.GET, path = "/:uuid", perm = "vshop.webapi.edit")
+    public void infoShop(IServletData data, UUID shopID) {
+		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+		if (shop == null) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
+            return;
+		}
+		data.addJson("shop", new VShopPacket(shop), true);
+		
+		data.addJson("ok", true, false);
+	}
+	
+	@WebAPIEndpoint(method = HttpMethod.PUT, path = "/:uuid", perm = "vshop.webapi.edit")
+    public void updateShop(IServletData data, UUID shopID) {
+		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+		if (shop == null) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
+            return;
+		}
+		Optional<VShopPacket> query = data.getRequestBody(VShopPacket.class);
+		if (!query.isPresent()) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No update data for: " + shopID.toString());
+            return;
+		}
+		query.get().execute(shop);
+		
+		data.addJson("ok", true, false);
+	}
+	
+	@WebAPIEndpoint(method = HttpMethod.DELETE, path = "/:uuid/:item", perm = "vshop.webapi.edit")
+    public void deleteItem(IServletData data, UUID shopID, Integer item) {
+		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+		if (shop == null) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
+            return;
+		}
+		if (item == null || item < 0 || shop.getPreparator().size() >= shop.getPreparator().size()) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid item ID " + item + "  on " + shopID.toString());
+            return;
+		}
+		VillagerShops.closeShopInventories(shopID); //important to update inventories
+		shop.getPreparator().removeIndex(item);
+		
+		data.addJson("ok", true, false);
+	}
+	
+	@WebAPIEndpoint(method = HttpMethod.GET, path = "/:uuid/:item", perm = "vshop.webapi.edit")
+    public void infoItem(IServletData data, UUID shopID, Integer item) {
+		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+		if (shop == null) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
+            return;
+		}
+		if (item == null || item < 0 || shop.getPreparator().size() >= shop.getPreparator().size()) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid item ID " + item + "  on " + shopID.toString());
+            return;
+		}
+		data.addJson("item", new StockItemPacket(shop.getPreparator().getItem(item)), true);
+		
+		data.addJson("ok", true, false);
+	}
+	
+	/** will auto insert item */
+	@WebAPIEndpoint(method = HttpMethod.PUT, path = "/:uuid/:item", perm = "vshop.webapi.edit")
+    public void updateItem(IServletData data, UUID shopID, Integer item) {
+		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+		if (shop == null) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
+            return;
+		}
+		if (item == null || item < 0 || item > shop.getPreparator().size()) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid item ID " + item + "  on " + shopID.toString());
+            return;
+		}
+		Optional<StockItemPacket> query = data.getRequestBody(StockItemPacket.class);
+		if (!query.isPresent()) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No update data for: " + shopID.toString());
+            return;
+		}
+		StockItem blep = query.get().execute();
+		if (!query.isPresent()) {
+            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid data");
+            return;
+		}
+		if (item == shop.getPreparator().size())
+			shop.getPreparator().addItem(blep);
+		else
+			shop.getPreparator().setItem(item, blep);
+		
+		data.addJson("ok", true, false);
+	}
 }

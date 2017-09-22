@@ -141,7 +141,7 @@ public class VillagerShops {
 			if (npcs == null) npcs = new LinkedList<>();
 		}
 	}
-	Currency CurrencyByName(String name) {
+	public Currency CurrencyByName(String name) {
 		if (name != null) for (Currency c : economyService.getCurrencies()) if (c.getName().equals(name)) return c; return economyService.getDefaultCurrency();
 	}
 	
