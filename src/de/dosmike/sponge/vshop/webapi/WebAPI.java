@@ -82,7 +82,7 @@ public class WebAPI extends WebAPIBaseServlet {
 	}
 	
 	
-	@WebAPIEndpoint(method = HttpMethod.DELETE, path = "/:uuid", perm = "vshop.webapi.edit")
+	@WebAPIEndpoint(method = HttpMethod.DELETE, path = "/:shopID", perm = "vshop.webapi.edit")
     public void deleteShop(IServletData data, UUID shopID) {
 		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 		if (shop == null) {
@@ -94,7 +94,7 @@ public class WebAPI extends WebAPIBaseServlet {
 		data.addJson("ok", true, false);
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.GET, path = "/:uuid", perm = "vshop.webapi.edit")
+	@WebAPIEndpoint(method = HttpMethod.GET, path = "/:shopID", perm = "vshop.webapi.edit")
     public void infoShop(IServletData data, UUID shopID) {
 		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 		if (shop == null) {
@@ -106,7 +106,7 @@ public class WebAPI extends WebAPIBaseServlet {
 		data.addJson("ok", true, false);
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.PUT, path = "/:uuid", perm = "vshop.webapi.edit")
+	@WebAPIEndpoint(method = HttpMethod.PUT, path = "/:shopID", perm = "vshop.webapi.edit")
     public void updateShop(IServletData data, UUID shopID) {
 		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 		if (shop == null) {
@@ -123,14 +123,14 @@ public class WebAPI extends WebAPIBaseServlet {
 		data.addJson("ok", true, false);
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.DELETE, path = "/:uuid/:item", perm = "vshop.webapi.edit")
+	@WebAPIEndpoint(method = HttpMethod.DELETE, path = "/:shopID/:item", perm = "vshop.webapi.edit")
     public void deleteItem(IServletData data, UUID shopID, Integer item) {
 		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 		if (shop == null) {
             data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
             return;
 		}
-		if (item == null || item < 0 || shop.getPreparator().size() >= shop.getPreparator().size()) {
+		if (item == null || item < 0 || item >= shop.getPreparator().size()) {
             data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid item ID " + item + "  on " + shopID.toString());
             return;
 		}
@@ -140,14 +140,14 @@ public class WebAPI extends WebAPIBaseServlet {
 		data.addJson("ok", true, false);
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.GET, path = "/:uuid/:item", perm = "vshop.webapi.edit")
+	@WebAPIEndpoint(method = HttpMethod.GET, path = "/:shopID/:item", perm = "vshop.webapi.edit")
     public void infoItem(IServletData data, UUID shopID, Integer item) {
 		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 		if (shop == null) {
             data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
             return;
 		}
-		if (item == null || item < 0 || shop.getPreparator().size() >= shop.getPreparator().size()) {
+		if (item == null || item < 0 || item >= shop.getPreparator().size()) {
             data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid item ID " + item + "  on " + shopID.toString());
             return;
 		}
@@ -157,7 +157,7 @@ public class WebAPI extends WebAPIBaseServlet {
 	}
 	
 	/** will auto insert item */
-	@WebAPIEndpoint(method = HttpMethod.PUT, path = "/:uuid/:item", perm = "vshop.webapi.edit")
+	@WebAPIEndpoint(method = HttpMethod.PUT, path = "/:shopID/:item", perm = "vshop.webapi.edit")
     public void updateItem(IServletData data, UUID shopID, Integer item) {
 		NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 		if (shop == null) {
