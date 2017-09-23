@@ -1,4 +1,4 @@
-package de.dosmike.sponge.vshop.webapi;
+package de.dosmike.sponge.vshop.webapi.packets;
 
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.economy.Currency;
@@ -7,7 +7,7 @@ import de.dosmike.sponge.vshop.StockItem;
 import de.dosmike.sponge.vshop.VillagerShops;
 import valandur.webapi.shadow.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-public class StockItemPacket {
+public class StockItemPacket extends apiPacket {
 	
 	@JsonDeserialize
 	private Double buyPrice=null;
@@ -44,6 +44,7 @@ public class StockItemPacket {
 		return itemStack;
 	}
 	
+	public StockItemPacket() {}
 	public StockItemPacket(StockItem sitem) {
 		buyPrice = sitem.getBuyPrice();
 		sellPrice = sitem.getSellPrice();

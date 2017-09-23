@@ -36,6 +36,7 @@ import com.google.inject.Inject;
 
 import de.dosmike.sponge.languageservice.API.LanguageService;
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
+import de.dosmike.sponge.vshop.webapi.WebAPI;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -96,6 +97,16 @@ public class VillagerShops {
 		customSerializer.registerType(TypeToken.of(NPCguard.class), new NPCguardSerializer());
 		
 		Sponge.getEventManager().registerListeners(this, new EventListeners());
+		
+		try {
+			//trick here:
+			// if we can't get the class for name an exception is thrown preventing the real depending code from even being looked at.
+			// this requires the entry point to not be obfuscated, but for an API that's normally not the case anyways. 
+			Class<?> webAPIAPI = Class.forName("valandur.webapi.api.WebAPIAPI");
+			if (webAPIAPI != null) WebAPI.init();
+		} catch(Exception e) {
+			l("WebAPI not found, skipping");
+		}
 	}
 	
 	@Listener

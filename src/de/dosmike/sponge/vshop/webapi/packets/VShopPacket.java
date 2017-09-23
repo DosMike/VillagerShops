@@ -1,4 +1,4 @@
-package de.dosmike.sponge.vshop.webapi;
+package de.dosmike.sponge.vshop.webapi.packets;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -19,7 +19,7 @@ import de.dosmike.sponge.vshop.FieldResolver;
 import de.dosmike.sponge.vshop.NPCguard;
 import valandur.webapi.shadow.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-public class VShopPacket {
+public class VShopPacket extends apiPacket {
 
 	@JsonDeserialize
 	private String shop=null;
@@ -79,6 +79,7 @@ public class VShopPacket {
 		return items;
 	}
 	
+	public VShopPacket() {}
 	public VShopPacket(NPCguard buildWith) {
 		shop = buildWith.getIdentifier().toString();
 		name = TextSerializers.FORMATTING_CODE.serialize(buildWith.getDisplayName());

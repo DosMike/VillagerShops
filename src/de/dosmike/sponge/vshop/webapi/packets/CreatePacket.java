@@ -1,4 +1,4 @@
-package de.dosmike.sponge.vshop.webapi;
+package de.dosmike.sponge.vshop.webapi.packets;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -18,8 +18,8 @@ import valandur.webapi.WebAPI;
 import valandur.webapi.api.cache.world.ICachedWorld;
 import valandur.webapi.shadow.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-public class CreatePacket {
-
+public class CreatePacket extends apiPacket {
+	
 	@JsonDeserialize
 	private String name;
 	public Text getName() {
@@ -60,6 +60,8 @@ public class CreatePacket {
 		Collection<EntityType> types = Sponge.getRegistry().getAllOf(EntityType.class);
 		return types.stream().filter(g -> g.getId().equalsIgnoreCase(type) || g.getName().equalsIgnoreCase(type)).findAny();
 	}
+	
+	public CreatePacket() {}
 	
 	/** returns true on success */
 	public NPCguard execute() {

@@ -1,4 +1,4 @@
-package de.dosmike.sponge.vshop.webapi;
+package de.dosmike.sponge.vshop.webapi.packets;
 
 import java.util.UUID;
 
@@ -7,7 +7,7 @@ import org.spongepowered.api.world.World;
 
 import valandur.webapi.shadow.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-public class OwnedLocationPacket {
+public class OwnedLocationPacket extends apiPacket {
 	
 	@JsonDeserialize
 	private String owner=null;
@@ -21,6 +21,7 @@ public class OwnedLocationPacket {
 		return location;
 	}
 	
+	public OwnedLocationPacket() {}
 	public OwnedLocationPacket(UUID owner, Location<World> location) {
 		this.owner=owner!=null?owner.toString():null;
 		this.location=location;

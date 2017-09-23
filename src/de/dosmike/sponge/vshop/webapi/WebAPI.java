@@ -9,15 +9,40 @@ import de.dosmike.sponge.vshop.API;
 import de.dosmike.sponge.vshop.NPCguard;
 import de.dosmike.sponge.vshop.StockItem;
 import de.dosmike.sponge.vshop.VillagerShops;
+import de.dosmike.sponge.vshop.webapi.packets.CreatePacket;
+import de.dosmike.sponge.vshop.webapi.packets.OwnedLocationPacket;
+import de.dosmike.sponge.vshop.webapi.packets.SimpleVShopPacket;
+import de.dosmike.sponge.vshop.webapi.packets.StockItemPacket;
+import de.dosmike.sponge.vshop.webapi.packets.VShopPacket;
+import de.dosmike.sponge.vshop.webapi.serializer.CreatePacketSerializer;
+import de.dosmike.sponge.vshop.webapi.serializer.OwnedLocationPacketSerializer;
+import de.dosmike.sponge.vshop.webapi.serializer.SimpleVShopPacketSerializer;
+import de.dosmike.sponge.vshop.webapi.serializer.StockItemPacketSerializer;
+import de.dosmike.sponge.vshop.webapi.serializer.VShopPacketSerializer;
+import valandur.webapi.api.WebAPIAPI;
 import valandur.webapi.api.annotation.WebAPIEndpoint;
 import valandur.webapi.api.annotation.WebAPIServlet;
 import valandur.webapi.api.servlet.IServletData;
+import valandur.webapi.api.servlet.IServletService;
 import valandur.webapi.api.servlet.WebAPIBaseServlet;
 import valandur.webapi.shadow.javax.servlet.http.HttpServletResponse;
 import valandur.webapi.shadow.org.eclipse.jetty.http.HttpMethod;
 
 @WebAPIServlet(basePath = "vshop")
 public class WebAPI extends WebAPIBaseServlet {
+	
+	public static void init() {
+		Optional<IServletService> optSrv = WebAPIAPI.getServletService();
+	    if (optSrv.isPresent()) {
+	        IServletService srv = optSrv.get();
+	        srv.registerServlet(WebAPI.class);
+	    }
+	    valandur.webapi.WebAPI.getJsonService().registerSerializer(CreatePacket.class, CreatePacketSerializer.class);
+	    valandur.webapi.WebAPI.getJsonService().registerSerializer(OwnedLocationPacket.class, OwnedLocationPacketSerializer.class);
+	    valandur.webapi.WebAPI.getJsonService().registerSerializer(StockItemPacket.class, StockItemPacketSerializer.class);
+	    valandur.webapi.WebAPI.getJsonService().registerSerializer(SimpleVShopPacket.class, SimpleVShopPacketSerializer.class);
+	    valandur.webapi.WebAPI.getJsonService().registerSerializer(VShopPacket.class, VShopPacketSerializer.class);
+	}
 	
 	@WebAPIEndpoint(method = HttpMethod.POST, path = "", perm = "vshop.webapi.edit")
     public void create(IServletData data) {
@@ -153,6 +178,7 @@ public class WebAPI extends WebAPIBaseServlet {
             data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid data");
             return;
 		}
+		VillagerShops.closeShopInventories(shopID);
 		if (item == shop.getPreparator().size())
 			shop.getPreparator().addItem(blep);
 		else
