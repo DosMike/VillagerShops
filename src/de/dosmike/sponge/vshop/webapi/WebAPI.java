@@ -10,26 +10,20 @@ import de.dosmike.sponge.vshop.NPCguard;
 import de.dosmike.sponge.vshop.StockItem;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.webapi.packets.CreatePacket;
-import de.dosmike.sponge.vshop.webapi.packets.OwnedLocationPacket;
 import de.dosmike.sponge.vshop.webapi.packets.SimpleVShopPacket;
 import de.dosmike.sponge.vshop.webapi.packets.StockItemPacket;
 import de.dosmike.sponge.vshop.webapi.packets.VShopPacket;
-import de.dosmike.sponge.vshop.webapi.serializer.CreatePacketSerializer;
-import de.dosmike.sponge.vshop.webapi.serializer.OwnedLocationPacketSerializer;
-import de.dosmike.sponge.vshop.webapi.serializer.SimpleVShopPacketSerializer;
-import de.dosmike.sponge.vshop.webapi.serializer.StockItemPacketSerializer;
-import de.dosmike.sponge.vshop.webapi.serializer.VShopPacketSerializer;
 import valandur.webapi.api.WebAPIAPI;
-import valandur.webapi.api.annotation.WebAPIEndpoint;
-import valandur.webapi.api.annotation.WebAPIServlet;
+import valandur.webapi.api.servlet.BaseServlet;
+import valandur.webapi.api.servlet.Endpoint;
 import valandur.webapi.api.servlet.IServletData;
 import valandur.webapi.api.servlet.IServletService;
-import valandur.webapi.api.servlet.WebAPIBaseServlet;
+import valandur.webapi.api.servlet.Servlet;
 import valandur.webapi.shadow.javax.servlet.http.HttpServletResponse;
 import valandur.webapi.shadow.org.eclipse.jetty.http.HttpMethod;
 
-@WebAPIServlet(basePath = "vshop")
-public class WebAPI extends WebAPIBaseServlet {
+@Servlet(basePath = "vshop")
+public class WebAPI extends BaseServlet {
 	
 	public static void init() {
 		Optional<IServletService> optSrv = WebAPIAPI.getServletService();
@@ -37,17 +31,15 @@ public class WebAPI extends WebAPIBaseServlet {
 	        IServletService srv = optSrv.get();
 	        srv.registerServlet(WebAPI.class);
 	    }
-	    valandur.webapi.WebAPI.getJsonService().registerSerializer(CreatePacket.class, CreatePacketSerializer.class);
-	    valandur.webapi.WebAPI.getJsonService().registerSerializer(OwnedLocationPacket.class, OwnedLocationPacketSerializer.class);
-	    valandur.webapi.WebAPI.getJsonService().registerSerializer(StockItemPacket.class, StockItemPacketSerializer.class);
-	    valandur.webapi.WebAPI.getJsonService().registerSerializer(SimpleVShopPacket.class, SimpleVShopPacketSerializer.class);
-	    valandur.webapi.WebAPI.getJsonService().registerSerializer(VShopPacket.class, VShopPacketSerializer.class);
+	}
+	public static void onRegister() {
+		
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.POST, path = "", perm = "vshop.webapi.edit")
+	@Endpoint(method = HttpMethod.POST, path = "", perm = "vshop.webapi.edit")
     public void create(IServletData data) {
 		CreatePacket query = data.getRequestBody(CreatePacket.class).orElse(null);
-		valandur.webapi.WebAPI.runOnMain(()->{
+		WebAPIAPI.runOnMain(()->{
 			if (query==null) {
 	            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid query: " + data.getLastParseError().getMessage());
 	            return;
@@ -67,28 +59,28 @@ public class WebAPI extends WebAPIBaseServlet {
 				data.sendError(HttpServletResponse.SC_CONFLICT, "The API could not process your request");
 	            return;
 			}
-			data.addJson("uuid", npc.getIdentifier(), true);
-			data.addJson("ok", true, false);
+			data.addData("uuid", npc.getIdentifier(), true);
+			data.addData("ok", true, false);
 		});
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.GET, path = "", perm = "vshop.webapi.edit")
+	@Endpoint(method = HttpMethod.GET, path = "", perm = "vshop.webapi.edit")
     public void info(IServletData data) {
-		valandur.webapi.WebAPI.runOnMain(()->{
+		WebAPIAPI.runOnMain(()->{
 			Set<SimpleVShopPacket> list = new HashSet<>();
 			API.list().forEachRemaining(npc->{
 				list.add(new SimpleVShopPacket(npc));
 			});
-			data.addJson("shops", list, true);
+			data.addData("shops", list, true);
 			
-			data.addJson("ok", true, false);
+			data.addData("ok", true, false);
 		});
 	}
 	
 	
-	@WebAPIEndpoint(method = HttpMethod.DELETE, path = "/:shopID", perm = "vshop.webapi.edit")
+	@Endpoint(method = HttpMethod.DELETE, path = "/:shopID", perm = "vshop.webapi.edit")
     public void deleteShop(IServletData data, UUID shopID) {
-		valandur.webapi.WebAPI.runOnMain(()->{
+		WebAPIAPI.runOnMain(()->{
 			NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 			if (shop == null) {
 	            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
@@ -96,28 +88,28 @@ public class WebAPI extends WebAPIBaseServlet {
 			}
 			API.delete(shop);
 			
-			data.addJson("ok", true, false);
+			data.addData("ok", true, false);
 		});
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.GET, path = "/:shopID", perm = "vshop.webapi.edit")
+	@Endpoint(method = HttpMethod.GET, path = "/:shopID", perm = "vshop.webapi.edit")
     public void infoShop(IServletData data, UUID shopID) {
-		valandur.webapi.WebAPI.runOnMain(()->{
+		WebAPIAPI.runOnMain(()->{
 			NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 			if (shop == null) {
 	            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
 	            return;
 			}
-			data.addJson("shop", new VShopPacket(shop), true);
+			data.addData("shop", new VShopPacket(shop), true);
 			
-			data.addJson("ok", true, false);
+			data.addData("ok", true, false);
 		});
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.PUT, path = "/:shopID", perm = "vshop.webapi.edit")
+	@Endpoint(method = HttpMethod.PUT, path = "/:shopID", perm = "vshop.webapi.edit")
     public void updateShop(IServletData data, UUID shopID) {
 		Optional<VShopPacket> query = data.getRequestBody(VShopPacket.class);
-		valandur.webapi.WebAPI.runOnMain(()->{
+		WebAPIAPI.runOnMain(()->{
 			NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 			if (shop == null) {
 	            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
@@ -129,13 +121,13 @@ public class WebAPI extends WebAPIBaseServlet {
 			}
 			query.get().execute(shop);
 			
-			data.addJson("ok", true, false);
+			data.addData("ok", true, false);
 		});
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.DELETE, path = "/:shopID/:item", perm = "vshop.webapi.edit")
+	@Endpoint(method = HttpMethod.DELETE, path = "/:shopID/:item", perm = "vshop.webapi.edit")
     public void deleteItem(IServletData data, UUID shopID, Integer item) {
-		valandur.webapi.WebAPI.runOnMain(()->{
+		WebAPIAPI.runOnMain(()->{
 			NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 			if (shop == null) {
 	            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
@@ -148,13 +140,13 @@ public class WebAPI extends WebAPIBaseServlet {
 			VillagerShops.closeShopInventories(shopID); //important to update inventories
 			shop.getPreparator().removeIndex(item);
 			
-			data.addJson("ok", true, false);
+			data.addData("ok", true, false);
 		});
 	}
 	
-	@WebAPIEndpoint(method = HttpMethod.GET, path = "/:shopID/:item", perm = "vshop.webapi.edit")
+	@Endpoint(method = HttpMethod.GET, path = "/:shopID/:item", perm = "vshop.webapi.edit")
     public void infoItem(IServletData data, UUID shopID, Integer item) {
-		valandur.webapi.WebAPI.runOnMain(()->{
+		WebAPIAPI.runOnMain(()->{
 			NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 			if (shop == null) {
 	            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
@@ -164,18 +156,18 @@ public class WebAPI extends WebAPIBaseServlet {
 	            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid item ID " + item + "  on " + shopID.toString());
 	            return;
 			}
-			data.addJson("item", new StockItemPacket(shop.getPreparator().getItem(item)), true);
+			data.addData("item", new StockItemPacket(shop.getPreparator().getItem(item)), true);
 			
-			data.addJson("ok", true, false);
+			data.addData("ok", true, false);
 		});
 	}
 	
 	/** will auto insert item */
-	@WebAPIEndpoint(method = HttpMethod.PUT, path = "/:shopID/:item", perm = "vshop.webapi.edit")
+	@Endpoint(method = HttpMethod.PUT, path = "/:shopID/:item", perm = "vshop.webapi.edit")
     public void updateItem(IServletData data, UUID shopID, Integer item) {
 		Optional<StockItemPacket> query = data.getRequestBody(StockItemPacket.class);
 		
-		valandur.webapi.WebAPI.runOnMain(()->{
+		WebAPIAPI.runOnMain(()->{
 			NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 			if (shop == null) {
 	            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such shop: " + shopID.toString());
@@ -196,14 +188,14 @@ public class WebAPI extends WebAPIBaseServlet {
 			}
 			VillagerShops.closeShopInventories(shopID);
 			if (item >= shop.getPreparator().size()) {
-				data.addJson("index", shop.getPreparator().size(), false);
+				data.addData("index", shop.getPreparator().size(), false);
 				shop.getPreparator().addItem(blep);
 			} else {
-				data.addJson("index", item, false);
+				data.addData("index", item, false);
 				shop.getPreparator().setItem(item, blep);
 			}
 			
-			data.addJson("ok", true, false);
+			data.addData("ok", true, false);
 		});
 	}
 }

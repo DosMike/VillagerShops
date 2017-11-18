@@ -5,41 +5,48 @@ import org.spongepowered.api.service.economy.Currency;
 
 import de.dosmike.sponge.vshop.StockItem;
 import de.dosmike.sponge.vshop.VillagerShops;
-import valandur.webapi.shadow.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import valandur.webapi.shadow.com.fasterxml.jackson.annotation.JsonIgnore;
+import valandur.webapi.shadow.com.fasterxml.jackson.annotation.JsonProperty;
 
 public class StockItemPacket extends apiPacket {
 	
-	@JsonDeserialize
+	@JsonProperty
 	private Double buyPrice=null;
+	@JsonIgnore
 	public Double getBuyPrice() {
 		return buyPrice;
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private Double sellPrice=null;
+	@JsonIgnore
 	public Double getSellPrice() {
 		return sellPrice;
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private Integer stockLimit=null;
+	@JsonIgnore
 	public Integer getStockLimit() {
 		return stockLimit;
 	}
-	@JsonDeserialize
+	@JsonProperty
 	private Integer stockAmount=null;
+	@JsonIgnore
 	public Integer getStockAmount() {
 		return stockAmount;
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private String currency=null;
+	@JsonIgnore
 	public String getCurrency() {
 		return currency;
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private ItemStackSnapshot itemStack=null;
+	@JsonIgnore
 	public ItemStackSnapshot getItem() {
 		return itemStack;
 	}
@@ -54,6 +61,7 @@ public class StockItemPacket extends apiPacket {
 		itemStack = sitem.getItem().createSnapshot();
 	}
 	
+	@JsonIgnore
 	public StockItem execute() {
 		Currency c = VillagerShops.getInstance().CurrencyByName((String) currency);
 		if (c==null || (buyPrice==null&&sellPrice==null)) return null;

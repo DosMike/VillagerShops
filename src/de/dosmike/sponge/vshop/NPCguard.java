@@ -23,9 +23,6 @@ import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.Living;
-import org.spongepowered.api.event.cause.Cause;
-import org.spongepowered.api.event.cause.entity.spawn.EntitySpawnCause;
-import org.spongepowered.api.event.cause.entity.spawn.SpawnTypes;
 import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.InventoryArchetypes;
@@ -249,7 +246,7 @@ public class NPCguard {
 				        
 				        shop.offer(Keys.DISPLAY_NAME, displayName);
 				        
-				        if (w.spawnEntity(shop, Cause.source(EntitySpawnCause.builder().entity(shop).type(SpawnTypes.PLUGIN).build()).build()) ) {
+				        if (w.spawnEntity(shop)) {
 				        	lastKnown = shop.getUniqueId();
 				        }
 //				    }

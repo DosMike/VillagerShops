@@ -10,6 +10,7 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.cause.EventContext;
 import org.spongepowered.api.item.inventory.Container;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
@@ -32,7 +33,7 @@ public class InteractionHandler {
 //			if (side == Button.right) {
 				if (npc.get().getPreparator().size()>0) {
 					npc.get().updateStock();
-					source.openInventory(npc.get().getInventory(), Cause.builder().named("PLUGIN (Shop Opened)", VillagerShops.getInstance()).build());
+					source.openInventory(npc.get().getInventory());
 					VillagerShops.openShops.put(source.getUniqueId(), npc.get().getIdentifier());
 				}
 //			}
@@ -102,11 +103,13 @@ public class InteractionHandler {
 				acc.get().withdraw(
 						currency, 
 						BigDecimal.valueOf(finalPrice), 
-						Cause.builder().named("PURCHASED ITEMS", VillagerShops.getInstance()).build());
+						Cause.of(EventContext.empty(), VillagerShops.getInstance().getContainer()) );
+						//Cause.builder().named("PURCHASED ITEMS", VillagerShops.getInstance()).build());
 				if (acc2.isPresent()) acc2.get().deposit(
 						currency, 
 						BigDecimal.valueOf(finalPrice), 
-						Cause.builder().named("PLAYER SHOP ITEMS SOLD", VillagerShops.getInstance()).build());
+						Cause.of(EventContext.empty(), VillagerShops.getInstance().getContainer()) );
+						//Cause.builder().named("PLAYER SHOP ITEMS SOLD", VillagerShops.getInstance()).build());
 				
 				player.sendMessage(VillagerShops.getTranslator().localText("shop.buy.message")
 						.replace("%balance%", Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET))
@@ -125,11 +128,13 @@ public class InteractionHandler {
 				acc.get().deposit(
 						currency, 
 						BigDecimal.valueOf(finalPrice), 
-						Cause.builder().named("SOLD ITEMS", VillagerShops.getInstance()).build());
+						Cause.of(EventContext.empty(), VillagerShops.getInstance().getContainer()) );
+						//Cause.builder().named("SOLD ITEMS", VillagerShops.getInstance()).build());
 				if (acc2.isPresent()) acc2.get().withdraw(
 						currency, 
-						BigDecimal.valueOf(finalPrice), 
-						Cause.builder().named("PLAYER SHOP ITEMS BOUGHT", VillagerShops.getInstance()).build());
+						BigDecimal.valueOf(finalPrice),
+						Cause.of(EventContext.empty(), VillagerShops.getInstance().getContainer()) );
+						//Cause.builder().named("PLAYER SHOP ITEMS BOUGHT", VillagerShops.getInstance()).build());
 				
 				player.sendMessage(VillagerShops.getTranslator().localText("shop.sell.message")
 						.replace("%balance%", Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET))
