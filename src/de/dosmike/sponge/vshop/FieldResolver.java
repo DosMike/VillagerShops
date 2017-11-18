@@ -3,6 +3,7 @@ package de.dosmike.sponge.vshop;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import org.apache.commons.lang3.StringUtils;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
@@ -31,6 +32,12 @@ public class FieldResolver {
 //			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	public static <T extends Object> Object getFinalStaticAuto(Class<T> clazz, String value) {
+		return StringUtils.isNumeric(value) 
+			? FieldResolver.getFinalStaticByIndex(clazz, Integer.parseInt(value))
+			: FieldResolver.getFinalStaticByName(clazz, value);
 	}
 
 	/** getting item type API independent */
