@@ -1,5 +1,6 @@
 package de.dosmike.sponge.vshop.webapi.packets;
 
+import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.economy.Currency;
 
@@ -45,10 +46,10 @@ public class StockItemPacket extends apiPacket {
 	}
 	
 	@JsonProperty
-	private ItemStackSnapshot itemStack=null;
+	private ItemStack itemStack=null;
 	@JsonIgnore
 	public ItemStackSnapshot getItem() {
-		return itemStack;
+		return itemStack.createSnapshot();
 	}
 	
 	public StockItemPacket() {}
@@ -58,7 +59,7 @@ public class StockItemPacket extends apiPacket {
 		stockLimit = sitem.getMaxStock();
 		if (stockLimit != null) stockAmount = sitem.getStocked(); 
 		currency = sitem.getCurrency().getName();
-		itemStack = sitem.getItem().createSnapshot();
+		itemStack = sitem.getItem().copy();
 	}
 	
 	@JsonIgnore
