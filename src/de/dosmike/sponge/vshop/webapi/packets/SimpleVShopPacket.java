@@ -3,18 +3,18 @@ package de.dosmike.sponge.vshop.webapi.packets;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
 import de.dosmike.sponge.vshop.NPCguard;
-import valandur.webapi.shadow.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import valandur.webapi.shadow.com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SimpleVShopPacket extends apiPacket {
-	@JsonDeserialize
+	@JsonProperty
 	private String name;
 	
-	@JsonDeserialize
+	@JsonProperty
 	private String type;
-	@JsonDeserialize
+	@JsonProperty
 	private String variant;
 	
-	@JsonDeserialize
+	@JsonProperty
 	private String uuid;
 	
 	public SimpleVShopPacket() {

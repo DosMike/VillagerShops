@@ -19,12 +19,12 @@ import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.EconomyService;
@@ -44,7 +44,7 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 
-@Plugin(id="vshop", name="VillagerShops", version="1.4", authors={"DosMike"})
+@Plugin(id="vshop", name="VillagerShops", version="1.5", authors={"DosMike"})
 public class VillagerShops {
 	
 	public static void main(String[] args) { System.err.println("This plugin can not be run as executable!"); }
@@ -65,6 +65,8 @@ public class VillagerShops {
 	}
 	public static PluginTranslation getTranslator() { return instance.translator; }
 	public static EconomyService getEconomy() { return instance.economyService; }
+	
+	public PluginContainer getContainer() { return Sponge.getPluginManager().fromInstance(this).get(); }
 	
 	@Inject
 	private Logger logger;
@@ -225,7 +227,7 @@ public class VillagerShops {
 	public static void closeShopInventories() {
 		for (Entry<UUID,UUID> shop : openShops.entrySet()) {
 			Player p = Sponge.getServer().getPlayer(shop.getKey()).orElse(null);
-			if (p != null) p.closeInventory(Cause.builder().named("PLUGIN", instance).build());
+			if (p != null) p.closeInventory();
 		}
 		openShops.clear();
 	}
@@ -235,7 +237,7 @@ public class VillagerShops {
 			if (shop.getValue().equals(shopID)) {
 				Player p = Sponge.getServer().getPlayer(shop.getKey()).orElse(null);
 				if (p != null) {
-					p.closeInventory(Cause.builder().named("PLUGIN", instance).build());
+					p.closeInventory();
 					rem.add(shop.getKey());
 				}
 			}
@@ -248,7 +250,7 @@ public class VillagerShops {
 	public static void closeShopInventory(UUID player) {
 		Player p = Sponge.getServer().getPlayer(player).orElse(null);
 		if (p != null) {
-			p.closeInventory(Cause.builder().named("PLUGIN", instance).build());
+			p.closeInventory();
 			openShops.remove(player);
 			actionUnstack.remove(player);
 		}

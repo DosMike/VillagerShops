@@ -17,26 +17,31 @@ import com.flowpowered.math.vector.Vector3d;
 import de.dosmike.sponge.vshop.API;
 import de.dosmike.sponge.vshop.FieldResolver;
 import de.dosmike.sponge.vshop.NPCguard;
+import valandur.webapi.shadow.com.fasterxml.jackson.annotation.JsonIgnore;
+import valandur.webapi.shadow.com.fasterxml.jackson.annotation.JsonProperty;
 import valandur.webapi.shadow.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 public class VShopPacket extends apiPacket {
 
-	@JsonDeserialize
+	@JsonProperty
 	private String shop=null;
+	@JsonIgnore
 	public UUID getShop() {
 		return UUID.fromString(shop);
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private String name=null;
+	@JsonIgnore
 	public Optional<Text> getName() {
 		return name==null
 			?Optional.empty()
 			:Optional.of(TextSerializers.FORMATTING_CODE.deserialize(name));
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private String type=null;
+	@JsonIgnore
 	public Optional<EntityType> getType() {
 		if (type==null) return Optional.empty();
 		EntityType et = (EntityType)FieldResolver.getFinalStaticAuto(EntityTypes.class, type);
@@ -45,8 +50,9 @@ public class VShopPacket extends apiPacket {
 			:Optional.of(et);
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private String variant=null;
+	@JsonIgnore
 	public Optional<String> getVariant() {
 		return variant==null
 				?Optional.empty()
@@ -55,26 +61,30 @@ public class VShopPacket extends apiPacket {
 	
 	@JsonDeserialize
 	private OwnedLocationPacket playershop=null;
+	@JsonIgnore
 	public Optional<OwnedLocationPacket> getPlayershop() {
 		return playershop==null
 				?Optional.empty()
 				:Optional.of(playershop);
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private Location<World> location=null;
+	@JsonIgnore
 	public Location<World> getLocation() {
 		return location;
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private Double rotation=null;
+	@JsonIgnore
 	public Double getRotation() {
 		return rotation;
 	}
 	
-	@JsonDeserialize
+	@JsonProperty
 	private List<StockItemPacket> items=null;
+	@JsonIgnore
 	public List<StockItemPacket> getItems() {
 		return items;
 	}
@@ -96,6 +106,7 @@ public class VShopPacket extends apiPacket {
 		}}
 	}
 	
+	@JsonIgnore
 	public void execute(NPCguard target) {
 		API.disintegrate(target);
 		if (name!=null) target.setDisplayName(getName().get());
