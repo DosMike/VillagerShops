@@ -39,6 +39,9 @@ public class WebAPI extends BaseServlet {
 	@Endpoint(method = HttpMethod.POST, path = "", perm = "vshop.webapi.edit")
     public void create(IServletData data) {
 		CreatePacket query = data.getRequestBody(CreatePacket.class).orElse(null);
+		Exception e = data.getLastParseError();
+		if (e!=null) e.printStackTrace();
+		
 		WebAPIAPI.runOnMain(()->{
 			if (query==null) {
 	            data.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid query: " + data.getLastParseError().getMessage());
@@ -109,6 +112,9 @@ public class WebAPI extends BaseServlet {
 	@Endpoint(method = HttpMethod.PUT, path = "/:shopID", perm = "vshop.webapi.edit")
     public void updateShop(IServletData data, UUID shopID) {
 		Optional<VShopPacket> query = data.getRequestBody(VShopPacket.class);
+		Exception e = data.getLastParseError();
+		if (e!=null) e.printStackTrace();
+		
 		WebAPIAPI.runOnMain(()->{
 			NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
 			if (shop == null) {
@@ -166,6 +172,8 @@ public class WebAPI extends BaseServlet {
 	@Endpoint(method = HttpMethod.PUT, path = "/:shopID/:item", perm = "vshop.webapi.edit")
     public void updateItem(IServletData data, UUID shopID, Integer item) {
 		Optional<StockItemPacket> query = data.getRequestBody(StockItemPacket.class);
+		Exception e = data.getLastParseError();
+		if (e!=null) e.printStackTrace();
 		
 		WebAPIAPI.runOnMain(()->{
 			NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
