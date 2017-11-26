@@ -2,6 +2,7 @@ package de.dosmike.sponge.vshop;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.property.InventoryDimension;
@@ -27,7 +28,7 @@ public class InvPrep {
 		return items.size();
 	}
 	
-	public Inventory getInventory(Inventory.Builder ib) {
+	public Inventory getInventory(Inventory.Builder ib, UUID player) {
 		Inventory inv = ib
 			.property("inventorydimension", new InventoryDimension(9, (int)Math.ceil((double)items.size()/9.0)*3-1))
 			.build(VillagerShops.getInstance());
@@ -39,8 +40,8 @@ public class InvPrep {
 		int row=0, col=0;
 		for (int i = 0; i < items.size(); i++) {
 			
-			cinv.setItemStack(col, row,   items.get(i).getBuyDisplayItem(row*9+col));
-			cinv.setItemStack(col, row+1, items.get(i).getSellDisplayItem((row+1)*9+col));
+			cinv.setItemStack(col, row,   items.get(i).getBuyDisplayItem(row*9+col, player));
+			cinv.setItemStack(col, row+1, items.get(i).getSellDisplayItem((row+1)*9+col, player));
 			
 			if (++col>=9) { col=0; row+=3; }
 		}
@@ -68,7 +69,7 @@ public class InvPrep {
 	
 	/** dealing with open inventories this will target a OrderedInventory 
 	 * (more precisely a OrderedInventoryAdapter at runtime) */
-	public void updateInventory(Inventory view) {
+	public void updateInventory(Inventory view, UUID player) {
 		if (!(view instanceof OrderedInventory)) {
 			VillagerShops.w("Can't update view");
 			return;
@@ -77,8 +78,8 @@ public class InvPrep {
 		int row=0, col=0;
 		for (int i = 0; i < items.size(); i++) {
 			
-			oi.set(new SlotIndex(row*9+col),		items.get(i).getBuyDisplayItem(row*9+col));
-			oi.set(new SlotIndex((row+1)*9+col),	items.get(i).getSellDisplayItem((row+1)*9+col));
+			oi.set(new SlotIndex(row*9+col),		items.get(i).getBuyDisplayItem(row*9+col, player));
+			oi.set(new SlotIndex((row+1)*9+col),	items.get(i).getSellDisplayItem((row+1)*9+col, player));
 			
 			if (++col>=9) { col=0; row+=3; }
 		}

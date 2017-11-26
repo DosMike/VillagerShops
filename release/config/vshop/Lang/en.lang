@@ -1,6 +1,6 @@
 permission.missing:You do not have permission to do this!
 cmd.description.short:/vshop <command> <options>
-cmd.description.long:Always look at the shop you want to edit! Options for:\nCREATE : --at <Position> <EntityType> --skin <Skin> [Name]\n    Skin is supposed to be a valid skin for this Mob\n    Position is formatted like: world/x/y/z/rotation\nADD : -l <Limit> <~|BuyPrice> <~|SellPrice> [Currency] (Hold ItemStack)\n    - as Price will disable that option, one required\n    The l flag can limit the maximum stock of this item for player-shops\nREMOVE : <Index>\n    Count through items in shop inventory, start with 1\nDELETE : (No arguments)\nLINK : (No arguments)\n    Afterwards you need to open a chest to link a player-shop to it. Use again to cancel.IDENTIFY / ID : (No arguments)\nSAVE : (No arguments)\nRELOAD : (No arguments)
+cmd.description.long:Always look at the shop you want to edit! Options for:\nCREATE : --at <Position> <EntityType> --skin <Skin> [Name]\n    Skin is supposed to be a valid skin for this Mob\n    Position is formatted like: world/x/y/z/rotation\nADD : -l <Limit> <-|BuyPrice> <-|SellPrice> [Currency] (Hold ItemStack)\n    - as Price will disable that option, one required\n    The l flag can limit the maximum stock of this item for player-shops\nREMOVE : <Index>\n    Count through items in shop inventory, start with 1\nDELETE : (No arguments)\nLINK : (No arguments)\n    Afterwards you need to open a chest to link a player-shop to it. Use again to cancel.IDENTIFY / ID : (No arguments)\nSAVE : (No arguments)\nRELOAD : (No arguments)
 cmd.playeronly:This command can only be run by players
 cmd.common.notarget:There is no shop where you're looking!
 cmd.create.invalidtype:Invalid EntityType (use tab to auto-complete)
@@ -13,8 +13,8 @@ cmd.create.playershop.success:Created a new player shop called %name%
 cmd.create.playershop.limit:You may not create more than %limit% shops
 cmd.create.success:Created a new admin shop called %name%
 cmd.add.limit.adminshop:You can't add stock limits to an admin-shop 
-cmd.add.buyprice:The BuyPrice was not '~' or a decimal
-cmd.add.sellprice:The SellPrice was not '~' or a decimal
+cmd.add.buyprice:The BuyPrice was not '-' or a decimal
+cmd.add.sellprice:The SellPrice was not '-' or a decimal
 cmd.add.noprice:You need to specify at lease one of BuyPrice and SellPrice
 cmd.add.negativeprice:Prices may not be negative
 cmd.add.itemisair:Please hold the exact item you want to sell in your hand
@@ -33,6 +33,12 @@ cmd.link.success:This chest is now linked to the shop. The old container is no l
 cmd.deleted:Shop deleted!
 cmd.saved:Shops saved!
 cmd.reloaded:Reload complete!
+shop.title:[vShop] %name%
+shop.item.buy.one:Buy for:§f %currency%%price%
+shop.item.buy.stack:Buy for:§f %currency%%price% (á %currency%%itemprice%)
+shop.item.sell.one:Sell for:§f %currency%%price%
+shop.item.sell.stack:Sell for:§f %currency%%price% (á %currency%%itemprice%)
+shop.item.stock:In Stock: %amount%/%max%
 shop.buy.message:%balance% (%payed%): Buying %amount%x %item%
 shop.sell.message:%balance% (%payed%): Selling %amount%x %item%
 shop.customer.lowbalance:You do not have enough money

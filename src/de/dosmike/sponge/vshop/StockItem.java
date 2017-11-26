@@ -67,38 +67,74 @@ public class StockItem {
 	}
 	
 	/** create a Item with custom description adding the sell-price for a stack with the present size */
-	public ItemStack getSellDisplayItem(int patchedSlot) {
+	public ItemStack getSellDisplayItem(int patchedSlot, UUID player) {
 		if (sellprice == null) return ItemStack.of(FieldResolver.emptyHandItem(), 1); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
 		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());
-		desc.add(Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", sellprice), cs, (item.getQuantity()>1? 
-				Text.of(String.format(" (á %.2f", sellprice/(double)item.getQuantity()), cs, ')')
-				:"") ));
+		desc.add(Text.of(TextColors.GREEN, (item.getQuantity()>1
+				? VillagerShops.getTranslator().localText("shop.item.sell.stack")
+					.replace("%price%", String.format("%.2f", buyprice))
+					.replace("%itemprice%", Text.of(String.format("%.2f", buyprice/(double)item.getQuantity())))
+					.replace("%currency%", cs)
+					.resolve(player).orElse(
+						Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs, String.format(" (á %.2f", buyprice/(double)item.getQuantity()), cs, ')')
+						)
+				: VillagerShops.getTranslator().localText("shop.item.sell.one")
+				.replace("%price%", String.format("%.2f", buyprice))
+				.replace("%currency%", cs)
+				.resolve(player).orElse(
+					Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs)
+					)
+				)));
 		if (maxStock>0) 
-			desc.add(Text.of(TextColors.GRAY, String.format("In Stock: %d/%d", getStocked(), maxStock))); 
+			desc.add(Text.of(TextColors.GRAY, 
+					VillagerShops.getTranslator().localText("shop.item.stock")
+						.replace("%amount%", getStocked())
+						.replace("%max%", maxStock)
+						.resolve(player).orElse(
+							Text.of(String.format("In Stock: %d/%d", getStocked(), maxStock))
+							))); 
 		
 		dis.offer(Keys.ITEM_LORE, desc);
 		
 		return ItemStack.builder().fromContainer(
-                dis.toContainer().set(DataQuery.of("UnsafeData", "slotnum"), patchedSlot) ).build();
+                dis.toContainer().set(DataQuery.of("UnsafeData", "vShopSlotNum"), patchedSlot) ).build();
 	}
 	/** create a Item with custom description adding the buy-price for a stack with the present size */
-	public ItemStack getBuyDisplayItem(int patchedSlot) {
+	public ItemStack getBuyDisplayItem(int patchedSlot, UUID player) {
 		if (buyprice == null) return ItemStack.of(FieldResolver.emptyHandItem(), 1); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
 		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());
-		desc.add(Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs, (item.getQuantity()>1? 
-				Text.of(String.format(" (á %.2f", buyprice/(double)item.getQuantity()), cs, ')')
-				:"") ));
+		desc.add(Text.of(TextColors.RED, (item.getQuantity()>1
+				? VillagerShops.getTranslator().localText("shop.item.buy.stack")
+					.replace("%price%", String.format("%.2f", buyprice))
+					.replace("%itemprice%", Text.of(String.format("%.2f", buyprice/(double)item.getQuantity())))
+					.replace("%currency%", cs)
+					.resolve(player).orElse(
+						Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs, String.format(" (á %.2f", buyprice/(double)item.getQuantity()), cs, ')')
+						)
+				: VillagerShops.getTranslator().localText("shop.item.buy.one")
+				.replace("%price%", String.format("%.2f", buyprice))
+				.replace("%currency%", cs)
+				.resolve(player).orElse(
+					Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs)
+					)
+				)));
 		if (maxStock>0) 
-			desc.add(Text.of(TextColors.GRAY, String.format("In Stock: %d/%d", getStocked(), maxStock)));
+			desc.add(Text.of(TextColors.GRAY, 
+				VillagerShops.getTranslator().localText("shop.item.stock")
+					.replace("%amount%", getStocked())
+					.replace("%max%", maxStock)
+					.resolve(player).orElse(
+						Text.of(String.format("In Stock: %d/%d", getStocked(), maxStock))
+						)));
 		
 		dis.offer(Keys.ITEM_LORE, desc);
 
 		return ItemStack.builder().fromContainer(
-                dis.toContainer().set(DataQuery.of("UnsafeData", "slotnum"), patchedSlot) ).build();
+                dis.toContainer().set(DataQuery.of("UnsafeData", "vShopSlotNum"), patchedSlot) ).build();
 	}
 	
 	/** Try to add the represented itemstack to the target inventory without doing any economy changes.

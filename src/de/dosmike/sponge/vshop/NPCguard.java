@@ -91,12 +91,17 @@ public class NPCguard {
 	public InvPrep getPreparator() {
 		return preparator;
 	}
-	public Inventory getInventory() {
+	/** @param forPlayer translate items descriptions for this player if applicable */
+	public Inventory getInventory(UUID forPlayer) {
 		ShopInventoryListener sil = new ShopInventoryListener(this);
 		Inventory.Builder builder = Inventory.builder().of(InventoryArchetypes.CHEST)
-				.property("inventorytitle", new InventoryTitle(Text.of(TextColors.DARK_AQUA, "[vShop] ", TextColors.RESET, displayName==null?Text.of():displayName)))
+				.property("inventorytitle", new InventoryTitle(Text.of(TextColors.DARK_AQUA,
+						VillagerShops.getTranslator().localText("shop.title")
+							.replace("%name%", Text.of(TextColors.RESET, displayName==null?Text.of():displayName))
+							.resolve(forPlayer).orElse(Text.of("[vShop] ", displayName==null?Text.of():displayName)))
+					))
 				.listener(ClickInventoryEvent.class, sil);
-		Inventory inv = preparator.getInventory(builder);
+		Inventory inv = preparator.getInventory(builder, forPlayer);
 		return inv;
 	}
 	

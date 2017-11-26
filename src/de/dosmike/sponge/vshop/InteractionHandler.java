@@ -33,7 +33,7 @@ public class InteractionHandler {
 //			if (side == Button.right) {
 				if (npc.get().getPreparator().size()>0) {
 					npc.get().updateStock();
-					source.openInventory(npc.get().getInventory());
+					source.openInventory(npc.get().getInventory(source.getUniqueId()));
 					VillagerShops.openShops.put(source.getUniqueId(), npc.get().getIdentifier());
 				}
 //			}
@@ -71,7 +71,7 @@ public class InteractionHandler {
 				if (stockinv.isPresent()) {
 					//is the first child (not clean coding, but working, so whatever)
 					shop.get().updateStock();
-					shop.get().getPreparator().updateInventory(stockinv.get().iterator().next());
+					shop.get().getPreparator().updateInventory(stockinv.get().iterator().next(), source.getUniqueId());
 				}
 			},21,TimeUnit.MILLISECONDS);
 		}

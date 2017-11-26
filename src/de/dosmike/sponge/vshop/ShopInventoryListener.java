@@ -38,7 +38,7 @@ public class ShopInventoryListener implements Consumer<ClickInventoryEvent>{
 		
 		//items we added hold a slotum value, so we can simply check for that and retrieve the correct slot
 		//props to codeHusky for figuring the slotnum workaround...
-		Optional<Object> unsafeslot = event.getCursorTransaction().getDefault().toContainer().get(DataQuery.of("UnsafeData", "slotnum"));
+		Optional<Object> unsafeslot = event.getCursorTransaction().getDefault().toContainer().get(DataQuery.of("UnsafeData", "vShopSlotNum"));
 		if (unsafeslot.isPresent()) {
 			slotIndex = (int)unsafeslot.get();
 		}

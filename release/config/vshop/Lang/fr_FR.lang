@@ -33,6 +33,12 @@ cmd.link.success:Ce coffre est maintenant reliée au shop. L'ancien conteneur n'
 cmd.deleted:Le shop a été supprimé!
 cmd.saved:Les shops ont été enregistrés
 cmd.reloaded:Configuration rechargée!
+shop.title:[vShop] %name%
+shop.item.buy.one:Acheter pour:§f %price%%currency%
+shop.item.buy.stack:one:Acheter pour:§f %price%%currency% (%itemprice%%currency% pièce)
+shop.item.sell.one:Vendre pour:§f %price%%currency%
+shop.item.sell.stack:Vendre pour:§f %price%%currency% (%itemprice%%currency% pièce)
+shop.item.stock:En stock: %amount%/%max%
 shop.buy.message:%balance% (%payed%): Achat de %amount% x %item%
 shop.sell.message:%balance% (%payed%): vente de %amount% x %item%
 shop.customer.lowbalance:Vous n'avez pas assez d'argent

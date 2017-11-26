@@ -216,7 +216,6 @@ public class EventListeners {
 
 	@Listener
 	public void onBlockBreak(ChangeBlockEvent.Break event) {
-//		if (event instanceof ChangeBlockEvent.Break) {
 		event.getTransactions().forEach(trans -> {
 			if (trans.getOriginal().getState().getType().equals(BlockTypes.CHEST)) {
 				Optional<Location<World>> w = trans.getOriginal().getLocation(); 
@@ -232,7 +231,6 @@ public class EventListeners {
 				}
 			}
 		});
-//		}
 	}
 	
 	
@@ -240,4 +238,13 @@ public class EventListeners {
 	public void onPlayerDisconnect(ClientConnectionEvent.Disconnect event) {
 		ChestLinkManager.cancel(event.getTargetEntity());
 	}
+	
+	
+	/*@Listener //uncomment when ready
+	public void onAiTargetEntity(SetAttackTargetEvent event) {
+		event.getTarget().ifPresent(target->{
+			if (VillagerShops.isNPCused(target)) 
+				event.setCancelled(true); //would probably be better to set a different target
+		});
+	}*/
 }
