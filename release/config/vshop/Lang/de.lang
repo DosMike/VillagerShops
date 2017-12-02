@@ -1,6 +1,6 @@
 permission.missing:Dir fehlen die Rechte, um diesen Befehl zu verwenden!
 cmd.description.short:/vshop <befehl> <optionen>
-cmd.description.long:Schaue immer auf den shop, den du bearbeiten willst! Optionen für:\nCREATE : --at <Position> <EntityType> --skin <Skin> [Name]\n    Skin sollte ein gültiger Skin für diesen Mob sein\n    Position hat folgenden Aufbau: Welt/x/y/z/Drehung\nADD : -l <Limit> <-|KaufPreis> <-|VerkaufsPreis> [Währung] (Halte den ItemStack)\n    - als Preis deaktiviert diese Option, eine benötigt\n    Die l-Flag kann den maximalen Vorrat für Player-Shops begrenzen\nREMOVE : <Index>\n    Zähle die items im Shop-Inventar, beginnend mit 1\nDELETE : (Keine Optionen)\nLINK : (Keine Optionen)\n    Danach muss du eine Kiste öffnen, um diese mit dem Player-Shop zu verlinken.\n    Nochmal verwenden um den Vorgang abzubrechen.\nIDENTIFY / ID : (Keine Optionen)\nSAVE : (Keine Optionen)\nRELOAD : (Keine Optionen)
+cmd.description.long:Schaue immer auf den shop, den du bearbeiten willst! Optionen für:\nCREATE : --at <Position> <EntityType> --skin <Skin> [Name]\n    Skin sollte ein gültiger Skin für diesen Mob sein\n    Position hat folgenden Aufbau: Welt/x/y/z/Drehung\nADD : -l <Limit> <~|KaufPreis> <~|VerkaufsPreis> [Währung] (Halte den ItemStack)\n    - als Preis deaktiviert diese Option, eine benötigt\n    Die l-Flag kann den maximalen Vorrat für Player-Shops begrenzen\nREMOVE : <Index>\n    Zähle die items im Shop-Inventar, beginnend mit 1\nDELETE : (Keine Optionen)\nLINK : (Keine Optionen)\n    Danach muss du eine Kiste öffnen, um diese mit dem Player-Shop zu verlinken.\n    Nochmal verwenden um den Vorgang abzubrechen.\nIDENTIFY / ID : (Keine Optionen)\nSAVE : (Keine Optionen)\nRELOAD : (Keine Optionen)
 cmd.playeronly:Diesen Befehl können nur Spieler ausführen
 cmd.common.notarget:Du siehst gerade keinen Shop an!
 cmd.create.invalidtype:Ungültiger EntityType (verwende Tab zur Auto-Vervollständigung)
@@ -13,8 +13,8 @@ cmd.create.playershop.success:Ein neuer Player-Shop namens %name% wurde erstellt
 cmd.create.playershop.limit:Du darfst nicht mehr als %limit% Shops erstellen
 cmd.create.success:Ein neuer Admin-Shop namens %name% wurde erstellt
 cmd.add.limit.adminshop:Du kannst den Vorrat in einem Admin-Shop nicht begrenzen
-cmd.add.buyprice:Der KaufPreis war nicht '-' oder eine Zahl
-cmd.add.sellprice:Der VerkaufsPreis war nicht '-' oder eine Zahl
+cmd.add.buyprice:Der KaufPreis war nicht '~' oder eine Zahl
+cmd.add.sellprice:Der VerkaufsPreis war nicht '~' oder eine Zahl
 cmd.add.noprice:Du musst mindestens einen Betrag für KaufsPreis oder VerkaufsPreis angeben!
 cmd.add.negativeprice:Preise können nicht negativ sein
 cmd.add.itemisair:Bite halte das Item, das du hinzufügen möchtest in deiner Hand
