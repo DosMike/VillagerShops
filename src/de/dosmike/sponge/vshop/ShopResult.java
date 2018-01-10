@@ -16,8 +16,11 @@ public class ShopResult {
 		return msg;
 	}
 	
+	public static final ShopResult GENERIC_FAILURE = new ShopResult(0, "shop.generic.transactionfailure");
 	public static final ShopResult CUSTOMER_LOW_BALANCE = new ShopResult(0, "shop.customer.lowbalance");
 	public static final ShopResult SHOPOWNER_LOW_BALANCE = new ShopResult(0, "shop.shopowner.lowbalance");
+	public static final ShopResult CUSTOMER_HIGH_BALANCE = new ShopResult(0, "shop.customer.highbalance");
+	public static final ShopResult SHOPOWNER_HIGH_BALANCE = new ShopResult(0, "shop.customer.highbalance");
 	public static final ShopResult CUSTOMER_MISSING_ITEMS = new ShopResult(0, "shop.customer.missingitems");
 	public static final ShopResult SHOPOWNER_MISSING_ITEMS = new ShopResult(0, "shop.shopowner.missingitems");
 	public static final ShopResult CUSTOMER_INVENTORY_FULL = new ShopResult(0, "shop.customer.inventoryfull");

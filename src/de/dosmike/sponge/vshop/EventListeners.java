@@ -106,64 +106,6 @@ public class EventListeners {
 			}
 		}
 
-	//@Listener //DISABLED, the inventory should have it's own listener
-	/*public void onInventoryClick(ClickInventoryEvent event) {
-		Optional<Player> clicker = event.getCause().first(Player.class);
-		if (!clicker.isPresent()) return;
-		if (!VillagerShops.openShops.containsKey(clicker.get().getUniqueId())) return;
-		
-		if (VillagerShops.actionUnstack.contains(clicker.get().getUniqueId())) {
-			event.getTransactions().forEach(action -> { action.setValid(false); });
-			event.getCursorTransaction().setCustom(ItemStackSnapshot.NONE);
-			event.getCursorTransaction().setValid(false);
-			event.setCancelled(true);
-			return;
-		}
-		
-		int slotIndex=-1;
-		boolean inTargetInventory=false;
-		
-		//small algorithm to determ in what inventory the event occurred
-		//thanks for this great API so far ;D
-		
-		NPCguard g = VillagerShops.getNPCfromShopUUID(VillagerShops.openShops.get(clicker.get().getUniqueId())).get();
-		
-		//compare the cursor held or actioned item with the item it should
-		//be at in the InvPrep, if the item matches for the action use that
-		ItemStackSnapshot isnap = event.getCursorTransaction().getFinal();
-		for (SlotTransaction action : event.getTransactions()) {
-			Slot thisSlot = action.getSlot();
-			
-			if (FieldResolver.itemStackEmpty(isnap)) isnap = action.getOriginal();
-			if (FieldResolver.itemStackEmpty(isnap) || isnap.getType().equals(FieldResolver.emptyHandItem())) continue; //can't buy/sell air mofo 
-			for (SlotIndex si : thisSlot.getProperties(SlotIndex.class)) {
-				InvPrep p = g.getPreparator();
-				slotIndex = si.getValue();
-				int i = InvPrep.slotToIndex(slotIndex);
-				int a = InvPrep.isSlotBuySell(slotIndex);
-				if (a > 1 || i >= p.items.size()) continue;
-				StockItem s = p.getItem(i);
-				if ((a==0 && s.getBuyDisplayItem().createSnapshot().equals(isnap)) ||
-						s.getSellDisplayItem().createSnapshot().equals(isnap)) inTargetInventory=true;
-			}
-			if (inTargetInventory) break;
-		}
-		
-		//clear cursor
-		event.getCursorTransaction().setValid(false);
-		event.getCursorTransaction().setCustom(ItemStackSnapshot.NONE);
-		event.getTransactions().forEach(action -> { action.setValid(false); });
-		
-		if (inTargetInventory) { 
-			InteractionHandler.clickInventory(clicker.get(), slotIndex);
-			Sponge.getScheduler().createSyncExecutor(VillagerShops.getInstance())
-				.schedule(() -> {
-					VillagerShops.actionUnstack.remove(clicker.get().getUniqueId());
-				}, 50, TimeUnit.MILLISECONDS);
-		}
-		event.setCancelled(true);
-	}*/
-
 	@Listener
 	public void onDropItem(DropItemEvent event) {
 		Optional<Player> clicker = event.getCause().first(Player.class);

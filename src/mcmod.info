@@ -5,6 +5,6 @@
   "version": "1.5.1",
   "url": "https://github.com/DosMike/VillagerShops",
   "authorList": [ "DosMike" ],
-  "requiredMods": [ "langswitch" ],
-  "dependencies": [ "langswitch" ]
+  "requiredMods": [ "langswitch", "spongeapi" ],
+  "dependencies": [ "langswitch", "spongeapi" ]
 }]
