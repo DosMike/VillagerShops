@@ -9,6 +9,7 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.Container;
+import org.spongepowered.api.item.inventory.type.OrderedInventory;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.text.Text;
@@ -68,7 +69,7 @@ public class InteractionHandler {
 				if (stockinv.isPresent()) {
 					//is the first child (not clean coding, but working, so whatever)
 					shop.get().updateStock();
-					shop.get().getPreparator().updateInventory(stockinv.get().iterator().next(), source.getUniqueId());
+					shop.get().getPreparator().updateInventory(stockinv.get().query(OrderedInventory.class).first(), source.getUniqueId());
 				}
 			},21,TimeUnit.MILLISECONDS);
 		}

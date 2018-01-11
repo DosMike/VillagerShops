@@ -436,7 +436,7 @@ static void register() {
 				-Math.sin(rot.getX()), 
 				Math.cos(rot.getX())*Math.cos(rot.getY())); //should now be a unit vector (len 1)
 		
-		VillagerShops.l("%s\n%s", source.getHeadRotation().toString(), dir.toString());
+//		VillagerShops.l("%s\n%s", source.getHeadRotation().toString(), dir.toString());
 		
 		//Scanning for a target
 		Double dist = 0.0;

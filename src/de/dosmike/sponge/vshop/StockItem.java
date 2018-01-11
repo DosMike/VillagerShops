@@ -27,7 +27,7 @@ public class StockItem {
 	private ItemStack item;
 	
 	private Currency currency; //currency to use
-	private Double sellprice=null, buyprice=null; //per single item in stack => stack price is item.quantity * price
+	private Double sellprice=null, buyprice=null; //This IS the STACK price
 	
 	//caution: maxStock does not actually hold information about the size of the stock container!
 	private int maxStock=0, stocked=0;
@@ -179,7 +179,7 @@ public class StockItem {
 		
 		Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
 		int amount = Math.min(invSpace(playerInv), item.getQuantity()); //buy at max the configured amount
-		if (amount <= 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
+		if (amount <= 0) return ShopResult.CUSTOMER_INVENTORY_FULL;
 		
 		Optional<Inventory> stock = shop.getStockInventory();
 		if (stock.isPresent()) {
@@ -193,12 +193,12 @@ public class StockItem {
 			if (!account2.isPresent()) return ShopResult.GENERIC_FAILURE;
 			
 			//account transaction
-			BigDecimal price = new BigDecimal(amount * buyprice);
+			BigDecimal price = new BigDecimal(amount * buyprice/item.getQuantity());
 			TransactionResult res = acc.transfer(account2.get(), currency, price, Sponge.getCauseStackManager().getCurrentCause());
 			
-			if (res.getType().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.CUSTOMER_LOW_BALANCE;
-			else if (res.getType().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.SHOPOWNER_HIGH_BALANCE;
-			else if (!res.getType().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.CUSTOMER_LOW_BALANCE;
+			else if (res.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.SHOPOWNER_HIGH_BALANCE;
+			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
 			
 			//item transaction
 			ItemStack stack = getItem();
@@ -209,11 +209,11 @@ public class StockItem {
 			return ShopResult.OK(amount);
 		} else {
 			//account transaction
-			BigDecimal price = new BigDecimal(amount * buyprice);
+			BigDecimal price = new BigDecimal(amount * buyprice/item.getQuantity());
 			TransactionResult res = acc.withdraw(currency, price, Sponge.getCauseStackManager().getCurrentCause());
 			
-			if (res.getType().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.CUSTOMER_LOW_BALANCE;
-			else if (!res.getType().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.CUSTOMER_LOW_BALANCE;
+			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
 			
 			//item transaction
 			ItemStack stack = getItem();
@@ -236,7 +236,7 @@ public class StockItem {
 		if (stock.isPresent()) {
 			amount = Math.min(amount, invSpace(stock.get())); //reduce to what the stock can offer
 			if (maxStock > 0) amount = Math.min(amount, maxStock-stocked); //if we have a stock we may not exceed the stock limit (empty space for selling) - could be negative
-			if (amount <= 0) return ShopResult.SHOPOWNER_MISSING_ITEMS;
+			if (amount <= 0) return ShopResult.SHOPOWNER_INVENTORY_FULL;
 			
 			//shop owner account
 			Optional<UUID> owner = shop.getShopOwner();
@@ -245,12 +245,12 @@ public class StockItem {
 			if (!account2.isPresent()) return ShopResult.GENERIC_FAILURE;
 			
 			//account transaction
-			BigDecimal price = new BigDecimal(amount * sellprice);
+			BigDecimal price = new BigDecimal(amount * sellprice/item.getQuantity());
 			TransactionResult res = account2.get().transfer(acc, currency, price, Sponge.getCauseStackManager().getCurrentCause());
 			
-			if (res.getType().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.SHOPOWNER_LOW_BALANCE;
-			else if (res.getType().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.CUSTOMER_HIGH_BALANCE;
-			else if (!res.getType().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.SHOPOWNER_LOW_BALANCE;
+			else if (res.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.CUSTOMER_HIGH_BALANCE;
+			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
 			
 			//item transaction
 			ItemStack stack = getItem();
@@ -261,11 +261,11 @@ public class StockItem {
 			return ShopResult.OK(amount);
 		} else {
 			//account transaction
-			BigDecimal price = new BigDecimal(amount * sellprice);
+			BigDecimal price = new BigDecimal(amount * sellprice/item.getQuantity());
 			TransactionResult res = acc.deposit(currency, price, Sponge.getCauseStackManager().getCurrentCause());
 			
-			if (res.getType().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.CUSTOMER_HIGH_BALANCE;
-			else if (!res.getType().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.CUSTOMER_HIGH_BALANCE;
+			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
 			
 			//item transaction
 			getFrom(playerInv, amount);

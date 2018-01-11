@@ -71,11 +71,13 @@ public class InvPrep {
 	/** dealing with open inventories this will target a OrderedInventory 
 	 * (more precisely a OrderedInventoryAdapter at runtime) */
 	public void updateInventory(Inventory view, UUID player) {
+		
 		if (!(view instanceof OrderedInventory)) {
-			VillagerShops.w("Can't update view");
+			VillagerShops.w("Can't update view, Inventory is not ordered?");
 			return;
 		}
 		OrderedInventory oi = (OrderedInventory)view;
+		
 		int row=0, col=0;
 		for (int i = 0; i < items.size(); i++) {
 			
