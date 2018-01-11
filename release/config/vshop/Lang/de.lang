@@ -41,6 +41,9 @@ shop.item.sell.stack:Verkaufen:§f %price%%currency% (á %itemprice%%currency%)
 shop.item.stock:Auf Lager: %amount%/%max%
 shop.buy.message:%balance% (%payed%): %amount%x %item% gekauft
 shop.sell.message:%balance% (%payed%): %amount%x %item% verkauft
+shop.generic.transactionfailure:Fehler bei der Transaktion! - Bitte dem Enwickler melden
+shop.customer.highbalance:Es ist klein platz mehr auf deinem Bankkonto
+shop.shopowner.highbalance:Das Bankkonto des Shop-Besitzers ist voll 
 shop.customer.lowbalance:Du hast nicht genug Geld
 shop.shopowner.lowbalance:Der Shop-Besitzer hat nicht mehr genug Geld
 shop.customer.missingitems:Du hast nicht genügend Items

@@ -41,6 +41,9 @@ shop.item.sell.stack:Vendre pour:§f %price%%currency% (%itemprice%%currency% pi
 shop.item.stock:En stock: %amount%/%max%
 shop.buy.message:%balance% (%payed%): Achat de %amount% x %item%
 shop.sell.message:%balance% (%payed%): vente de %amount% x %item%
+shop.generic.transactionfailure:Erreur pendant la transaction - Veuillez contacter le développeur
+shop.customer.highbalance:Le solde maximum du compte est atteint
+shop.shopowner.highbalance:Le solde maximum du compte du gérant est atteint
 shop.customer.lowbalance:Vous n'avez pas assez d'argent
 shop.shopowner.lowbalance:Le gérant du shop n'a plus assez d'argent
 shop.customer.missingitems:Vous n'avez pas assez d'objets
