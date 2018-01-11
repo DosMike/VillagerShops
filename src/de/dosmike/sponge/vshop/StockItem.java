@@ -177,7 +177,7 @@ public class StockItem {
 		if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
 		Account acc = account.get();
 		
-		Inventory playerInv = player.getInventory().query(MainPlayerInventory.class, Hotbar.class);
+		Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
 		int amount = Math.min(invSpace(playerInv), item.getQuantity()); //buy at max the configured amount
 		if (amount <= 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
 		
@@ -228,7 +228,7 @@ public class StockItem {
 		if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
 		Account acc = account.get();
 		
-		Inventory playerInv = player.getInventory().query(MainPlayerInventory.class, Hotbar.class);
+		Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
 		int amount = Math.min(invSupply(playerInv), item.getQuantity()); //buy at max the configured amount
 		if (amount <= 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
 		
@@ -281,12 +281,14 @@ public class StockItem {
 	 */
 	private int invSpace(Inventory i) {
 		ItemStack detector = getItem();
-		int space = 0;
-		for (Inventory s : i.slots()) {
+		int space = 0, c;
+		Inventory result = i.queryAny(detector);
+		for (Inventory s : result.slots()) {
 			Slot slot = (Slot) s;
-			if (slot.getStackSize()==-1) space += detector.getMaxStackQuantity();
-			else if (slot.containsAny(detector)) space += slot.getMaxStackSize()-slot.getStackSize();
+			c = slot.getStackSize();
+			if (c > 0) space += (detector.getMaxStackQuantity() - c);
 		}
+		space += (i.capacity()-i.size())*detector.getMaxStackQuantity();
 		return space;
 	}
 	/** figure out how much of item the inventory can supply
@@ -294,11 +296,7 @@ public class StockItem {
 	private int invSupply(Inventory i) {
 		ItemStack detector = getItem();
 		int available = 0;
-		Inventory collection = i.queryAny(detector);
-		for (Inventory s : collection) {
-			Slot slot = (Slot) s;
-			available += slot.getStackSize();
-		}
+		available = i.queryAny(detector).totalItems();
 		return available;
 	}
 }
