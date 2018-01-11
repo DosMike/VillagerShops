@@ -4,21 +4,17 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.spongepowered.api.CatalogType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.Career;
-import org.spongepowered.api.data.type.Careers;
 import org.spongepowered.api.data.type.HorseColor;
-import org.spongepowered.api.data.type.HorseColors;
 import org.spongepowered.api.data.type.LlamaVariant;
-import org.spongepowered.api.data.type.LlamaVariants;
 import org.spongepowered.api.data.type.OcelotType;
-import org.spongepowered.api.data.type.OcelotTypes;
 import org.spongepowered.api.data.type.ParrotVariant;
-import org.spongepowered.api.data.type.ParrotVariants;
+import org.spongepowered.api.data.type.Profession;
 import org.spongepowered.api.data.type.RabbitType;
-import org.spongepowered.api.data.type.RabbitTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
@@ -42,7 +38,7 @@ public class NPCguard {
 	private InvPrep preparator;
 	private Entity le = null;
 	private EntityType npcType = EntityTypes.VILLAGER;
-	private String variantName; private Object variant;
+	private String variantName; private CatalogType variant;
 	private Text displayName;
 	private UUID ident; //for configs;
 	UUID playershopholder = null;
@@ -102,6 +98,7 @@ public class NPCguard {
 					))
 				.listener(ClickInventoryEvent.class, sil);
 		Inventory inv = preparator.getInventory(builder, forPlayer);
+		
 		return inv;
 	}
 	
@@ -135,17 +132,21 @@ public class NPCguard {
 			if (fieldName.equalsIgnoreCase("none")) {
 				variant = null;
 			}if (npcType.equals(EntityTypes.HORSE)) {
-				variant = FieldResolver.getFinalStaticAuto(HorseColors.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(HorseColor.class, fieldName);
 			} else if (npcType.equals(EntityTypes.OCELOT)) {
-				variant = FieldResolver.getFinalStaticAuto(OcelotTypes.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(OcelotType.class, fieldName);
 			} else if (npcType.equals(EntityTypes.VILLAGER)) {
-				variant = FieldResolver.getFinalStaticAuto(Careers.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(Profession.class, fieldName);
+				if (variant == null) { //maybe a career was specified
+					variant = FieldResolver.getFinalStaticAuto(Career.class, fieldName);
+					if (variant != null) variant = ((Career)variant).getProfession(); ///professions give skins, so we won't bother the career any further 
+				}
 			} else if (npcType.equals(EntityTypes.LLAMA)) {
-				variant = FieldResolver.getFinalStaticAuto(LlamaVariants.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(LlamaVariant.class, fieldName);
 			} else if (npcType.equals(EntityTypes.RABBIT)) {
-				variant = FieldResolver.getFinalStaticAuto(RabbitTypes.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(RabbitType.class, fieldName);
 			} else if (npcType.equals(EntityTypes.PARROT)) {
-				variant = FieldResolver.getFinalStaticAuto(ParrotVariants.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(ParrotVariant.class, fieldName);
 			} else {
 				variantName = "NONE";
 				variant = null;
@@ -154,7 +155,10 @@ public class NPCguard {
 			variantName = "NONE";
 			variant = null;
 		}
-		variantName = fieldName;
+		if (variant != null)
+			variantName = variant.getId();
+		else 
+			variantName = fieldName; //maybe valid later?
 	}
 	public Object getVariant() {
 		return variant;
@@ -215,7 +219,7 @@ public class NPCguard {
 				Collection<Entity> ents = chunk.get().getEntities();
 				for (Entity ent : ents) {
 					if (( ent.isLoaded() && ent.getType().equals(npcType) && (ent.getUniqueId().equals(lastKnown) || 
-						( ent.getLocation().getExtent().equals(loc.getExtent()) && ent.getLocation().getPosition().distanceSquared(loc.getPosition())<1.5) ) ) &&
+						( ent.getLocation().getExtent().equals(loc.getExtent()) && ent.getLocation().getPosition().distanceSquared(loc.getPosition())<1) ) ) && //can't check for bigger distances, as it will yank npcs from other shops with the same name
 						( !VillagerShops.isNPCused(ent) &&
 						  displayName.equals(ent.get(Keys.DISPLAY_NAME).orElse(null))))
 					{	//check if npc already belongs to a different shop
@@ -239,7 +243,7 @@ public class NPCguard {
 								} else if (npcType.equals(EntityTypes.OCELOT)) {
 									shop.tryOffer(Keys.OCELOT_TYPE, (OcelotType)variant);
 								} else if (npcType.equals(EntityTypes.VILLAGER)) {
-									shop.tryOffer(Keys.CAREER, (Career)variant);
+									shop.tryOffer(Keys.CAREER, ((Profession)variant).getCareers().iterator().next()); //Since I think I have to offer a career, that would define trades, but we don't really care take the first available career for the profession
 								} else if (npcType.equals(EntityTypes.LLAMA)) {
 									shop.tryOffer(Keys.LLAMA_VARIANT, (LlamaVariant)variant);
 								} else if (npcType.equals(EntityTypes.RABBIT)) {

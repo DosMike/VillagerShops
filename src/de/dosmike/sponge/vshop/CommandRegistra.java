@@ -414,21 +414,6 @@ static void register() {
 					return CommandResult.success();
 				}
 			}).build());
-	/*children.put(Arrays.asList("test"), CommandSpec.builder()
-			.arguments(
-					GenericArguments.none()
-			) .executor(new CommandExecutor() {
-				@Override
-				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
-					VillagerShops vshop = VillagerShops.getInstance();
-					for (Player player : Sponge.getServer().getOnlinePlayers()) {
-						//player.closeInventory(Cause.builder().named("PLUGIN", VillagerShops.getInstance()).build());
-						player.openInventory(player.getInventory(), Cause.builder().named("PLUGIN", VillagerShops.getInstance()).build());
-					}
-					src.sendMessage(Text.of(TextColors.GREEN, "Done!"));
-					return CommandResult.success();
-				}
-			}).build());*/
 
 
 	Sponge.getCommandManager().register(VillagerShops.getInstance(), CommandSpec.builder()
@@ -446,7 +431,12 @@ static void register() {
 		Collection<Entity> ents = source.getNearbyEntities(maxRange); // get all entities in interaction range
 		//we need a facing vector for the source
 		Vector3d rot = source.getHeadRotation().mul(Math.PI/180.0); //to radians
-		Vector3d dir = new Vector3d(-Math.cos(rot.getX())*Math.sin(rot.getY()), -Math.sin(rot.getX()), Math.cos(rot.getX())*Math.cos(rot.getY())); //should now be a unit vector (len 1)
+		Vector3d dir = new Vector3d(
+				-Math.cos(rot.getX())*Math.sin(rot.getY()), 
+				-Math.sin(rot.getX()), 
+				Math.cos(rot.getX())*Math.cos(rot.getY())); //should now be a unit vector (len 1)
+		
+//		VillagerShops.l("%s\n%s", source.getHeadRotation().toString(), dir.toString());
 		
 		//Scanning for a target
 		Double dist = 0.0;

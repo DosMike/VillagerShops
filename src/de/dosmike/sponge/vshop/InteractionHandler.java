@@ -1,6 +1,5 @@
 package de.dosmike.sponge.vshop;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -9,9 +8,8 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.cause.Cause;
-import org.spongepowered.api.event.cause.EventContext;
 import org.spongepowered.api.item.inventory.Container;
+import org.spongepowered.api.item.inventory.type.OrderedInventory;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.text.Text;
@@ -71,7 +69,7 @@ public class InteractionHandler {
 				if (stockinv.isPresent()) {
 					//is the first child (not clean coding, but working, so whatever)
 					shop.get().updateStock();
-					shop.get().getPreparator().updateInventory(stockinv.get().iterator().next(), source.getUniqueId());
+					shop.get().getPreparator().updateInventory(stockinv.get().query(OrderedInventory.class).first(), source.getUniqueId());
 				}
 			},21,TimeUnit.MILLISECONDS);
 		}
@@ -100,17 +98,6 @@ public class InteractionHandler {
 			result = item.buy(player, shop);
 			if (result.getTradedItems()>0) {
 				finalPrice = item.getBuyPrice()*(double)result.getTradedItems()/(double)item.getItem().getQuantity();
-				acc.get().withdraw(
-						currency, 
-						BigDecimal.valueOf(finalPrice), 
-						Cause.of(EventContext.empty(), VillagerShops.getInstance().getContainer()) );
-						//Cause.builder().named("PURCHASED ITEMS", VillagerShops.getInstance()).build());
-				if (acc2.isPresent()) acc2.get().deposit(
-						currency, 
-						BigDecimal.valueOf(finalPrice), 
-						Cause.of(EventContext.empty(), VillagerShops.getInstance().getContainer()) );
-						//Cause.builder().named("PLAYER SHOP ITEMS SOLD", VillagerShops.getInstance()).build());
-				
 				player.sendMessage(VillagerShops.getTranslator().localText("shop.buy.message")
 						.replace("%balance%", Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET))
 						.replace("%payed%", Text.of(TextColors.RED, "-", String.format("%.2f", finalPrice), TextColors.RESET)) 
@@ -125,17 +112,6 @@ public class InteractionHandler {
 			result = item.sell(player, shop);
 			if (result.getTradedItems()>0) {
 				finalPrice = item.getSellPrice()*(double)result.getTradedItems()/(double)item.getItem().getQuantity();
-				acc.get().deposit(
-						currency, 
-						BigDecimal.valueOf(finalPrice), 
-						Cause.of(EventContext.empty(), VillagerShops.getInstance().getContainer()) );
-						//Cause.builder().named("SOLD ITEMS", VillagerShops.getInstance()).build());
-				if (acc2.isPresent()) acc2.get().withdraw(
-						currency, 
-						BigDecimal.valueOf(finalPrice),
-						Cause.of(EventContext.empty(), VillagerShops.getInstance().getContainer()) );
-						//Cause.builder().named("PLAYER SHOP ITEMS BOUGHT", VillagerShops.getInstance()).build());
-				
 				player.sendMessage(VillagerShops.getTranslator().localText("shop.sell.message")
 						.replace("%balance%", Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET))
 						.replace("%payed%", Text.of(TextColors.GREEN, "+", String.format("%.2f", finalPrice), TextColors.RESET)) 

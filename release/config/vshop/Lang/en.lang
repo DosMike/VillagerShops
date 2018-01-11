@@ -41,6 +41,9 @@ shop.item.sell.stack:Sell for:§f %currency%%price% (á %currency%%itemprice%)
 shop.item.stock:In Stock: %amount%/%max%
 shop.buy.message:%balance% (%payed%): Buying %amount%x %item%
 shop.sell.message:%balance% (%payed%): Selling %amount%x %item%
+shop.generic.transactionfailure:Error on transaction! - Please report to the developer
+shop.customer.highbalance:Your account can't hold more money
+shop.shopowner.highbalance:The shop owners account reached its limit
 shop.customer.lowbalance:You do not have enough money
 shop.shopowner.lowbalance:The shop owner ran out of money
 shop.customer.missingitems:You do not have enough items

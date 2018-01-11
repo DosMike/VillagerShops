@@ -1,19 +1,25 @@
 package de.dosmike.sponge.vshop;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.Slot;
+import org.spongepowered.api.item.inventory.entity.Hotbar;
+import org.spongepowered.api.item.inventory.entity.MainPlayerInventory;
 import org.spongepowered.api.service.economy.Currency;
+import org.spongepowered.api.service.economy.account.Account;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
+import org.spongepowered.api.service.economy.transaction.ResultType;
+import org.spongepowered.api.service.economy.transaction.TransactionResult;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
@@ -21,8 +27,9 @@ public class StockItem {
 	private ItemStack item;
 	
 	private Currency currency; //currency to use
-	private Double sellprice=null, buyprice=null; //per single item in stack => stack price is item.quantity * price
+	private Double sellprice=null, buyprice=null; //This IS the STACK price
 	
+	//caution: maxStock does not actually hold information about the size of the stock container!
 	private int maxStock=0, stocked=0;
 	
 	public StockItem(ItemStack itemstack, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
@@ -74,17 +81,17 @@ public class StockItem {
 		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());
 		desc.add(Text.of(TextColors.GREEN, (item.getQuantity()>1
 				? VillagerShops.getTranslator().localText("shop.item.sell.stack")
-					.replace("%price%", String.format("%.2f", buyprice))
-					.replace("%itemprice%", Text.of(String.format("%.2f", buyprice/(double)item.getQuantity())))
+					.replace("%price%", String.format("%.2f", sellprice))
+					.replace("%itemprice%", Text.of(String.format("%.2f", sellprice/(double)item.getQuantity())))
 					.replace("%currency%", cs)
 					.resolve(player).orElse(
-						Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs, String.format(" (á %.2f", buyprice/(double)item.getQuantity()), cs, ')')
+						Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", sellprice), cs, String.format(" (á %.2f", sellprice/(double)item.getQuantity()), cs, ')')
 						)
 				: VillagerShops.getTranslator().localText("shop.item.sell.one")
-				.replace("%price%", String.format("%.2f", buyprice))
+				.replace("%price%", String.format("%.2f", sellprice))
 				.replace("%currency%", cs)
 				.resolve(player).orElse(
-					Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs)
+					Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", sellprice), cs)
 					)
 				)));
 		if (maxStock>0) 
@@ -137,25 +144,6 @@ public class StockItem {
                 dis.toContainer().set(DataQuery.of("UnsafeData", "vShopSlotNum"), patchedSlot) ).build();
 	}
 	
-	/** Try to add the represented itemstack to the target inventory without doing any economy changes.
-	 * This function is able to give a fraction of the represented stack size. 
-	 * @param quantity the amount of items supposed to give, overriding the default in item  
-	 * @returns the amount of given items */
-	public int offerTo(Inventory inv, int quantity) {
-		ItemStack copy = item.copy();
-		copy.setQuantity(quantity);
-		inv.offer(copy);
-		int c = copy.getQuantity();
-//		VillagerShops.l("Rejected "+c);
-		return quantity-c;
-	}
-	/** Try to add the represented itemstack to the target inventory without doing any economy changes.
-	 * This function tried to give as much of this item as represented by the itemstack
-	 * @returns the amount of given items */
-	public int offerTo(Inventory inv) {
-		return offerTo(inv, item.getQuantity());
-	}
-	
 	/** Tries to take a certain amount of items represented by this item from the inventory 
 	 * @param quantity the amount of items supposed to take, overriding the default in item  
 	 * @returns the amount of items taken out of the inventory */
@@ -184,69 +172,131 @@ public class StockItem {
 		return getFrom(inv, maxStock<=0?item.getQuantity():Math.min(item.getQuantity(), maxStock-stocked));
 	}
 	
-	/** About Money: checks how many of this item the player can afford with the default currency maxing out at the quantity given by the represented itemstack */
-	public int canAfford(UUID player, double price) {
-		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player);
-		if (!acc.isPresent()) return 0;
-//		VillagerShops.l(acc.get().getDisplayName()+ " has " + acc.get().getBalance(currency).toPlainString());
-		BigDecimal bd = acc.get().getBalance(currency);
-		BigDecimal num = bd.divide(new BigDecimal(price/(double)item.getQuantity()), 2, RoundingMode.HALF_DOWN);
-		int amount = num.intValue();
-		amount = (num.compareTo(BigDecimal.valueOf(item.getQuantity())) > 0 ? item.getQuantity() : amount);
-//		VillagerShops.l("Can afford "+amount);
-		return amount;
-	}
-	
-	/** About Money: checks how many of this item the player can afford with the default currency */
-	public int canAccept(UUID player) {
-		return item.getQuantity();	//there's no way to check how much money a account can hold
-	} 
-	
-	/** @returns the ammount of actually purchased items, -1 if the stock is empty */
 	public ShopResult buy(Player player, NPCguard shop) {
+		Optional<UniqueAccount> account = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
+		if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
+		Account acc = account.get();
+		
+		Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
+		int amount = Math.min(invSpace(playerInv), item.getQuantity()); //buy at max the configured amount
+		if (amount <= 0) return ShopResult.CUSTOMER_INVENTORY_FULL;
+		
 		Optional<Inventory> stock = shop.getStockInventory();
-		if (!stock.isPresent()) {
-			int amount = canAfford(player.getUniqueId(), buyprice);
-			if (amount == 0) return ShopResult.CUSTOMER_LOW_BALANCE;
-			amount = offerTo(player.getInventory(), amount);
-			if (amount == 0) return ShopResult.CUSTOMER_INVENTORY_FULL;
+		if (stock.isPresent()) {
+			amount = Math.min(amount, invSupply(stock.get())); //reduce to what the stock can offer
+			if (amount <= 0) return ShopResult.SHOPOWNER_MISSING_ITEMS;
+			
+			//shop owner account
+			Optional<UUID> owner = shop.getShopOwner();
+			if (!owner.isPresent()) return ShopResult.GENERIC_FAILURE;
+			Optional<UniqueAccount> account2 = VillagerShops.getEconomy().getOrCreateAccount(owner.get());
+			if (!account2.isPresent()) return ShopResult.GENERIC_FAILURE;
+			
+			//account transaction
+			BigDecimal price = new BigDecimal(amount * buyprice/item.getQuantity());
+			TransactionResult res = acc.transfer(account2.get(), currency, price, Sponge.getCauseStackManager().getCurrentCause());
+			
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.CUSTOMER_LOW_BALANCE;
+			else if (res.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.SHOPOWNER_HIGH_BALANCE;
+			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+			
+			//item transaction
+			ItemStack stack = getItem();
+			stack.setQuantity(amount);
+			playerInv.offer(stack);
+			getFrom(stock.get(), amount);
+			
 			return ShopResult.OK(amount);
 		} else {
-			//let's say we could afford 5 apples from a shelf
-			int amount = canAfford(player.getUniqueId(), buyprice);
-			if (amount == 0) return ShopResult.CUSTOMER_LOW_BALANCE;
-			int took = getFrom(stock.get(), amount); //we take all the apples we can afford
-			if (took < 1 && amount > 0) return ShopResult.SHOPOWNER_MISSING_ITEMS;
-			int stocked = offerTo(player.getInventory(), took);		//and try so put them in our backpack, but only 3 fit
-			offerTo(stock.get(), took-stocked);	//so we put the other 2 apples back on the shelf
-			if (stocked == 0) return ShopResult.CUSTOMER_INVENTORY_FULL;
-			else return ShopResult.OK(stocked);
+			//account transaction
+			BigDecimal price = new BigDecimal(amount * buyprice/item.getQuantity());
+			TransactionResult res = acc.withdraw(currency, price, Sponge.getCauseStackManager().getCurrentCause());
+			
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.CUSTOMER_LOW_BALANCE;
+			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+			
+			//item transaction
+			ItemStack stack = getItem();
+			stack.setQuantity(amount);
+			playerInv.offer(stack);
+			
+			return ShopResult.OK(amount);
+		}
+	}
+	public ShopResult sell(Player player, NPCguard shop) {
+		Optional<UniqueAccount> account = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
+		if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
+		Account acc = account.get();
+		
+		Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
+		int amount = Math.min(invSupply(playerInv), item.getQuantity()); //buy at max the configured amount
+		if (amount <= 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
+		
+		Optional<Inventory> stock = shop.getStockInventory();
+		if (stock.isPresent()) {
+			amount = Math.min(amount, invSpace(stock.get())); //reduce to what the stock can offer
+			if (maxStock > 0) amount = Math.min(amount, maxStock-stocked); //if we have a stock we may not exceed the stock limit (empty space for selling) - could be negative
+			if (amount <= 0) return ShopResult.SHOPOWNER_INVENTORY_FULL;
+			
+			//shop owner account
+			Optional<UUID> owner = shop.getShopOwner();
+			if (!owner.isPresent()) return ShopResult.GENERIC_FAILURE;
+			Optional<UniqueAccount> account2 = VillagerShops.getEconomy().getOrCreateAccount(owner.get());
+			if (!account2.isPresent()) return ShopResult.GENERIC_FAILURE;
+			
+			//account transaction
+			BigDecimal price = new BigDecimal(amount * sellprice/item.getQuantity());
+			TransactionResult res = account2.get().transfer(acc, currency, price, Sponge.getCauseStackManager().getCurrentCause());
+			
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.SHOPOWNER_LOW_BALANCE;
+			else if (res.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.CUSTOMER_HIGH_BALANCE;
+			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+			
+			//item transaction
+			ItemStack stack = getItem();
+			stack.setQuantity(amount);
+			stock.get().offer(stack);
+			getFrom(playerInv, amount);
+			
+			return ShopResult.OK(amount);
+		} else {
+			//account transaction
+			BigDecimal price = new BigDecimal(amount * sellprice/item.getQuantity());
+			TransactionResult res = acc.deposit(currency, price, Sponge.getCauseStackManager().getCurrentCause());
+			
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.CUSTOMER_HIGH_BALANCE;
+			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+			
+			//item transaction
+			getFrom(playerInv, amount);
+			
+			return ShopResult.OK(amount);
 		}
 	}
 	
-	/** @returns the ammount of actually sold items, -1 if the stock is full or other can't afford */
-	public ShopResult sell(Player player, NPCguard shop) {
-		Optional<Inventory> stock = shop.getStockInventory();
-		if (!stock.isPresent()) {
-			int amount = getFrom(player.getInventory(), canAccept(player.getUniqueId()));
-			if (amount == 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
-			else return ShopResult.OK(amount);
-		} else {
-			//let's say we have 5 apples, the shelf owner might be able to afford 4
-			int amount;
-			if (shop.getShopOwner().isPresent()) { //there might be a stock, but no owner in the future
-				amount = canAfford(shop.getShopOwner().get(), sellprice);
-				if (amount < 1) return ShopResult.SHOPOWNER_LOW_BALANCE;
-			} else amount = canAccept(player.getUniqueId());
-			if (maxStock>0) amount = Math.min(amount, maxStock-stocked); //if the stock is limited we do not want to exceed the limit for this item
-			if (amount < 1) return ShopResult.SHOPOWNER_INVENTORY_FULL; // if we can't sell any items NOW, the stock limit most likely was reached
-			 
-			int took = getFrom(player.getInventory(), amount); //we want to put them on a shelf
-			if (took == 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
-			int stocked = offerTo(stock.get(), took);		//and we stuff them onto the shelf, but only 3 fit
-			offerTo(player.getInventory(), took-stocked);	//so we take the other 2 apples back
-			if (stocked == 0) return ShopResult.SHOPOWNER_INVENTORY_FULL;
-			else return ShopResult.OK(stocked);
+	/** figure out how much of item the inventory can hold<br><br>
+	 * A few months ago there Sponge asked what could be changes about the inventory API
+	 * it is only now, that I realize a inventory.tryOffer(ItemStack) or inventory.capacityFor(ItemStack) would be nice
+	 * count for each slot, how many of the item it could accept
+	 */
+	private int invSpace(Inventory i) {
+		ItemStack detector = getItem();
+		int space = 0, c;
+		Inventory result = i.queryAny(detector);
+		for (Inventory s : result.slots()) {
+			Slot slot = (Slot) s;
+			c = slot.getStackSize();
+			if (c > 0) space += (detector.getMaxStackQuantity() - c);
 		}
+		space += (i.capacity()-i.size())*detector.getMaxStackQuantity();
+		return space;
+	}
+	/** figure out how much of item the inventory can supply
+	 */
+	private int invSupply(Inventory i) {
+		ItemStack detector = getItem();
+		int available = 0;
+		available = i.queryAny(detector).totalItems();
+		return available;
 	}
 }
