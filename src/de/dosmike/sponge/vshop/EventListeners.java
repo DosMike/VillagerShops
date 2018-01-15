@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.entity.Entity;
@@ -159,17 +158,15 @@ public class EventListeners {
 	@Listener
 	public void onBlockBreak(ChangeBlockEvent.Break event) {
 		event.getTransactions().forEach(trans -> {
-			if (trans.getOriginal().getState().getType().equals(BlockTypes.CHEST)) {
-				Optional<Location<World>> w = trans.getOriginal().getLocation(); 
-				if (!w.isPresent()) return;
-				Extent tex = w.get().getExtent();
-				Vector3i tv3 = w.get().getBlockPosition(); 
-				for (NPCguard g : VillagerShops.npcs) {
-					if (g.playershopcontainer != null &&
-							g.playershopcontainer.getExtent().equals(tex) &&
-							g.playershopcontainer.getBlockPosition().equals(tv3)) {
-						trans.setValid(false);
-					}
+			Optional<Location<World>> w = trans.getOriginal().getLocation();
+			if (!w.isPresent()) return;
+			Extent tex = w.get().getExtent();
+			Vector3i tv3 = w.get().getBlockPosition(); 
+			for (NPCguard g : VillagerShops.npcs) {
+				if (g.playershopcontainer != null &&
+						g.playershopcontainer.getExtent().equals(tex) &&
+						g.playershopcontainer.getBlockPosition().equals(tv3)) {
+					trans.setValid(false);
 				}
 			}
 		});

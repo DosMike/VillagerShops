@@ -229,9 +229,9 @@ static void register() {
 						}
 						
 						Optional<ItemStack> item = player.getItemInHand(HandTypes.MAIN_HAND);
-						if (!item.isPresent() || FieldResolver.getType(item.get()).equals(FieldResolver.emptyHandItem()))
+						if (!item.isPresent() || item.get().isEmpty())
 							item = player.getItemInHand(HandTypes.OFF_HAND);
-						if (!item.isPresent() || FieldResolver.getType(item.get()).equals(FieldResolver.emptyHandItem())) {
+						if (!item.isPresent() || item.get().isEmpty()) {
 							player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
 									lang.local("cmd.add.itemisair").resolve(player).orElse("[Item is air]")));
 							return CommandResult.success();

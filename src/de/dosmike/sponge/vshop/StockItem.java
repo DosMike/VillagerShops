@@ -75,7 +75,7 @@ public class StockItem {
 	
 	/** create a Item with custom description adding the sell-price for a stack with the present size */
 	public ItemStack getSellDisplayItem(int patchedSlot, UUID player) {
-		if (sellprice == null) return ItemStack.of(FieldResolver.emptyHandItem(), 1); //nothing
+		if (sellprice == null) return ItemStack.empty(); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
 		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());
@@ -110,7 +110,7 @@ public class StockItem {
 	}
 	/** create a Item with custom description adding the buy-price for a stack with the present size */
 	public ItemStack getBuyDisplayItem(int patchedSlot, UUID player) {
-		if (buyprice == null) return ItemStack.of(FieldResolver.emptyHandItem(), 1); //nothing
+		if (buyprice == null) return ItemStack.empty(); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
 		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());

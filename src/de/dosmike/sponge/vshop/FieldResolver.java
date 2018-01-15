@@ -8,7 +8,6 @@ import org.spongepowered.api.CatalogType;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 
 public class FieldResolver {
 	
@@ -69,24 +68,5 @@ public class FieldResolver {
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to invoke ItemStack.getType() Method");
 		}
-	}
-	private static ItemType airType = null;
-	static ItemType emptyHandItem() {
-		if (airType != null) return airType;
-		ItemType air = (ItemType) getFinalStaticByName(ItemType.class, "air");
-		if (air == null) air = (ItemType) getFinalStaticByName(ItemType.class, "none");
-		return airType = air;
-	}
-	static boolean itemStackEmpty(ItemStackSnapshot item) {
-		try {
-			return (boolean) ItemStackSnapshot.class.getMethod("isEmpty").invoke(item);
-		} catch (Exception e) {
-			try {
-				return (int)ItemStackSnapshot.class.getMethod("getCount").invoke(item) ==0;
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
-		}
-		return true;
 	}
 }

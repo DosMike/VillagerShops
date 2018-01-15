@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.spongepowered.api.CatalogType;
-import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.Career;
@@ -180,10 +180,15 @@ public class NPCguard {
 			return;
 		}
 		Location<World> scan = getLoc().sub(0, 0.5, 0);
-		if (!scan.getBlockType().equals(BlockTypes.CHEST)) 
+		Optional<TileEntity> te = scan.getTileEntity();
+		if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier)te.get()).getInventory().capacity()<27) {
+//		if (!scan.getBlockType().equals(BlockTypes.CHEST)) 
 			scan = scan.sub(0, 1, 0);
-		if (!scan.getBlockType().equals(BlockTypes.CHEST))
-			throw new IllegalStateException("Shop is not placed above a chest");
+			te = scan.getTileEntity();
+			if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier)te.get()).getInventory().capacity()<27)
+//			if (!scan.getBlockType().equals(BlockTypes.CHEST))
+				throw new IllegalStateException("Shop is not placed above a chest");
+		}
 		
 		playershopholder = owner;
 		playershopcontainer = scan;
@@ -194,10 +199,12 @@ public class NPCguard {
 	public Optional<Inventory> getStockInventory() {
 		if (playershopholder==null) return Optional.empty();
 		try {
-			if (!playershopcontainer.getBlockType().equals(BlockTypes.CHEST))
+			Optional<TileEntity> te = playershopcontainer.getTileEntity();
+			if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier)te.get()).getInventory().capacity()<27)
+//			if (!playershopcontainer.getBlockType().equals(BlockTypes.CHEST))
 				throw new RuntimeException("ContainerBlock not Chest");
-			TileEntityCarrier chest = (TileEntityCarrier) playershopcontainer.getTileEntity().get();
-			return Optional.of(chest.getInventory());
+//			TileEntityCarrier chest = (TileEntityCarrier) playershopcontainer.getTileEntity().get();
+			return Optional.of(((TileEntityCarrier)te.get()).getInventory());
 		} catch (Exception e) {
 			VillagerShops.w("Could not receive container for Playershop at " + loc.getExtent().getName() + " " + loc.getBlockPosition());
 			return Optional.empty();
