@@ -18,12 +18,19 @@ public class InvPrep {
 	
 	public void addItem(StockItem si) {
 		items.add(si);
+		VillagerShops.instance.npcsDirty = true;
 	}
 	
 	public void removeIndex(int i) {
 		items.remove(i);
+		VillagerShops.instance.npcsDirty = true;
 	}
 	
+	public void setItem(int index, StockItem element) {
+		items.set(index, element);
+		VillagerShops.instance.npcsDirty = true;
+	}
+
 	public StockItem getItem(int index) {
 		return items.get(index);
 	}
@@ -86,9 +93,5 @@ public class InvPrep {
 			
 			if (++col>=9) { col=0; row+=RowsPerItem; }
 		}
-	}
-
-	public void setItem(int index, StockItem element) {
-		items.set(index, element);
 	}
 }

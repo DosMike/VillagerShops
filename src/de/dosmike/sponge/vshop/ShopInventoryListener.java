@@ -15,6 +15,10 @@ public class ShopInventoryListener implements Consumer<ClickInventoryEvent>{
 	public ShopInventoryListener(NPCguard npc) {
 		this.npc=npc;
 	}
+	@Override
+	protected void finalize() throws Throwable {
+		npc = null; //unlinks the actual shop to enable gc
+	}
 	
 	@Override
 	public void accept(ClickInventoryEvent event) {

@@ -63,7 +63,7 @@ public class EventListeners {
 		Entity target = event.getTargetEntity();
 		if (cause.isPresent())
 			if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.right))
-					event.setCancelled(true);
+				event.setCancelled(true);
 	}
 	
 	@Listener
@@ -122,7 +122,7 @@ public class EventListeners {
 		if (!event.getTargetBlock().getLocation().isPresent()) return;
 		Extent tex = event.getTargetBlock().getLocation().get().getExtent();
 		Vector3i tv3 = event.getTargetBlock().getPosition(); 
-		for (NPCguard g : VillagerShops.npcs)
+		for (NPCguard g : VillagerShops.getNPCguards())
 			if (g.playershopcontainer != null && 
 					g.playershopcontainer.getExtent().equals(tex) &&
 					g.playershopcontainer.getBlockPosition().equals(tv3)) {
@@ -146,7 +146,7 @@ public class EventListeners {
 		}
 		
 		List<Location<World>> denied = new LinkedList<>();
-		for (NPCguard g : VillagerShops.npcs) {
+		for (NPCguard g : VillagerShops.getNPCguards()) {
 			if (g.playershopcontainer != null && 
 					event.getAffectedLocations().contains(g.playershopcontainer)) {
 					denied.add(g.playershopcontainer);
@@ -162,7 +162,7 @@ public class EventListeners {
 			if (!w.isPresent()) return;
 			Extent tex = w.get().getExtent();
 			Vector3i tv3 = w.get().getBlockPosition(); 
-			for (NPCguard g : VillagerShops.npcs) {
+			for (NPCguard g : VillagerShops.getNPCguards()) {
 				if (g.playershopcontainer != null &&
 						g.playershopcontainer.getExtent().equals(tex) &&
 						g.playershopcontainer.getBlockPosition().equals(tv3)) {

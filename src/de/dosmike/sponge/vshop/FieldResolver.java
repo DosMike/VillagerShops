@@ -15,7 +15,7 @@ public class FieldResolver {
 	static <T extends CatalogType> CatalogType getFinalStaticByName(Class<T> clazz, String field) {
 		try {
 			Collection<T> result = Sponge.getRegistry().getAllOf(clazz);
-			VillagerShops.l("Entries for %s (%d):", clazz.getSimpleName(), result.size());
+//			VillagerShops.l("Entries for %s (%d):", clazz.getSimpleName(), result.size());
 			
 			//of course we perfer the ID, and we'll save that, but the use may enter a name
 			CatalogType toReturn=null;

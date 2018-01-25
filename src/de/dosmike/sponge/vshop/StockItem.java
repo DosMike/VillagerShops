@@ -1,6 +1,7 @@
 package de.dosmike.sponge.vshop;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -196,7 +197,25 @@ public class StockItem {
 			BigDecimal price = new BigDecimal(amount * buyprice/item.getQuantity());
 			TransactionResult res = acc.transfer(account2.get(), currency, price, Sponge.getCauseStackManager().getCurrentCause());
 			
-			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.CUSTOMER_LOW_BALANCE;
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS))  { //not enough money for this amount of items
+				//try to find a affordable amount
+				BigDecimal balance = acc.getBalance(currency);
+				if (balance.compareTo(BigDecimal.ZERO)>0) {
+					//resize stack to fit balance
+					int fixedamount = balance.divide(BigDecimal.valueOf(buyprice/item.getQuantity()), RoundingMode.FLOOR).intValue();
+					if (fixedamount < 1) return ShopResult.CUSTOMER_LOW_BALANCE;
+					
+					//recalculate price
+					amount = fixedamount;
+					price = new BigDecimal(amount * buyprice/item.getQuantity());
+					
+					//try again
+					TransactionResult res2 = acc.transfer(account2.get(), currency, price, Sponge.getCauseStackManager().getCurrentCause());
+					if (res2.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.SHOPOWNER_HIGH_BALANCE; //idk in what order transactions fail, so check this here as well
+					else if (!res2.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+				} else 
+					return ShopResult.CUSTOMER_LOW_BALANCE;
+			}
 			else if (res.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.SHOPOWNER_HIGH_BALANCE;
 			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
 			
@@ -212,7 +231,24 @@ public class StockItem {
 			BigDecimal price = new BigDecimal(amount * buyprice/item.getQuantity());
 			TransactionResult res = acc.withdraw(currency, price, Sponge.getCauseStackManager().getCurrentCause());
 			
-			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) return ShopResult.CUSTOMER_LOW_BALANCE;
+			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) { //not enough money for this amount of items
+				//try to find a affordable amount
+				BigDecimal balance = acc.getBalance(currency);
+				if (balance.compareTo(BigDecimal.ZERO)>0) {
+					//resize stack to fit balance
+					int fixedamount = balance.divide(BigDecimal.valueOf(buyprice/item.getQuantity()), RoundingMode.FLOOR).intValue();
+					if (fixedamount < 1) return ShopResult.CUSTOMER_LOW_BALANCE;
+					
+					//recalculate price
+					amount = fixedamount;
+					price = new BigDecimal(amount * buyprice/item.getQuantity());
+					
+					//try again
+					TransactionResult res2 = acc.withdraw(currency, price, Sponge.getCauseStackManager().getCurrentCause());
+					if (!res2.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+				} else 
+					return ShopResult.CUSTOMER_LOW_BALANCE;
+			}
 			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
 			
 			//item transaction
@@ -262,6 +298,23 @@ public class StockItem {
 		} else {
 			//account transaction
 			BigDecimal price = new BigDecimal(amount * sellprice/item.getQuantity());
+			if (VillagerShops.getIncomeLimiter().applicableFor(player)) {
+				Optional<BigDecimal> limited = VillagerShops.getIncomeLimiter().remainderFor(player);
+				if (limited.isPresent()) {
+					price = price.min(limited.get()); //get the max possibble income for today
+					
+					//reduce stack to march max income
+					int fixedamount = price.divide(BigDecimal.valueOf(sellprice/item.getQuantity()), RoundingMode.FLOOR).intValue();
+					if (fixedamount < 1) return ShopResult.CUSTOMER_INCOME_LIMIT;
+					
+					//recalculate price for reduced stack
+					amount = fixedamount;
+					price = new BigDecimal(amount * sellprice/item.getQuantity());
+					
+					//additional transaction
+					VillagerShops.getIncomeLimiter().payout(player, price); 
+				}
+			}
 			TransactionResult res = acc.deposit(currency, price, Sponge.getCauseStackManager().getCurrentCause());
 			
 			if (res.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.CUSTOMER_HIGH_BALANCE;

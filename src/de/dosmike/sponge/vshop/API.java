@@ -1,6 +1,6 @@
 package de.dosmike.sponge.vshop;
 
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,19 +27,19 @@ public class API {
 		npc.setPreparator(prep);
 		npc.setLoc(location);
 		npc.setRot(new Vector3d(0, rotation, 0));
-		VillagerShops.npcs.add(npc);
+		VillagerShops.addNPCguard(npc);
 		return npc;
 	}
 	
-	public static Iterator<NPCguard> list() {
-		return VillagerShops.npcs.iterator();
+	public static Collection<NPCguard> list() {
+		return VillagerShops.getNPCguards();
 	}
 	
 	public static void delete(NPCguard shop) {
 		VillagerShops.stopTimers();
 		VillagerShops.closeShopInventories(shop.getIdentifier());
 		shop.getLe().remove();
-		VillagerShops.npcs.remove(shop);
+		VillagerShops.removeNPCguard(shop);
 		VillagerShops.startTimers();
 	}
 	

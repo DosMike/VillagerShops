@@ -71,7 +71,7 @@ public class WebAPI extends BaseServlet {
     public void info(IServletData data) {
 		WebAPIAPI.runOnMain(()->{
 			Set<SimpleVShopPacket> list = new HashSet<>();
-			API.list().forEachRemaining(npc->{
+			API.list().forEach(npc->{
 				list.add(new SimpleVShopPacket(npc));
 			});
 			data.addData("shops", list, true);

@@ -102,9 +102,14 @@ public class InteractionHandler {
 						.replace("%balance%", Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET))
 						.replace("%payed%", Text.of(TextColors.RED, "-", String.format("%.2f", finalPrice), TextColors.RESET)) 
 						.replace("%amount%", Text.of(TextColors.YELLOW, result.getTradedItems(), TextColors.RESET))
-						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getTranslation().get())) ))
+						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getName())) ))
 						.resolve(player).orElse(Text.of("[items bought]")
 						));
+				if (shop.getShopOwner().isPresent()) {
+					LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), finalPrice, item.getCurrency(), index+1, item.getItem().getType(), result.getTradedItems());
+					trans.toDatabase();
+					LedgerManager.backstuffChat(trans);
+				}
 			} else {
 				player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
 			}
@@ -119,6 +124,11 @@ public class InteractionHandler {
 						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getTranslation().get())) ))
 						.resolve(player).orElse(Text.of("[items bought]")
 						));
+				if (shop.getShopOwner().isPresent()) {
+					LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), -finalPrice, item.getCurrency(), index+1, item.getItem().getType(), result.getTradedItems());
+					trans.toDatabase();
+					LedgerManager.backstuffChat(trans);
+				}
 			} else {
 				player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
 			}
