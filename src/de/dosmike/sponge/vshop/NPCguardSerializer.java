@@ -57,13 +57,6 @@ public class NPCguardSerializer implements TypeSerializer<NPCguard> {
 		if (tmp != null && !tmp.isEmpty())
 			npc.playershopholder=UUID.fromString(tmp);
 		npc.playershopcontainer=cfg.getNode("stocklocation").getValue(tokenLocationWorld);
-		if (npc.playershopcontainer != null && !npc.playershopcontainer.getTileEntity().isPresent()) {
-			npc.getPreparator().items.clear();
-			VillagerShops.w("Found a shop that lost his container, removing shop entries!");
-			VillagerShops.w("Location: %s", npc.getLoc().toString());
-			if (npc.getShopOwner().isPresent()) VillagerShops.w("Owner: %s", npc.getShopOwner().get().toString());
-			VillagerShops.w("Container was supposed to be at %s", npc.playershopcontainer);
-		}
 		return npc;
 	}
 }

@@ -27,14 +27,16 @@ public class InteractionHandler {
 		Optional<NPCguard> npc = VillagerShops.getNPCfromLocation(tl);
 		
 		if (npc.isPresent()) {
-//			VillagerShops.l("NPC: " + npc.get().getDisplayName().toPlain());
-//			if (side == Button.right) {
-				if (npc.get().getPreparator().size()>0) {
-					npc.get().updateStock();
-					source.openInventory(npc.get().getInventory(source.getUniqueId()));
-					VillagerShops.openShops.put(source.getUniqueId(), npc.get().getIdentifier());
-				}
-//			}
+			if (npc.get().playershopcontainer != null && !npc.get().playershopcontainer.getTileEntity().isPresent()) {
+				VillagerShops.w("Found a shop that lost his container, cancelled interaction!");
+				VillagerShops.w("Location: %s", npc.get().getLoc().toString());
+				if (npc.get().getShopOwner().isPresent()) VillagerShops.w("Owner: %s", npc.get().getShopOwner().get().toString());
+				VillagerShops.w("Container was supposed to be at %s", npc.get().playershopcontainer);
+			} else if (npc.get().getPreparator().size()>0) {
+				npc.get().updateStock();
+				source.openInventory(npc.get().getInventory(source.getUniqueId()));
+				VillagerShops.openShops.put(source.getUniqueId(), npc.get().getIdentifier());
+			}
 			
 			return true;
 		}
