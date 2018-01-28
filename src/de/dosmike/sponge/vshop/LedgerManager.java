@@ -275,7 +275,7 @@ public class LedgerManager {
 	}
 	
 	private static SqlService sql=null;
-	private static final String DB_URL = "jdbc:h2:./vshopledger.db";
+	private static final String DB_URL = "jdbc:h2:./config/vshop/ledger.db";
 	public static DataSource getDataSource() throws SQLException {
 	    if (sql == null) {
 	        sql = Sponge.getServiceManager().provide(SqlService.class).get();
@@ -302,20 +302,22 @@ public class LedgerManager {
 			VillagerShops.getAsyncScheduler().submit(new Callable<List<Transaction>>(){
 				@Override
 					public List<Transaction> call() throws Exception {
-						String sql = "SELECT `customer`, `vendor`, `item`, `slot`, `amount`, `price`, `currency`, `date` FROM `vshopledger` WHERE `customer`=? ORDER BY `ID` DESC LIMIT 250;";
+						String sql = "SELECT `customer`, `vendor`, `item`, `slot`, `amount`, `price`, `currency`, `date` FROM `vshopledger` WHERE `vendor`=? ORDER BY `ID` DESC LIMIT 250;";
 						List<Transaction> transactions = new LinkedList<>();
-					    try (Connection conn = getDataSource().getConnection();
-					         PreparedStatement stmt = conn.prepareStatement(sql)) {
-					    	
-					    	stmt.setString(1, user.getUniqueId().toString());
-					    	ResultSet results = stmt.executeQuery();
-					        while (results.next()) {
-					            transactions.add(Transaction.fromDatabase(results));
-					        }
-					        results.close();
-					    } catch (SQLException e) {
-					    	VillagerShops.getSyncScheduler().execute(()->e.printStackTrace());
-						}
+						for (NPCguard npc : VillagerShops.getNPCguards()) 
+							if (npc.isShopOwner(user.getUniqueId()))
+							    try (Connection conn = getDataSource().getConnection();
+							         PreparedStatement stmt = conn.prepareStatement(sql)) {
+							    	
+							    	stmt.setString(1, npc.getIdentifier().toString());
+							    	ResultSet results = stmt.executeQuery();
+							        while (results.next()) {
+							            transactions.add(Transaction.fromDatabase(results));
+							        }
+							        results.close();
+							    } catch (SQLException e) {
+							    	VillagerShops.getSyncScheduler().execute(()->e.printStackTrace());
+								}
 //					    VillagerShops.getSyncScheduler().execute(()->VillagerShops.l("Found %d entries", transactions.size()));
 					    return transactions;
 					}
