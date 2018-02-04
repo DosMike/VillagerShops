@@ -15,7 +15,7 @@ public class StockItemSerializer implements TypeSerializer<StockItem> {
 		value.getNode("itemstack").setValue(TypeToken.of(ItemStack.class), item.getItem());
 		if (item.getBuyPrice() != null) value.getNode("buyprice").setValue(item.getBuyPrice());
 		if (item.getSellPrice() != null) value.getNode("sellprice").setValue(item.getSellPrice());
-		if (item.getCurrency() != null) value.getNode("currency").setValue(item.getCurrency().getName());
+		if (item.getCurrency() != null) value.getNode("currency").setValue(item.getCurrency().getId());
 		if (item.getMaxStock() > 0) value.getNode("stocklimit").setValue(item.getMaxStock());
 	}
 	

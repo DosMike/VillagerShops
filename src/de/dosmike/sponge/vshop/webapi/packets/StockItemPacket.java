@@ -58,7 +58,7 @@ public class StockItemPacket extends apiPacket {
 		sellPrice = sitem.getSellPrice();
 		stockLimit = sitem.getMaxStock();
 		if (stockLimit != null) stockAmount = sitem.getStocked(); 
-		currency = sitem.getCurrency().getName();
+		currency = sitem.getCurrency().getId();
 		itemStack = sitem.getItem().copy();
 	}
 	

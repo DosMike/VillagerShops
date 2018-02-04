@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.spongepowered.api.entity.EntityType;
-import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.world.Location;
@@ -44,7 +43,7 @@ public class VShopPacket extends apiPacket {
 	@JsonIgnore
 	public Optional<EntityType> getType() {
 		if (type==null) return Optional.empty();
-		EntityType et = (EntityType)FieldResolver.getFinalStaticAuto(EntityTypes.class, type);
+		EntityType et = (EntityType)FieldResolver.getFinalStaticAuto(EntityType.class, type);
 		return et==null
 			?Optional.empty()
 			:Optional.of(et);

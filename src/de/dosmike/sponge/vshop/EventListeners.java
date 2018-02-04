@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.entity.Entity;
@@ -64,7 +63,7 @@ public class EventListeners {
 		Entity target = event.getTargetEntity();
 		if (cause.isPresent())
 			if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.right))
-					event.setCancelled(true);
+				event.setCancelled(true);
 	}
 	
 	@Listener
@@ -106,64 +105,6 @@ public class EventListeners {
 			}
 		}
 
-	//@Listener //DISABLED, the inventory should have it's own listener
-	/*public void onInventoryClick(ClickInventoryEvent event) {
-		Optional<Player> clicker = event.getCause().first(Player.class);
-		if (!clicker.isPresent()) return;
-		if (!VillagerShops.openShops.containsKey(clicker.get().getUniqueId())) return;
-		
-		if (VillagerShops.actionUnstack.contains(clicker.get().getUniqueId())) {
-			event.getTransactions().forEach(action -> { action.setValid(false); });
-			event.getCursorTransaction().setCustom(ItemStackSnapshot.NONE);
-			event.getCursorTransaction().setValid(false);
-			event.setCancelled(true);
-			return;
-		}
-		
-		int slotIndex=-1;
-		boolean inTargetInventory=false;
-		
-		//small algorithm to determ in what inventory the event occurred
-		//thanks for this great API so far ;D
-		
-		NPCguard g = VillagerShops.getNPCfromShopUUID(VillagerShops.openShops.get(clicker.get().getUniqueId())).get();
-		
-		//compare the cursor held or actioned item with the item it should
-		//be at in the InvPrep, if the item matches for the action use that
-		ItemStackSnapshot isnap = event.getCursorTransaction().getFinal();
-		for (SlotTransaction action : event.getTransactions()) {
-			Slot thisSlot = action.getSlot();
-			
-			if (FieldResolver.itemStackEmpty(isnap)) isnap = action.getOriginal();
-			if (FieldResolver.itemStackEmpty(isnap) || isnap.getType().equals(FieldResolver.emptyHandItem())) continue; //can't buy/sell air mofo 
-			for (SlotIndex si : thisSlot.getProperties(SlotIndex.class)) {
-				InvPrep p = g.getPreparator();
-				slotIndex = si.getValue();
-				int i = InvPrep.slotToIndex(slotIndex);
-				int a = InvPrep.isSlotBuySell(slotIndex);
-				if (a > 1 || i >= p.items.size()) continue;
-				StockItem s = p.getItem(i);
-				if ((a==0 && s.getBuyDisplayItem().createSnapshot().equals(isnap)) ||
-						s.getSellDisplayItem().createSnapshot().equals(isnap)) inTargetInventory=true;
-			}
-			if (inTargetInventory) break;
-		}
-		
-		//clear cursor
-		event.getCursorTransaction().setValid(false);
-		event.getCursorTransaction().setCustom(ItemStackSnapshot.NONE);
-		event.getTransactions().forEach(action -> { action.setValid(false); });
-		
-		if (inTargetInventory) { 
-			InteractionHandler.clickInventory(clicker.get(), slotIndex);
-			Sponge.getScheduler().createSyncExecutor(VillagerShops.getInstance())
-				.schedule(() -> {
-					VillagerShops.actionUnstack.remove(clicker.get().getUniqueId());
-				}, 50, TimeUnit.MILLISECONDS);
-		}
-		event.setCancelled(true);
-	}*/
-
 	@Listener
 	public void onDropItem(DropItemEvent event) {
 		Optional<Player> clicker = event.getCause().first(Player.class);
@@ -181,7 +122,7 @@ public class EventListeners {
 		if (!event.getTargetBlock().getLocation().isPresent()) return;
 		Extent tex = event.getTargetBlock().getLocation().get().getExtent();
 		Vector3i tv3 = event.getTargetBlock().getPosition(); 
-		for (NPCguard g : VillagerShops.npcs)
+		for (NPCguard g : VillagerShops.getNPCguards())
 			if (g.playershopcontainer != null && 
 					g.playershopcontainer.getExtent().equals(tex) &&
 					g.playershopcontainer.getBlockPosition().equals(tv3)) {
@@ -205,7 +146,7 @@ public class EventListeners {
 		}
 		
 		List<Location<World>> denied = new LinkedList<>();
-		for (NPCguard g : VillagerShops.npcs) {
+		for (NPCguard g : VillagerShops.getNPCguards()) {
 			if (g.playershopcontainer != null && 
 					event.getAffectedLocations().contains(g.playershopcontainer)) {
 					denied.add(g.playershopcontainer);
@@ -217,17 +158,15 @@ public class EventListeners {
 	@Listener
 	public void onBlockBreak(ChangeBlockEvent.Break event) {
 		event.getTransactions().forEach(trans -> {
-			if (trans.getOriginal().getState().getType().equals(BlockTypes.CHEST)) {
-				Optional<Location<World>> w = trans.getOriginal().getLocation(); 
-				if (!w.isPresent()) return;
-				Extent tex = w.get().getExtent();
-				Vector3i tv3 = w.get().getBlockPosition(); 
-				for (NPCguard g : VillagerShops.npcs) {
-					if (g.playershopcontainer != null &&
-							g.playershopcontainer.getExtent().equals(tex) &&
-							g.playershopcontainer.getBlockPosition().equals(tv3)) {
-						trans.setValid(false);
-					}
+			Optional<Location<World>> w = trans.getOriginal().getLocation();
+			if (!w.isPresent()) return;
+			Extent tex = w.get().getExtent();
+			Vector3i tv3 = w.get().getBlockPosition(); 
+			for (NPCguard g : VillagerShops.getNPCguards()) {
+				if (g.playershopcontainer != null &&
+						g.playershopcontainer.getExtent().equals(tex) &&
+						g.playershopcontainer.getBlockPosition().equals(tv3)) {
+					trans.setValid(false);
 				}
 			}
 		});

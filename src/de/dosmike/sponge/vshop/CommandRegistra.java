@@ -1,5 +1,6 @@
 package de.dosmike.sponge.vshop;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
@@ -21,12 +23,16 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
+import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.service.pagination.PaginationList;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.text.format.TextStyles;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -70,13 +76,13 @@ static void register() {
 					
 					if (!adminshop) {
 						Optional<String> option = player.getOption("vshop.option.playershop.limit");
-						VillagerShops.l("limit:"+option.orElse("?"));
+//						VillagerShops.l("limit:"+option.orElse("?"));
 						int limit=-1;
 						try { 
 							limit = Integer.parseInt(option.orElse("-1")); 
 						} catch (Exception e) {}
 						if (limit>=0) {
-							int cnt=0; UUID pid = player.getUniqueId(); for (NPCguard npc : VillagerShops.npcs) 
+							int cnt=0; UUID pid = player.getUniqueId(); for (NPCguard npc : VillagerShops.getNPCguards()) 
 								if (npc.isShopOwner(pid)) cnt++;
 							
 							if (cnt >= limit) {
@@ -150,7 +156,7 @@ static void register() {
 							return CommandResult.success();
 						}
 					}
-					VillagerShops.npcs.add(npc);
+					VillagerShops.addNPCguard(npc);
 					
 					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ", 
 							lang.localText(playershop?"cmd.create.playershop.success":"cmd.create.success").replace("%name%", Text.of(TextColors.RESET, displayName)).resolve(player).orElse(Text.of("[success]")) ));
@@ -161,6 +167,8 @@ static void register() {
 	children.put(Arrays.asList("add"), CommandSpec.builder()
 			.arguments(GenericArguments.flags().valueFlag(
 					GenericArguments.integer(Text.of("limit")), "l"
+				).valueFlag(
+					GenericArguments.integer(Text.of("slot")), "o"
 				).buildWith(GenericArguments.seq(
 					GenericArguments.onlyOne(GenericArguments.string(Text.of("BuyPrice"))),
 					GenericArguments.onlyOne(GenericArguments.string(Text.of("SellPrice"))),
@@ -200,6 +208,17 @@ static void register() {
 								limit = args.<Integer>getOne("limit").orElse(0);
 							}
 						}
+						int overwriteindex=-1;
+						if (args.hasAny("slot")) {
+							int testslot = args.<Integer>getOne("slot").get();
+							if (testslot > prep.size() || testslot < 1) {
+								player.sendMessage(Text.of(TextColors.RED, 
+										lang.local("cmd.add.overwrite.index").resolve(player).orElse("[invalid overwrite index]")));
+							} else {
+								overwriteindex = testslot-1;
+							}
+						}
+						
 						String parse = args.getOne("BuyPrice").orElse("~").toString();
 						try {
 							buyFor = parse.equals("~")?null:Double.parseDouble(parse); 
@@ -229,23 +248,36 @@ static void register() {
 						}
 						
 						Optional<ItemStack> item = player.getItemInHand(HandTypes.MAIN_HAND);
-						if (!item.isPresent() || FieldResolver.getType(item.get()).equals(FieldResolver.emptyHandItem()))
+						if (!item.isPresent() || item.get().isEmpty())
 							item = player.getItemInHand(HandTypes.OFF_HAND);
-						if (!item.isPresent() || FieldResolver.getType(item.get()).equals(FieldResolver.emptyHandItem())) {
+						if (!item.isPresent() || item.get().isEmpty()) {
 							player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
 									lang.local("cmd.add.itemisair").resolve(player).orElse("[Item is air]")));
 							return CommandResult.success();
 						}
 						VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
-						prep.addItem(new StockItem(item.get(), sellFor, buyFor, VillagerShops.getInstance().CurrencyByName((String) args.getOne("Currency").orElse(null)), limit));
-
-						player.sendMessage(Text.of(
-								TextColors.GREEN, "[vShop] ",
+						StockItem newItem = new StockItem(item.get(), sellFor, buyFor, VillagerShops.getInstance().CurrencyByName((String) args.getOne("Currency").orElse(null)), limit);
+						if (overwriteindex < 0) {
+							prep.addItem(newItem);
+							
+							player.sendMessage(Text.of(
+									TextColors.GREEN, "[vShop] ",
 									lang.localText("cmd.add.success")
-									.replace("%item%", Text.of( TextColors.RESET, item.get().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.get()).getTranslation().get())), TextColors.GREEN ))
+									.replace("%item%", Text.of( TextColors.RESET, item.get().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.get()).getName())), TextColors.GREEN ))
 									.replace("%pos%", prep.size())
 									.resolve(player).orElse(Text.of("[item added]"))
-								));
+									));
+						} else {
+							prep.setItem(overwriteindex, newItem);
+							
+							player.sendMessage(Text.of(
+									TextColors.GREEN, "[vShop] ",
+									lang.localText("cmd.add.replaced")
+									.replace("%item%", Text.of( TextColors.RESET, item.get().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.get()).getName())), TextColors.GREEN ))
+									.replace("%pos%", prep.size())
+									.resolve(player).orElse(Text.of("[item replaced]"))
+									));
+						}
 					}
 					
 					
@@ -254,7 +286,7 @@ static void register() {
 			}).build());
 	children.put(Arrays.asList("remove"), CommandSpec.builder()
 			.arguments(
-					GenericArguments.optional(GenericArguments.integer(Text.of("Index")))
+					GenericArguments.integer(Text.of("Index"))
 			) .executor(new CommandExecutor() {
 				@Override
 				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
@@ -319,7 +351,7 @@ static void register() {
 						VillagerShops.stopTimers();
 						VillagerShops.closeShopInventories(npc.get().getIdentifier());
 						npc.get().getLe().remove();
-						VillagerShops.npcs.remove(npc.get());
+						VillagerShops.removeNPCguard(npc.get());
 						VillagerShops.startTimers();
 						src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
 								lang.local("cmd.deleted").resolve(player).orElse("[deleted]")));
@@ -338,6 +370,7 @@ static void register() {
 					VillagerShops.getInstance().saveConfigs();
 					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
 							lang.local("cmd.saved").resolve(src).orElse("[saved]")));
+//					src.sendMessage(Text.of("With the change to auto-save, this command became obsolete"));
 					return CommandResult.success();
 				}
 			}).build());
@@ -348,13 +381,105 @@ static void register() {
 			) .executor(new CommandExecutor() {
 				@Override
 				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
-					VillagerShops.terminateNPCs();
-					VillagerShops.getInstance().loadConfigs();
-					VillagerShops.startTimers();
-					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
-							lang.local("cmd.reloaded").resolve(src).orElse("[reloaded]")));
+//					VillagerShops.terminateNPCs();
+//					VillagerShops.getInstance().loadConfigs();
+//					VillagerShops.startTimers();
+//					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
+//							lang.local("cmd.reloaded").resolve(src).orElse("[reloaded]")));
+					VillagerShops.getNPCguards().stream().filter(shop->shop.getNpcType().equals(EntityTypes.HUMAN)&&shop.getVariant() != null).forEach(shop->{
+						if (shop.getVariant() instanceof UUID) {
+							shop.getLe().remove(Keys.SKIN_UNIQUE_ID);
+							shop.getLe().offer(Keys.SKIN_UNIQUE_ID, (UUID)shop.getVariant());
+						}
+					});
+					src.sendMessage(Text.of("Reapplied skins to fake players"));
 					return CommandResult.success();
 				}
+			}).build());
+	children.put(Arrays.asList("list", "get", "for"), CommandSpec.builder()
+			.permission("vshop.edit.admin")
+			.arguments(
+					GenericArguments.optional(
+						GenericArguments.user(Text.of("User"))
+					)
+			).executor(new CommandExecutor() {
+					private List<Text> pump(Collection<NPCguard> shops) {
+						List<Text> pages = new ArrayList<>(shops.size()/16+1);
+						Text.Builder page = Text.builder();
+						int i=0;
+						
+						for (NPCguard shop : shops) {
+							Optional<UUID> oid = shop.getShopOwner();
+							Optional<User> owner = oid.isPresent()?VillagerShops.getUserStorage().get(oid.get()):Optional.empty();
+							if (i>0) page.append(Text.NEW_LINE);
+							page.append(entry(owner.orElse(null), shop));
+							i++;
+							if (i>=16) {
+								pages.add(page.build());
+								page = Text.builder();
+								i=0;
+							}
+						}
+						if (i>0) {
+							pages.add(page.build());
+							page = Text.builder();
+							i=0;
+						}
+						return pages;
+					}
+					private Text entry(User user, NPCguard shop) {
+						Text line = Text.builder().append(shop.getDisplayName())
+								.onHover(TextActions.showText(Text.of(
+									TextColors.WHITE, "Type: ", TextColors.GRAY, shop.getNpcType().getId(), Text.NEW_LINE,
+									TextColors.WHITE, "Skin: ", TextColors.GRAY, shop.getVariantName(), Text.NEW_LINE,
+									TextColors.WHITE, TextStyles.ITALIC, "Click to teleport"
+								)))
+								.onClick(TextActions.executeCallback(src->{
+									if (src instanceof Player) {
+										((Player) src).setLocation(shop.getLoc());
+									}
+								})).build();
+						line = Text.of(line, TextStyles.RESET, TextColors.RESET, " by ", 
+						(user == null ? Text.of(TextColors.DARK_RED, "admin") :
+							Text.builder().append(Text.of(user.getName()))
+								.onHover(TextActions.showText(Text.of(
+									TextColors.WHITE, "UUID: ", TextColors.GRAY, user.getUniqueId(), Text.NEW_LINE
+								))).build()
+						) );
+						
+						if (shop.getStockContainer().isPresent()) {
+							line = Text.of(line, Text.builder(" [Open Stock]")
+									.onClick(TextActions.executeCallback(src->{
+										if (src instanceof Player)
+											shop.getStockInventory().ifPresent(inv->((Player)src).openInventory(inv));
+									})).onHover(TextActions.showText(Text.of("Click to invsee")))
+									.build() );
+						}
+						
+						return line;
+					}
+					@Override
+					public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
+						Collection<NPCguard> filtered;
+						if (args.hasAny("User")) {
+							User target = (User)args.getOne("User").get();
+							UUID searchID = target.getUniqueId();
+							filtered = VillagerShops.getNPCguards().stream().filter(npc->npc.isShopOwner(searchID)).collect(Collectors.toList());
+							
+							PaginationList.builder()
+								.title(Text.of("Shops owned by "+target.getName()))
+								.contents(pump(filtered))
+								.build()
+								.sendTo(src);
+						} else {
+							PaginationList.builder()
+							.title(Text.of("Villager Shops"))
+							.contents(pump(VillagerShops.getNPCguards()))
+							.build()
+							.sendTo(src);
+						}
+						return CommandResult.success();
+					}
 			}).build());
 	children.put(Arrays.asList("identify", "id"), CommandSpec.builder()
 			.permission("vshop.edit.identify")
@@ -414,21 +539,40 @@ static void register() {
 					return CommandResult.success();
 				}
 			}).build());
-	/*children.put(Arrays.asList("test"), CommandSpec.builder()
+	children.put(Arrays.asList("ledger", "log"), CommandSpec.builder()
+			.permission("vshop.ledger.base")
 			.arguments(
-					GenericArguments.none()
+					GenericArguments.flags().permissionFlag("vshop.ledger.others", "t")
+					.buildWith(GenericArguments.optional(
+						GenericArguments.user(Text.of("Target"))
+					))
 			) .executor(new CommandExecutor() {
 				@Override
 				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
-					VillagerShops vshop = VillagerShops.getInstance();
-					for (Player player : Sponge.getServer().getOnlinePlayers()) {
-						//player.closeInventory(Cause.builder().named("PLUGIN", VillagerShops.getInstance()).build());
-						player.openInventory(player.getInventory(), Cause.builder().named("PLUGIN", VillagerShops.getInstance()).build());
+					if (args.hasAny("Target") && args.hasAny("t")) {
+						throw new CommandException(lang.localText("cmd.ledger.invalid").resolve(src).orElse(Text.of("[Choose one argument]")));
+//					} else if (args.hasAny("t")) {
+//						if (!(src instanceof Player)) {
+//							throw new CommandException(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
+//						} else {
+//							//TODO toggle caht spam
+//						}
+					} else if (!args.hasAny("Target") && !(src instanceof Player)) {
+						throw new CommandException(lang.localText("cmd.missingargument").resolve(src).orElse(Text.of("[Missing argument]")));
+					} else {
+						User target;
+						if (src instanceof Player)
+							target = (User)args.getOne("Target").orElse((User)src);
+						else if (args.hasAny("Target"))
+							target = (User)args.getOne("Target").get();
+						else throw new CommandException(Text.of("No target console, shouldn't fail"));
+						src.sendMessage(Text.of("Searching Business Ledger, please wait.."));
+						LedgerManager.openLedgerFor(src, target);
 					}
-					src.sendMessage(Text.of(TextColors.GREEN, "Done!"));
+
 					return CommandResult.success();
 				}
-			}).build());*/
+			}).build());
 
 
 	Sponge.getCommandManager().register(VillagerShops.getInstance(), CommandSpec.builder()
@@ -446,7 +590,12 @@ static void register() {
 		Collection<Entity> ents = source.getNearbyEntities(maxRange); // get all entities in interaction range
 		//we need a facing vector for the source
 		Vector3d rot = source.getHeadRotation().mul(Math.PI/180.0); //to radians
-		Vector3d dir = new Vector3d(-Math.cos(rot.getX())*Math.sin(rot.getY()), -Math.sin(rot.getX()), Math.cos(rot.getX())*Math.cos(rot.getY())); //should now be a unit vector (len 1)
+		Vector3d dir = new Vector3d(
+				-Math.cos(rot.getX())*Math.sin(rot.getY()), 
+				-Math.sin(rot.getX()), 
+				Math.cos(rot.getX())*Math.cos(rot.getY())); //should now be a unit vector (len 1)
+		
+//		VillagerShops.l("%s\n%s", source.getHeadRotation().toString(), dir.toString());
 		
 		//Scanning for a target
 		Double dist = 0.0;

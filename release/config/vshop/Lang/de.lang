@@ -1,7 +1,8 @@
 permission.missing:Dir fehlen die Rechte, um diesen Befehl zu verwenden!
 cmd.description.short:/vshop <befehl> <optionen>
-cmd.description.long:Schaue immer auf den shop, den du bearbeiten willst! Optionen für:\nCREATE : --at <Position> <EntityType> --skin <Skin> [Name]\n    Skin sollte ein gültiger Skin für diesen Mob sein\n    Position hat folgenden Aufbau: Welt/x/y/z/Drehung\nADD : -l <Limit> <~|KaufPreis> <~|VerkaufsPreis> [Währung] (Halte den ItemStack)\n    - als Preis deaktiviert diese Option, eine benötigt\n    Die l-Flag kann den maximalen Vorrat für Player-Shops begrenzen\nREMOVE : <Index>\n    Zähle die items im Shop-Inventar, beginnend mit 1\nDELETE : (Keine Optionen)\nLINK : (Keine Optionen)\n    Danach muss du eine Kiste öffnen, um diese mit dem Player-Shop zu verlinken.\n    Nochmal verwenden um den Vorgang abzubrechen.\nIDENTIFY / ID : (Keine Optionen)\nSAVE : (Keine Optionen)\nRELOAD : (Keine Optionen)
+cmd.description.long:Schaue immer auf den shop, den du bearbeiten willst! Optionen für:\nCREATE : [--at <Position>] <EntityType> [--skin <Skin>] [Name]\n    Skin sollte ein gültiger Skin für diesen Mob sein\n    Position hat folgenden Aufbau: Welt/x/y/z/Drehung\nADD : [-o <Index>] [-l <Limit>] <~|KaufPreis> <~|VerkaufsPreis> [Währung] (Halte den ItemStack)\n    - als Preis deaktiviert diese Option, eine benötigt\n    Die l-Flag kann den maximalen Vorrat für Player-Shops begrenzen\n    Die o-Flag kann verwendet werden um ein Item am angegebenen Index zu ersetzen, beginnend mit 1\nREMOVE : <Index>\n    Zähle die items im Shop-Inventar, beginnend mit 1\nDELETE : (Keine Optionen)\nLINK : (Keine Optionen)\n    Danach muss du eine Kiste öffnen, um diese mit dem Player-Shop zu verlinken.\n    Nochmal verwenden um den Vorgang abzubrechen.\nIDENTIFY / ID : (Keine Optionen)\nRELOAD : (Keine Optionen)\nLIST : [Player]\n    Listet alle shops (von diesem Spieler) und bietet eine Teleport function sowie invsee
 cmd.playeronly:Diesen Befehl können nur Spieler ausführen
+cmd.missingargument:Bitte gib ein argument an
 cmd.common.notarget:Du siehst gerade keinen Shop an!
 cmd.create.invalidtype:Ungültiger EntityType (verwende Tab zur Auto-Vervollständigung)
 cmd.create.entitypermission:Dieser EntityType benötigt die Berechtigung %permission%
@@ -13,12 +14,14 @@ cmd.create.playershop.success:Ein neuer Player-Shop namens %name% wurde erstellt
 cmd.create.playershop.limit:Du darfst nicht mehr als %limit% Shops erstellen
 cmd.create.success:Ein neuer Admin-Shop namens %name% wurde erstellt
 cmd.add.limit.adminshop:Du kannst den Vorrat in einem Admin-Shop nicht begrenzen
+cmd.add.overwrite.index:And der angegebenen Position befindet sich kein Item
 cmd.add.buyprice:Der KaufPreis war nicht '~' oder eine Zahl
 cmd.add.sellprice:Der VerkaufsPreis war nicht '~' oder eine Zahl
 cmd.add.noprice:Du musst mindestens einen Betrag für KaufsPreis oder VerkaufsPreis angeben!
 cmd.add.negativeprice:Preise können nicht negativ sein
 cmd.add.itemisair:Bite halte das Item, das du hinzufügen möchtest in deiner Hand
 cmd.add.success:Item %item% wurde an Position %pos% dem Shop hinzugefügt
+cmd.add.replaced:Das Item an Position %pos% wurde durch %item% ersetzt
 cmd.identify.adminshop:dem Server
 cmd.identify.response:Ein %type% namens %name% [%id%]\nDieser Shop gehört %owner%
 cmd.link.cancelled:Linking abgebrochen
@@ -28,11 +31,12 @@ cmd.link.hitachest:Öffne die Kiste, mit der du diesen Shop verbinden willst. Ve
 cmd.link.nochest:Du kannst nur einzelne Standart-Kisten zuweisen 
 cmd.link.missingshop:Konnte den Shop nicht finden, dem der Kontainer zugewiesen werden sollte!
 cmd.link.success:Dieser Kontainer ist nun mit dem Shop verbinden. Der alte Kontainer wird nicht mehr geschützt!
-cmd.remove.invalidindex:An der angegebenen Position existiert kein Item
+cmd.remove.invalidindex:An der angegebenen Position befindet sich kein Item
 cmd.remove.success:Item an der Position %pos% wurde vom Shop entfernt
 cmd.deleted:Shop gelöscht!
 cmd.saved:Shops gespeichert!
 cmd.reloaded:Reload komplett!
+cmd.ledger.invalid:Du kannst -t nicht mit einem Target verwenden 
 shop.title:[vShop] %name%
 shop.item.buy.one:Kaufen:§f %price%%currency%
 shop.item.buy.stack:Kaufen:§f %price%%currency% (á %itemprice%%currency%)
@@ -41,9 +45,16 @@ shop.item.sell.stack:Verkaufen:§f %price%%currency% (á %itemprice%%currency%)
 shop.item.stock:Auf Lager: %amount%/%max%
 shop.buy.message:%balance% (%payed%): %amount%x %item% gekauft
 shop.sell.message:%balance% (%payed%): %amount%x %item% verkauft
+shop.generic.transactionfailure:Fehler bei der Transaktion! - Bitte dem Enwickler melden
+shop.customer.highbalance:Es ist klein platz mehr auf deinem Bankkonto
+shop.shopowner.highbalance:Das Bankkonto des Shop-Besitzers ist voll 
 shop.customer.lowbalance:Du hast nicht genug Geld
 shop.shopowner.lowbalance:Der Shop-Besitzer hat nicht mehr genug Geld
 shop.customer.missingitems:Du hast nicht genügend Items
 shop.shopowner.missingitems:Dieses Item ist im Shop niicht mehr vorrätig
 shop.customer.inventoryfull:Du kannst keines dieser Items mehr tragen
 shop.shopowner.inventoryfull:Der Shop kann keine weiteren Items lagern
+shop.customer.incomelimit:Du hast deine Einkommesgrenze durch Adminshops für den Tag erreicht
+shop.chat.transaction.base:Dein Shop %shop% handelte %items%. Unterm Strich %money%.
+shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%

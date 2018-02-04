@@ -4,25 +4,22 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.CatalogType;
+import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.Career;
-import org.spongepowered.api.data.type.Careers;
 import org.spongepowered.api.data.type.HorseColor;
-import org.spongepowered.api.data.type.HorseColors;
 import org.spongepowered.api.data.type.LlamaVariant;
-import org.spongepowered.api.data.type.LlamaVariants;
 import org.spongepowered.api.data.type.OcelotType;
-import org.spongepowered.api.data.type.OcelotTypes;
 import org.spongepowered.api.data.type.ParrotVariant;
-import org.spongepowered.api.data.type.ParrotVariants;
+import org.spongepowered.api.data.type.Profession;
 import org.spongepowered.api.data.type.RabbitType;
-import org.spongepowered.api.data.type.RabbitTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.Living;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.InventoryArchetypes;
@@ -78,6 +75,7 @@ public class NPCguard {
 	}
 	public void setLoc(Location<World> loc) {
 		this.loc = new Location<World>(loc.getExtent(), loc.getBlockX()+0.5, loc.getY(), loc.getBlockZ()+0.5);
+		VillagerShops.instance.npcsDirty = true;
 	}
 
 	public Vector3d getRot() {
@@ -112,6 +110,7 @@ public class NPCguard {
 
 	public void setPreparator(InvPrep preparator) {
 		this.preparator = preparator;
+		VillagerShops.instance.npcsDirty = true;
 	}
 
 	public EntityType getNpcType() {
@@ -119,11 +118,14 @@ public class NPCguard {
 	}
 
 	public void setNpcType(EntityType npcType) {
+		if (npcType.equals(EntityTypes.PLAYER)) npcType = EntityTypes.HUMAN;
 		this.npcType = npcType;
+		VillagerShops.instance.npcsDirty = true;
 	}
 
 	public void setDisplayName(Text name) {
 		displayName = name;
+		VillagerShops.instance.npcsDirty = true;
 	}
 	public Text getDisplayName() {
 		return displayName;
@@ -132,29 +134,52 @@ public class NPCguard {
 	/** MAY NOT BE CALLED BEFORE setNpcType() */
 	public void setVariant(String fieldName) {
 		try {
+			if (npcType.equals(EntityTypes.PLAYER)) { //entity type player will shit at you, and then laugh at you for you don't know you're supposed to use sponge:human
+				npcType = EntityTypes.HUMAN;
+			}
 			if (fieldName.equalsIgnoreCase("none")) {
 				variant = null;
-			}if (npcType.equals(EntityTypes.HORSE)) {
-				variant = FieldResolver.getFinalStaticAuto(HorseColors.class, fieldName);
+			} if (npcType.equals(EntityTypes.HUMAN)) {
+				try {
+					variant = UUID.fromString(fieldName); //in case a uuid was specified with --SKIN
+				} catch (Exception e) { //in case it was not:
+					Optional<User> user = VillagerShops.getUserStorage().get(fieldName);
+					if (!user.isPresent()) {
+						throw new RuntimeException("No user was found"); //if no such skin was found we throw a exception to set variant to NONE further down below
+					}
+					variant = user.get().getUniqueId();
+				}
+			} else if (npcType.equals(EntityTypes.HORSE)) {
+				variant = FieldResolver.getFinalStaticAuto(HorseColor.class, fieldName);
 			} else if (npcType.equals(EntityTypes.OCELOT)) {
-				variant = FieldResolver.getFinalStaticAuto(OcelotTypes.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(OcelotType.class, fieldName);
 			} else if (npcType.equals(EntityTypes.VILLAGER)) {
-				variant = FieldResolver.getFinalStaticAuto(Careers.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(Profession.class, fieldName);
+				if (variant == null) { //maybe a career was specified
+					variant = FieldResolver.getFinalStaticAuto(Career.class, fieldName);
+					if (variant != null) variant = ((Career)variant).getProfession(); ///professions give skins, so we won't bother the career any further 
+				}
 			} else if (npcType.equals(EntityTypes.LLAMA)) {
-				variant = FieldResolver.getFinalStaticAuto(LlamaVariants.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(LlamaVariant.class, fieldName);
 			} else if (npcType.equals(EntityTypes.RABBIT)) {
-				variant = FieldResolver.getFinalStaticAuto(RabbitTypes.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(RabbitType.class, fieldName);
 			} else if (npcType.equals(EntityTypes.PARROT)) {
-				variant = FieldResolver.getFinalStaticAuto(ParrotVariants.class, fieldName);
+				variant = FieldResolver.getFinalStaticAuto(ParrotVariant.class, fieldName);
 			} else {
 				variantName = "NONE";
 				variant = null;
 			}
 		} catch (Exception e) { //ignore non existant fields due to lower version
+			e.printStackTrace();
 			variantName = "NONE";
 			variant = null;
 		}
-		variantName = fieldName;
+		if (variant != null) {
+			variantName = variant instanceof CatalogType ? ((CatalogType)variant).getId() : variant.toString();
+		} else 
+			variantName = fieldName; //maybe valid later?
+		
+		VillagerShops.instance.npcsDirty = true;
 	}
 	public Object getVariant() {
 		return variant;
@@ -176,13 +201,19 @@ public class NPCguard {
 			return;
 		}
 		Location<World> scan = getLoc().sub(0, 0.5, 0);
-		if (!scan.getBlockType().equals(BlockTypes.CHEST)) 
+		Optional<TileEntity> te = scan.getTileEntity();
+		if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier)te.get()).getInventory().capacity()<27) {
+//		if (!scan.getBlockType().equals(BlockTypes.CHEST)) 
 			scan = scan.sub(0, 1, 0);
-		if (!scan.getBlockType().equals(BlockTypes.CHEST))
-			throw new IllegalStateException("Shop is not placed above a chest");
+			te = scan.getTileEntity();
+			if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier)te.get()).getInventory().capacity()<27)
+//			if (!scan.getBlockType().equals(BlockTypes.CHEST))
+				throw new IllegalStateException("Shop is not placed above a chest");
+		}
 		
 		playershopholder = owner;
 		playershopcontainer = scan;
+		VillagerShops.instance.npcsDirty = true;
 	}
 	public boolean isShopOwner(UUID player) {
 		return playershopholder==null?false:playershopholder.equals(player);
@@ -190,10 +221,12 @@ public class NPCguard {
 	public Optional<Inventory> getStockInventory() {
 		if (playershopholder==null) return Optional.empty();
 		try {
-			if (!playershopcontainer.getBlockType().equals(BlockTypes.CHEST))
+			Optional<TileEntity> te = playershopcontainer.getTileEntity();
+			if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier)te.get()).getInventory().capacity()<27)
+//			if (!playershopcontainer.getBlockType().equals(BlockTypes.CHEST))
 				throw new RuntimeException("ContainerBlock not Chest");
-			TileEntityCarrier chest = (TileEntityCarrier) playershopcontainer.getTileEntity().get();
-			return Optional.of(chest.getInventory());
+//			TileEntityCarrier chest = (TileEntityCarrier) playershopcontainer.getTileEntity().get();
+			return Optional.of(((TileEntityCarrier)te.get()).getInventory());
 		} catch (Exception e) {
 			VillagerShops.w("Could not receive container for Playershop at " + loc.getExtent().getName() + " " + loc.getBlockPosition());
 			return Optional.empty();
@@ -215,11 +248,13 @@ public class NPCguard {
 				Collection<Entity> ents = chunk.get().getEntities();
 				for (Entity ent : ents) {
 					if (( ent.isLoaded() && ent.getType().equals(npcType) && (ent.getUniqueId().equals(lastKnown) || 
-						( ent.getLocation().getExtent().equals(loc.getExtent()) && ent.getLocation().getPosition().distanceSquared(loc.getPosition())<1.5) ) ) &&
+						( ent.getLocation().getExtent().equals(loc.getExtent()) && ent.getLocation().getPosition().distanceSquared(loc.getPosition())<1) ) ) && //can't check for bigger distances, as it will yank npcs from other shops with the same name
 						( !VillagerShops.isNPCused(ent) &&
 						  displayName.equals(ent.get(Keys.DISPLAY_NAME).orElse(null))))
 					{	//check if npc already belongs to a different shop
-							le = ent; le.setLocationAndRotation(loc, rot); break;
+							le = ent; 
+							le.setLocationAndRotation(loc, rot);
+							break;
 					}
 				}
 				if (le == null) { //unable to restore
@@ -232,22 +267,26 @@ public class NPCguard {
 				        
 				        //setting variant. super consistent ;D
 				        if (variant != null)
-					        try {
-						        if (npcType.equals(EntityTypes.HORSE)) {
-						        	shop.tryOffer(Keys.HORSE_COLOR, (HorseColor)variant);	
-		//							((Horse)shop).variant().set((HorseVariant)variant);
+				        	try {
+					        	if (npcType.equals(EntityTypes.HUMAN)) {
+					        		shop.remove(Keys.SKIN_UNIQUE_ID);
+					        		shop.offer(Keys.SKIN_UNIQUE_ID, (UUID)variant);
+					        	} else if (npcType.equals(EntityTypes.HORSE)) {
+						        	shop.offer(Keys.HORSE_COLOR, (HorseColor)variant);
 								} else if (npcType.equals(EntityTypes.OCELOT)) {
-									shop.tryOffer(Keys.OCELOT_TYPE, (OcelotType)variant);
+									shop.offer(Keys.OCELOT_TYPE, (OcelotType)variant);
 								} else if (npcType.equals(EntityTypes.VILLAGER)) {
-									shop.tryOffer(Keys.CAREER, (Career)variant);
+									shop.offer(Keys.CAREER, ((Profession)variant).getCareers().iterator().next()); //Since I think I have to offer a career, that would define trades, but we don't really care take the first available career for the profession
 								} else if (npcType.equals(EntityTypes.LLAMA)) {
-									shop.tryOffer(Keys.LLAMA_VARIANT, (LlamaVariant)variant);
+									shop.offer(Keys.LLAMA_VARIANT, (LlamaVariant)variant);
 								} else if (npcType.equals(EntityTypes.RABBIT)) {
-									shop.tryOffer(Keys.RABBIT_TYPE, (RabbitType)variant);
+									shop.offer(Keys.RABBIT_TYPE, (RabbitType)variant);
 								} else if (npcType.equals(EntityTypes.PARROT)) {
-									shop.tryOffer(Keys.PARROT_VARIANT, (ParrotVariant)variant);
+									shop.offer(Keys.PARROT_VARIANT, (ParrotVariant)variant);
 								}
-					        } catch (Exception e) { System.err.println("Variant no longer suported! Did the EntityType change?"); }
+				        	} catch (Exception e) {
+				        		VillagerShops.l("Variant no longer suported! Did the EntityType change?");
+				        	}
 				        
 				        shop.offer(Keys.DISPLAY_NAME, displayName);
 				        

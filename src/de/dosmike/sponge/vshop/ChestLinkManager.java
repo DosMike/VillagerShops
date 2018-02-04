@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
@@ -46,7 +45,7 @@ public class ChestLinkManager {
 		if (!activeLinker.containsKey(player.getUniqueId())) {
 			//player.sendMessage(Text.of("You need to /vshop link a playershop first"));
 			return false;
-		} else if (!carrier.getBlock().getType().equals(BlockTypes.CHEST)) {
+		} else if (carrier.getInventory().capacity() < 27) {
 			player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
 					l.local("cmd.link.nochest").resolve(player).orElse("[not a chest]")));
 		} else {
