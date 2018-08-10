@@ -25,10 +25,12 @@ import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
 import org.spongepowered.api.event.world.SaveWorldEvent;
+import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.SpongeExecutorService;
@@ -44,7 +46,7 @@ import com.google.inject.Inject;
 
 import de.dosmike.sponge.languageservice.API.LanguageService;
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
-import de.dosmike.sponge.vshop.webapi.WebAPI;
+import de.dosmike.sponge.vshop.webapi.VShopServlet;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -53,7 +55,12 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 
-@Plugin(id="vshop", name="VillagerShops", version="1.8.1", authors={"DosMike"})
+@Plugin(id="vshop", name="VillagerShops",
+	version="1.9-pre2", authors={"DosMike"},
+	dependencies = {
+		@Dependency(id="langswitch", optional=false),
+		@Dependency(id="webapi", optional=true)
+	})
 public class VillagerShops {
 	
 	public static void main(String[] args) { System.err.println("This plugin can not be run as executable!"); }
@@ -150,13 +157,19 @@ public class VillagerShops {
 		customSerializer.registerType(TypeToken.of(NPCguard.class), new NPCguardSerializer());
 		
 		Sponge.getEventManager().registerListeners(this, new EventListeners());
-		
+	}
+	/** Dependency management does not really work within sponge, it relies way to heavily on alphabetical 
+	 * sorting event though i specified deps EVERYWHERE i could imagine. <br>
+	 * So In order for this hook to load reliably after webapi and before that's continuing i have to use this
+	 * intermediate event, whether i like it or not */
+	@Listener
+	public void onServerPostInit(GamePostInitializationEvent event) {
 		try {
 			//trick here:
 			// if we can't get the class for name an exception is thrown preventing the real depending code from even being looked at.
 			// this requires the entry point to not be obfuscated, but for an API that's normally not the case anyways. 
-			Class<?> webAPIAPI = Class.forName("valandur.webapi.api.WebAPIAPI");
-			if (webAPIAPI != null) WebAPI.init();
+			if (Sponge.getPluginManager().getPlugin("webapi").isPresent())
+				VShopServlet.init();
 		} catch(Exception e) {
 			l("WebAPI not found, skipping");
 		}
@@ -164,6 +177,7 @@ public class VillagerShops {
 	
 	@Listener
 	public void onServerStart(GameStartedServerEvent event) {
+		l("Registering commands...");
 		CommandRegistra.register();
 		
 		try {
@@ -229,17 +243,25 @@ public class VillagerShops {
 					.setPath(privateConfigDir.resolve("incomeLimits.conf")).build();
 			ConfigurationNode root = limitManager.load();
 			if (!root.getNode("income").isVirtual() && !root.getNode("timestamp").isVirtual()) {
-				Map<UUID, BigDecimal> values = new HashMap<>();
+				Map<UUID, BigDecimal> earningValues = new HashMap<>();
+				Map<UUID, BigDecimal> spendingValues = new HashMap<>();
 				root.getNode("income").getChildrenMap().forEach((k,v)->{
 					try {
-						values.put(UUID.fromString((String)k), new BigDecimal(v.getString("0")));
+						earningValues.put(UUID.fromString((String)k), new BigDecimal(v.getString("0")));
+					} catch (Exception invalid) {
+						invalid.printStackTrace();
+					}
+				});
+				root.getNode("spending").getChildrenMap().forEach((k,v)->{
+					try {
+						spendingValues.put(UUID.fromString((String)k), new BigDecimal(v.getString("0")));
 					} catch (Exception invalid) {
 						invalid.printStackTrace();
 					}
 				});
 				long dayStamp = root.getNode("timestamp").getLong(System.currentTimeMillis());
 				
-				incomeLimiter.loadFromConfig(values, dayStamp);
+				incomeLimiter.loadFromConfig(earningValues, spendingValues, dayStamp);
 			}
 		} catch (Exception e1) {
 		}
@@ -272,6 +294,12 @@ public class VillagerShops {
 			ConfigurationNode sub = root.getNode("income");
 			Map<String, String> ser = new HashMap<>();
 			for (Entry<UUID, BigDecimal> e : incomeLimiter.getEarnings().entrySet()) {
+				ser.put(e.getKey().toString(), e.getValue().toString());
+			}
+			sub.setValue(new TypeToken<Map<String, String>>() {}, ser);
+			sub = root.getNode("spending");
+			ser.clear();
+			for (Entry<UUID, BigDecimal> e : incomeLimiter.getSpendings().entrySet()) {
 				ser.put(e.getKey().toString(), e.getValue().toString());
 			}
 			sub.setValue(new TypeToken<Map<String, String>>() {}, ser);

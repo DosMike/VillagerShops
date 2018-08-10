@@ -196,7 +196,22 @@ static void register() {
 						}
 						
 						InvPrep prep = npc.get().getPreparator();
-						
+
+						int overwriteindex=-1;
+						if (args.hasAny("slot")) {
+							int testslot = args.<Integer>getOne("slot").get();
+							if (testslot > prep.size() || testslot < 1) {
+								player.sendMessage(Text.of(TextColors.RED,
+										lang.local("cmd.add.overwrite.index").resolve(player).orElse("[invalid overwrite index]")));
+							} else {
+								overwriteindex = testslot-1;
+							}
+						}
+						if (overwriteindex < 0 && prep.size()>=27) {
+							player.sendMessage(Text.of(TextColors.RED,
+									lang.local("cmd.add.itemlimit").resolve(player).orElse("[item limit reached]")));
+							return CommandResult.success();
+						}
 						Double buyFor, sellFor;
 						int limit=0;
 						if (args.hasAny("limit")) {
@@ -206,16 +221,6 @@ static void register() {
 								return CommandResult.success();
 							} else {
 								limit = args.<Integer>getOne("limit").orElse(0);
-							}
-						}
-						int overwriteindex=-1;
-						if (args.hasAny("slot")) {
-							int testslot = args.<Integer>getOne("slot").get();
-							if (testslot > prep.size() || testslot < 1) {
-								player.sendMessage(Text.of(TextColors.RED, 
-										lang.local("cmd.add.overwrite.index").resolve(player).orElse("[invalid overwrite index]")));
-							} else {
-								overwriteindex = testslot-1;
 							}
 						}
 						
@@ -512,7 +517,11 @@ static void register() {
 								.replace("\\n", "\n")
 								.replace("%type%", npc.get().getLe().getTranslation().get())
 								.replace("%name%", npc.get().getDisplayName())
-								.replace("%id%", Text.builder(npc.get().getIdentifier().toString()).onShiftClick(TextActions.insertText(npc.get().getIdentifier().toString())).build())
+								.replace("%id%", 
+										Text.builder(npc.get().getIdentifier().toString())
+											.onShiftClick(TextActions.insertText(npc.get().getIdentifier().toString()))
+											.onHover(TextActions.showText(lang.localText("cmd.identify.shiftclick").resolve(src).orElse(Text.of("Shift-click"))))
+											.build())
 								.replace("%owner%", ownername)
 								.resolve(player).orElse(Text.of("[much data, such wow]"))));
 					}
@@ -535,6 +544,30 @@ static void register() {
 					
 					Optional<NPCguard> npc = VillagerShops.getNPCfromLocation(loc);
 					ChestLinkManager.toggleLinker(player, npc);
+					
+					return CommandResult.success();
+				}
+			}).build());
+	children.put(Arrays.asList("tphere"), CommandSpec.builder()
+			.permission("vshop.edit.move")
+			.arguments(
+					GenericArguments.uuid(Text.of("shopid"))
+			) .executor(new CommandExecutor() {
+				@Override
+				public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
+					if (!(src instanceof Player)) { src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]"))); return CommandResult.success(); }
+					Player player = (Player)src;
+					
+					Optional<NPCguard> npc = VillagerShops.getNPCfromShopUUID(args.<UUID>getOne("shopid").get());
+					if (!npc.isPresent()) {
+						src.sendMessage(lang.localText("cmd.common.noshopforid").resolve(src).orElse(Text.of("[Shop not found]")));
+						return CommandResult.success();
+					}
+					NPCguard guard = npc.get();
+					VillagerShops.closeShopInventories(guard.getIdentifier());
+					Location<World> to = player.getLocation();
+					guard.move(new Location<World>(to.getExtent(), to.getBlockX()+0.5, to.getY(), to.getBlockZ()+0.5));
+					guard.setRot(new Vector3d(0.0, player.getHeadRotation().getY(), 0.0));
 					
 					return CommandResult.success();
 				}

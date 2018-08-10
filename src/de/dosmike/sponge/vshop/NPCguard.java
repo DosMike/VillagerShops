@@ -68,9 +68,11 @@ public class NPCguard {
 			if (!chunk.loadChunk(false)) 
 				throw new RuntimeException("Unable to load chunk for shop to remove old entity");
 		}
-		chunk.getEntity(le.getUniqueId()).ifPresent(ent->{
+		/*chunk.getEntity(le.getUniqueId()).ifPresent(ent->{
 			if (ent instanceof Living) ent.remove();
-		});
+		});*/
+		if (le != null && !le.isRemoved())
+			le.remove();
 		loc = newLoc;
 	}
 	public void setLoc(Location<World> loc) {
@@ -145,9 +147,11 @@ public class NPCguard {
 				} catch (Exception e) { //in case it was not:
 					Optional<User> user = VillagerShops.getUserStorage().get(fieldName);
 					if (!user.isPresent()) {
-						throw new RuntimeException("No user was found"); //if no such skin was found we throw a exception to set variant to NONE further down below
-					}
-					variant = user.get().getUniqueId();
+//						throw new RuntimeException("No user was found"); //if no such skin was found we throw a exception to set variant to NONE further down below
+						variantName = "NONE";
+						variant = null;
+					} else
+						variant = user.get().getUniqueId();
 				}
 			} else if (npcType.equals(EntityTypes.HORSE)) {
 				variant = FieldResolver.getFinalStaticAuto(HorseColor.class, fieldName);
