@@ -1,14 +1,11 @@
 package de.dosmike.sponge.vshop;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.spongepowered.api.Sponge;
@@ -561,14 +558,38 @@ static void register() {
 					Optional<NPCguard> npc = VillagerShops.getNPCfromShopUUID(args.<UUID>getOne("shopid").get());
 					if (!npc.isPresent()) {
 						src.sendMessage(lang.localText("cmd.common.noshopforid").resolve(src).orElse(Text.of("[Shop not found]")));
-						return CommandResult.success();
+					} else {
+						if (!player.hasPermission("vshop.edit.admin") &&
+								!npc.get().isShopOwner(player.getUniqueId())) {
+							player.sendMessage(Text.of(TextColors.RED,
+									lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
+							return CommandResult.success();
+						}
+						Optional<Integer> distance = Optional.empty();
+						if (npc.get().getShopOwner().isPresent()) try {
+							distance = getMaximumStockDistance(player);
+						} catch (NumberFormatException nfe) {
+							throw new CommandException(lang.localText("option.invalidvalue")
+									.replace("%option%", "vshop.option.chestlink.distance")
+									.replace("%player%", player.getName())
+									.resolve(player)
+									.orElse(Text.of("[option value invalid]"))
+							);
+						}
+						NPCguard guard = npc.get();
+						Location<World> to = player.getLocation();
+						if (distance.isPresent() && guard.getStockContainer().isPresent() && (
+								!to.getExtent().equals(guard.getStockContainer().get().getExtent()) ||
+								to.getPosition().distance(guard.getStockContainer().get().getPosition()) > distance.get()))
+							throw new CommandException(lang.localText("cmd.link.distance")
+								.replace("%distance%", distance.get())
+								.resolve(player)
+								.orElse(Text.of("[too far away]")));
+
+						VillagerShops.closeShopInventories(guard.getIdentifier());
+						guard.move(new Location<World>(to.getExtent(), to.getBlockX() + 0.5, to.getY(), to.getBlockZ() + 0.5));
+						guard.setRot(new Vector3d(0.0, player.getHeadRotation().getY(), 0.0));
 					}
-					NPCguard guard = npc.get();
-					VillagerShops.closeShopInventories(guard.getIdentifier());
-					Location<World> to = player.getLocation();
-					guard.move(new Location<World>(to.getExtent(), to.getBlockX()+0.5, to.getY(), to.getBlockZ()+0.5));
-					guard.setRot(new Vector3d(0.0, player.getHeadRotation().getY(), 0.0));
-					
 					return CommandResult.success();
 				}
 			}).build());
@@ -661,5 +682,16 @@ static void register() {
 			dist += 0.1;
 		}
 		return Optional.empty();
+	}
+
+	/** throws number format exception if the option has a invalid (non positive integer) value */
+	static Optional<Integer> getMaximumStockDistance(Player player) throws NumberFormatException {
+		Optional<String> val = player.getOption("vshop.option.chestlink.distance");
+		Optional<Integer> res = val
+				.filter(s->s.matches("[1-9][0-9]*"))
+				.map(Integer::valueOf);
+		if (val.isPresent() && !res.isPresent())
+			throw new NumberFormatException();
+		return res;
 	}
 }

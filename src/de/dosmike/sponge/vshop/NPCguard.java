@@ -197,7 +197,7 @@ public class NPCguard {
 	}
 	/** by setting a owner id this will try to turn into a player shop.<br>
 	 * If there's no chest below the shop this will throw a IllegalStateException.<br>
-	 * If the argument is null the playershop accociation is lifted */
+	 * If the argument is null the playershop association is lifted */
 	public void setPlayerShop(UUID owner) throws IllegalStateException {
 		if (owner == null) {
 			playershopholder = null;
@@ -239,6 +239,7 @@ public class NPCguard {
 	public Optional<Location<World>> getStockContainer() {
 		return playershopholder==null?Optional.empty():Optional.of(playershopcontainer);
 	}
+	/** if present this shop is a player-shop as defined by setPlayerShop */
 	public Optional<UUID> getShopOwner() {
 		return playershopholder==null?Optional.empty():Optional.of(playershopholder);
 	}

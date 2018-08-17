@@ -1,9 +1,11 @@
 permission.missing:You do not have permission to do this!
+option.invalidvalue:The option '%option%' for the player %player% or their permission group is not numeric or negative. Please ensure a positive integer value. If you're a Player please report this to your responsible Server admins.
 cmd.description.short:/vshop <command> <options>
 cmd.description.long:Always look at the shop you want to edit! Options for:\nCREATE : [--at <Position>] <EntityType> [--skin <Skin>] [Name]\n    Skin is supposed to be a valid skin for this Mob\n    Position is formatted like: world/x/y/z/rotation\nADD : [-o <Index>] [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] (Hold ItemStack)\n    - as Price will disable that option, one required\n    The l flag can limit the maximum stock of this item for player-shops\n	The o flag can be used to replace an item at the Index, start with 1\nREMOVE : <Index>\n    Count through items in shop inventory, start with 1\nDELETE : (No arguments)\nLINK : (No arguments)\n    Afterwards you need to open a chest to link a player-shop to it. Use again to cancel.\nIDENTIFY / ID : (No arguments)\nRELOAD : (No arguments)\n    Tries to reload skins for Sponge:Human entities\nLIST : [Player]\n    List all shops (for a player) with a teleport short-cut and invsee
 cmd.playeronly:This command can only be run by players
 cmd.missingargument:Please specify an argument
 cmd.common.notarget:There is no shop where you're looking!
+cmd.common.noshopforid:The specified UUID did not match any shop.
 cmd.create.invalidtype:Invalid EntityType (use tab to auto-complete)
 cmd.create.entitypermission:This EntityType requires permission %permission%
 cmd.create.invalidvariant:No such Style/Variant found for %variant% - Use NONE or 0 to get the default Style/Variant
@@ -15,6 +17,7 @@ cmd.create.playershop.limit:You may not create more than %limit% shops
 cmd.create.success:Created a new admin shop called %name%
 cmd.add.limit.adminshop:You can't add stock limits to an admin-shop
 cmd.add.overwrite.index:There is no item on the specified position
+cmd.add.itemlimit:You can't pack more than 27 items in a shop.
 cmd.add.buyprice:The BuyPrice was not '~' or a decimal
 cmd.add.sellprice:The SellPrice was not '~ or a decimal
 cmd.add.noprice:You need to specify at lease one of BuyPrice and SellPrice
@@ -26,12 +29,14 @@ cmd.remove.invalidindex:There is no item on the specified position
 cmd.remove.success:Removed item at position %pos% from the shop
 cmd.identify.adminshop:the Server
 cmd.identify.response:A %type% called %name% [%id%]\nThis shop is owned by %owner%
+cmd.identify.shiftclick:Shift-click to copy the id into chat
 cmd.link.cancelled:Linking cancelled
 cmd.link.adminshop:You can't link an admin-shop to a chest 
 cmd.link.notyourshop:You may only relink containers for shops you own
 cmd.link.hitachest:Open the chest you want to link to this shop. Use '/vshop link' again to cancel
 cmd.link.nochest:You can only link to standard chests
 cmd.link.missingshop:Couldn't find the shop supposed to link this chest to
+cmd.link.distance:You are too far away! The distance to the container may not exceed %distance% blocks.
 cmd.link.success:This chest is now linked to the shop. The old container is no longer protected!
 cmd.deleted:Shop deleted!
 cmd.saved:Shops saved!
@@ -55,6 +60,7 @@ shop.shopowner.missingitems:The items is currently out of stock
 shop.customer.inventoryfull:You can not carry any more items
 shop.shopowner.inventoryfull:The shop can not stock more items
 shop.customer.incomelimit:You have hit your income limit from admin shops for the day
+shop.customer.incomelimit:The amount you can spend a day is limited. Try again tomorrow.
 shop.chat.transaction.base:Your shop %shop% sold %items%. In total %money%.
 shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
 shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%

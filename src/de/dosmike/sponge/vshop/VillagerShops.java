@@ -1,22 +1,16 @@
 package de.dosmike.sponge.vshop;
 
-import java.io.File;
-import java.math.BigDecimal;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.reflect.TypeToken;
+import com.google.inject.Inject;
+import de.dosmike.sponge.languageservice.API.LanguageService;
+import de.dosmike.sponge.languageservice.API.PluginTranslation;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigDir;
@@ -25,7 +19,6 @@ import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
-import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
@@ -41,22 +34,17 @@ import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import com.google.common.reflect.TypeToken;
-import com.google.inject.Inject;
-
-import de.dosmike.sponge.languageservice.API.LanguageService;
-import de.dosmike.sponge.languageservice.API.PluginTranslation;
-import de.dosmike.sponge.vshop.webapi.VShopServlet;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.ConfigurationOptions;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
-import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
-import ninja.leaping.configurate.loader.ConfigurationLoader;
-import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
-import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
+import java.io.File;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 @Plugin(id="vshop", name="VillagerShops",
-	version="1.9-pre2", authors={"DosMike"},
+	version="1.9", authors={"DosMike"},
 	dependencies = {
 		@Dependency(id="langswitch", optional=false),
 		@Dependency(id="webapi", optional=true)
@@ -158,22 +146,6 @@ public class VillagerShops {
 		
 		Sponge.getEventManager().registerListeners(this, new EventListeners());
 	}
-	/** Dependency management does not really work within sponge, it relies way to heavily on alphabetical 
-	 * sorting event though i specified deps EVERYWHERE i could imagine. <br>
-	 * So In order for this hook to load reliably after webapi and before that's continuing i have to use this
-	 * intermediate event, whether i like it or not */
-	@Listener
-	public void onServerPostInit(GamePostInitializationEvent event) {
-		try {
-			//trick here:
-			// if we can't get the class for name an exception is thrown preventing the real depending code from even being looked at.
-			// this requires the entry point to not be obfuscated, but for an API that's normally not the case anyways. 
-			if (Sponge.getPluginManager().getPlugin("webapi").isPresent())
-				VShopServlet.init();
-		} catch(Exception e) {
-			l("WebAPI not found, skipping");
-		}
-	}
 	
 	@Listener
 	public void onServerStart(GameStartedServerEvent event) {
@@ -271,7 +243,7 @@ public class VillagerShops {
 			for (Currency c : economyService.getCurrencies()) if (c.getId().equals(name)) return c;
 			for (Currency c : economyService.getCurrencies()) if (c.getName().equalsIgnoreCase(name)) return c;
 		}
-		 return economyService.getDefaultCurrency();
+		return economyService.getDefaultCurrency();
 	}
 	
 	@SuppressWarnings("serial")
@@ -416,5 +388,10 @@ public class VillagerShops {
 			openShops.remove(player);
 			actionUnstack.remove(player);
 		}
+	}
+
+	/** format a bigDecimal to a precision of 3, because everything else makes no sense in currency context */
+	public static String nf(BigDecimal value) {
+		return value.round(new MathContext(3, RoundingMode.HALF_EVEN)).toString();
 	}
 }

@@ -1,16 +1,15 @@
 package de.dosmike.sponge.vshop;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-
+import de.dosmike.sponge.languageservice.API.PluginTranslation;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
-import de.dosmike.sponge.languageservice.API.PluginTranslation;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 public class ChestLinkManager {
 	private static Map<UUID, UUID> activeLinker = new HashMap<>();
@@ -38,7 +37,8 @@ public class ChestLinkManager {
 		}
 	}
 	
-	/** @return true if the player was marked as active linker */
+	/** @return true if the player was marked as active linker and
+	 * the interaction event with a potential container should be cancelled */
 	public static boolean linkChest(Player player, TileEntityCarrier carrier) {
 		PluginTranslation l = VillagerShops.getTranslator();
 		
@@ -54,6 +54,29 @@ public class ChestLinkManager {
 				player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
 						l.local("cmd.link.missingshop").resolve(player).orElse("[where's the shop?]")));
 			} else {
+
+				Optional<Integer> distance = Optional.empty();
+				if (npc.get().getShopOwner().isPresent()) try {
+					distance = CommandRegistra.getMaximumStockDistance(player);
+				} catch (NumberFormatException nfe) {
+					player.sendMessage(Text.of(TextColors.RED, l.local("option.invalidvalue")
+							.replace("%option%", "vshop.option.chestlink.distance")
+							.replace("%player%", player.getName())
+							.resolve(player)
+							.orElse("[option value invalid]"))
+					);
+					return true;
+				}
+				if (distance.isPresent() && (
+						!carrier.getLocation().getExtent().equals(npc.get().getLoc().getExtent()) ||
+						carrier.getLocation().getPosition().distance(npc.get().getLoc().getPosition()) > distance.get())) {
+					player.sendMessage(Text.of(TextColors.RED, l.local("cmd.link.distance")
+							.replace("%distance%", distance.get())
+							.resolve(player)
+							.orElse("[too far away]")));
+					return true;
+				}
+
 				npc.get().playershopcontainer = carrier.getLocation();
 				player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
 						l.local("cmd.link.success").resolve(player).orElse("[chest linked!]")));
