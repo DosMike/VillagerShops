@@ -7,5 +7,5 @@
   "authorList": [ "DosMike" ],
   "useDependencyInformation": "true",
   "requiredMods": [ "langswitch", "spongeapi" ],
-  "dependencies": [ "langswitch", "spongeapi", "webapi" ]
+  "dependencies": [ "langswitch", "spongeapi" ]
 }]

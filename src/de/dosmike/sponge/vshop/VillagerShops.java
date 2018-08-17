@@ -46,8 +46,7 @@ import java.util.concurrent.TimeUnit;
 @Plugin(id="vshop", name="VillagerShops",
 	version="1.9", authors={"DosMike"},
 	dependencies = {
-		@Dependency(id="langswitch", optional=false),
-		@Dependency(id="webapi", optional=true)
+		@Dependency(id="langswitch", optional=false)
 	})
 public class VillagerShops {
 	
