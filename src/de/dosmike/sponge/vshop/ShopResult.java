@@ -26,6 +26,7 @@ public class ShopResult {
 	public static final ShopResult CUSTOMER_INVENTORY_FULL = new ShopResult(0, "shop.customer.inventoryfull");
 	public static final ShopResult SHOPOWNER_INVENTORY_FULL = new ShopResult(0, "shop.shopowner.inventoryfull");
 	public static final ShopResult CUSTOMER_INCOME_LIMIT = new ShopResult(0, "shop.customer.incomelimit");
+	public static final ShopResult CUSTOMER_SPENDING_LIMIT = new ShopResult(0, "shop.customer.spendinglimit");
 	public static ShopResult OK(int items) { return new ShopResult(items, null); }
 
 }

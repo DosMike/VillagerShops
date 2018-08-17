@@ -68,9 +68,11 @@ public class NPCguard {
 			if (!chunk.loadChunk(false)) 
 				throw new RuntimeException("Unable to load chunk for shop to remove old entity");
 		}
-		chunk.getEntity(le.getUniqueId()).ifPresent(ent->{
+		/*chunk.getEntity(le.getUniqueId()).ifPresent(ent->{
 			if (ent instanceof Living) ent.remove();
-		});
+		});*/
+		if (le != null && !le.isRemoved())
+			le.remove();
 		loc = newLoc;
 	}
 	public void setLoc(Location<World> loc) {
@@ -145,9 +147,11 @@ public class NPCguard {
 				} catch (Exception e) { //in case it was not:
 					Optional<User> user = VillagerShops.getUserStorage().get(fieldName);
 					if (!user.isPresent()) {
-						throw new RuntimeException("No user was found"); //if no such skin was found we throw a exception to set variant to NONE further down below
-					}
-					variant = user.get().getUniqueId();
+//						throw new RuntimeException("No user was found"); //if no such skin was found we throw a exception to set variant to NONE further down below
+						variantName = "NONE";
+						variant = null;
+					} else
+						variant = user.get().getUniqueId();
 				}
 			} else if (npcType.equals(EntityTypes.HORSE)) {
 				variant = FieldResolver.getFinalStaticAuto(HorseColor.class, fieldName);
@@ -193,7 +197,7 @@ public class NPCguard {
 	}
 	/** by setting a owner id this will try to turn into a player shop.<br>
 	 * If there's no chest below the shop this will throw a IllegalStateException.<br>
-	 * If the argument is null the playershop accociation is lifted */
+	 * If the argument is null the playershop association is lifted */
 	public void setPlayerShop(UUID owner) throws IllegalStateException {
 		if (owner == null) {
 			playershopholder = null;
@@ -235,6 +239,7 @@ public class NPCguard {
 	public Optional<Location<World>> getStockContainer() {
 		return playershopholder==null?Optional.empty():Optional.of(playershopcontainer);
 	}
+	/** if present this shop is a player-shop as defined by setPlayerShop */
 	public Optional<UUID> getShopOwner() {
 		return playershopholder==null?Optional.empty():Optional.of(playershopholder);
 	}

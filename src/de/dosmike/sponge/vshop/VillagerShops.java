@@ -1,22 +1,16 @@
 package de.dosmike.sponge.vshop;
 
-import java.io.File;
-import java.math.BigDecimal;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.reflect.TypeToken;
+import com.google.inject.Inject;
+import de.dosmike.sponge.languageservice.API.LanguageService;
+import de.dosmike.sponge.languageservice.API.PluginTranslation;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigDir;
@@ -29,6 +23,7 @@ import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
 import org.spongepowered.api.event.world.SaveWorldEvent;
+import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.SpongeExecutorService;
@@ -39,21 +34,20 @@ import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import com.google.common.reflect.TypeToken;
-import com.google.inject.Inject;
+import java.io.File;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
-import de.dosmike.sponge.languageservice.API.LanguageService;
-import de.dosmike.sponge.languageservice.API.PluginTranslation;
-import de.dosmike.sponge.vshop.webapi.WebAPI;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.ConfigurationOptions;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
-import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
-import ninja.leaping.configurate.loader.ConfigurationLoader;
-import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
-import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
-
-@Plugin(id="vshop", name="VillagerShops", version="1.8.1", authors={"DosMike"})
+@Plugin(id="vshop", name="VillagerShops",
+	version="1.9", authors={"DosMike"},
+	dependencies = {
+		@Dependency(id="langswitch", optional=false)
+	})
 public class VillagerShops {
 	
 	public static void main(String[] args) { System.err.println("This plugin can not be run as executable!"); }
@@ -150,20 +144,11 @@ public class VillagerShops {
 		customSerializer.registerType(TypeToken.of(NPCguard.class), new NPCguardSerializer());
 		
 		Sponge.getEventManager().registerListeners(this, new EventListeners());
-		
-		try {
-			//trick here:
-			// if we can't get the class for name an exception is thrown preventing the real depending code from even being looked at.
-			// this requires the entry point to not be obfuscated, but for an API that's normally not the case anyways. 
-			Class<?> webAPIAPI = Class.forName("valandur.webapi.api.WebAPIAPI");
-			if (webAPIAPI != null) WebAPI.init();
-		} catch(Exception e) {
-			l("WebAPI not found, skipping");
-		}
 	}
 	
 	@Listener
 	public void onServerStart(GameStartedServerEvent event) {
+		l("Registering commands...");
 		CommandRegistra.register();
 		
 		try {
@@ -229,17 +214,25 @@ public class VillagerShops {
 					.setPath(privateConfigDir.resolve("incomeLimits.conf")).build();
 			ConfigurationNode root = limitManager.load();
 			if (!root.getNode("income").isVirtual() && !root.getNode("timestamp").isVirtual()) {
-				Map<UUID, BigDecimal> values = new HashMap<>();
+				Map<UUID, BigDecimal> earningValues = new HashMap<>();
+				Map<UUID, BigDecimal> spendingValues = new HashMap<>();
 				root.getNode("income").getChildrenMap().forEach((k,v)->{
 					try {
-						values.put(UUID.fromString((String)k), new BigDecimal(v.getString("0")));
+						earningValues.put(UUID.fromString((String)k), new BigDecimal(v.getString("0")));
+					} catch (Exception invalid) {
+						invalid.printStackTrace();
+					}
+				});
+				root.getNode("spending").getChildrenMap().forEach((k,v)->{
+					try {
+						spendingValues.put(UUID.fromString((String)k), new BigDecimal(v.getString("0")));
 					} catch (Exception invalid) {
 						invalid.printStackTrace();
 					}
 				});
 				long dayStamp = root.getNode("timestamp").getLong(System.currentTimeMillis());
 				
-				incomeLimiter.loadFromConfig(values, dayStamp);
+				incomeLimiter.loadFromConfig(earningValues, spendingValues, dayStamp);
 			}
 		} catch (Exception e1) {
 		}
@@ -249,7 +242,7 @@ public class VillagerShops {
 			for (Currency c : economyService.getCurrencies()) if (c.getId().equals(name)) return c;
 			for (Currency c : economyService.getCurrencies()) if (c.getName().equalsIgnoreCase(name)) return c;
 		}
-		 return economyService.getDefaultCurrency();
+		return economyService.getDefaultCurrency();
 	}
 	
 	@SuppressWarnings("serial")
@@ -272,6 +265,12 @@ public class VillagerShops {
 			ConfigurationNode sub = root.getNode("income");
 			Map<String, String> ser = new HashMap<>();
 			for (Entry<UUID, BigDecimal> e : incomeLimiter.getEarnings().entrySet()) {
+				ser.put(e.getKey().toString(), e.getValue().toString());
+			}
+			sub.setValue(new TypeToken<Map<String, String>>() {}, ser);
+			sub = root.getNode("spending");
+			ser.clear();
+			for (Entry<UUID, BigDecimal> e : incomeLimiter.getSpendings().entrySet()) {
 				ser.put(e.getKey().toString(), e.getValue().toString());
 			}
 			sub.setValue(new TypeToken<Map<String, String>>() {}, ser);
@@ -388,5 +387,10 @@ public class VillagerShops {
 			openShops.remove(player);
 			actionUnstack.remove(player);
 		}
+	}
+
+	/** format a bigDecimal to a precision of 3, because everything else makes no sense in currency context */
+	public static String nf(BigDecimal value) {
+		return value.round(new MathContext(3, RoundingMode.HALF_EVEN)).toString();
 	}
 }

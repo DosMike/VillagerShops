@@ -16,8 +16,8 @@ You can also name the shop mobs and set the variant (Villager profession).<br>
 *Please note that you require any economy Plugin for this to work*<br>
 <sub>Let's just never mention the Bukkit-version...</sub>
 
-Latest Version: 1.8.1 (2018-02-04)<br>
-(Written, compiled and tested for spongevanilla-1.12-7.1.0-BETA-9)
+Latest Version: 1.9 (2018-08-17)<br>
+(Written, compiled and tested for spongevanilla-1.12-7.1.0-BETA-97)
 
 Commands
 -----
@@ -34,15 +34,17 @@ For every edit command but create, please look at the shop
 - `/vshop reload` (reapply skins on sponge:human entities)
 - `/vshop ledger [Player]` or `/vshop log [Player]` (display last 100 transactions the players shops made)
 - `/vshop list [Player]` (list all shops, offer invsee for player shops and tp)
+- `/vshop tphere <Shop ID>` moves a shop by id (`/vshop identify`) to your current location
 
 Permissions
 -----
-- `vshop.edit.admin` edit any shop, create admin shops, `/vshop save`, `/vshop reload`, `/vshop list`
+- `vshop.edit.admin` edit any shop, create admin shops, `/vshop save`, `/vshop reload`, `/vshop list`, `/vshop tphere`
 - `vshop.edit.player` is required to create your player shop
 - the add, remove and delete command are always available for shops you own
 - `vshop.create.<ENTITYTYPE>` is required for each entity type a player should be allowed to create, where colons are replaced with dots and dashed are taken out. so for example `minecraft:villager`s would require `vshop.create.minecraft.villager`
 - `vshop.edit.identify` for `/vshop identify`
 - `vshop.edit.linkchest` for `/vshop link`
+- `vshop.edit.move` for `/vshop tphere`
 - `vshop.ledger.base` for `/vshop ledger`
 - `vshop.ledger.others` for `/vshop ledger <Player>`
 
@@ -52,6 +54,7 @@ With LuckPerms you can set options like `/lp user DosMike meta set KEY VALUE`
 
 - `vshop.option.playershop.limit` Number of player-shops one is allowed to have
 - `vshop.option.dailyincome.limit` Maximum money a player may earn through admin shops per irl day, reset at 24:00 server time
+- `vshop.option.chestlink.distance` Maximum distance a player-shop may have to it's stock-container. This affects `/vshop link` as well as `/vshop tphere`
 
 Player Shops
 -----

@@ -183,7 +183,7 @@ public class LedgerManager {
 					.replace("%amount%", amount)
 					.replace("%item%", Text.of(TextStyles.ITALIC, Text.builder(displayName)
 							.onHover(TextActions.showItem(display.createSnapshot()))
-							.build(), "§r")) //reset won't properly work for me for some reason
+							.build(), "Â§r")) //reset won't properly work for me for some reason
 					.replace("%index%", slot)
 					.replace("%price%", gain?payed:-payed)
 					.replace("%currency%", currency.getSymbol())

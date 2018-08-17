@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.entity.EntityType;
-import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Chunk;
 import org.spongepowered.api.world.Location;
@@ -68,7 +67,8 @@ public class API {
 				throw new RuntimeException("Unable to load chunk for shop to remove old entity");
 		}
 		chunk.getEntity(shop.getLe().getUniqueId()).ifPresent(ent->{
-			if (ent instanceof Living) ent.remove();
+			//if (ent instanceof Living) 
+				ent.remove();
 		});
 	}
 	

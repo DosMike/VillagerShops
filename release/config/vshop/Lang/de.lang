@@ -1,9 +1,11 @@
 permission.missing:Dir fehlen die Rechte, um diesen Befehl zu verwenden!
+option.invalidvalue:Die Option '%option%' für den Spieler %player% oder deren Berechtigungsgruppe ist nicht numerisch oder negativ. Bitte verwenden Sie einen ganzzahligen positiven Wert. Fals Sie nur ein Spieler sind melden Sie diesen Fehler bitte den zuständigen Admins.
 cmd.description.short:/vshop <befehl> <optionen>
 cmd.description.long:Schaue immer auf den shop, den du bearbeiten willst! Optionen für:\nCREATE : [--at <Position>] <EntityType> [--skin <Skin>] [Name]\n    Skin sollte ein gültiger Skin für diesen Mob sein\n    Position hat folgenden Aufbau: Welt/x/y/z/Drehung\nADD : [-o <Index>] [-l <Limit>] <~|KaufPreis> <~|VerkaufsPreis> [Währung] (Halte den ItemStack)\n    - als Preis deaktiviert diese Option, eine benötigt\n    Die l-Flag kann den maximalen Vorrat für Player-Shops begrenzen\n    Die o-Flag kann verwendet werden um ein Item am angegebenen Index zu ersetzen, beginnend mit 1\nREMOVE : <Index>\n    Zähle die items im Shop-Inventar, beginnend mit 1\nDELETE : (Keine Optionen)\nLINK : (Keine Optionen)\n    Danach muss du eine Kiste öffnen, um diese mit dem Player-Shop zu verlinken.\n    Nochmal verwenden um den Vorgang abzubrechen.\nIDENTIFY / ID : (Keine Optionen)\nRELOAD : (Keine Optionen)\nLIST : [Player]\n    Listet alle shops (von diesem Spieler) und bietet eine Teleport function sowie invsee
 cmd.playeronly:Diesen Befehl können nur Spieler ausführen
 cmd.missingargument:Bitte gib ein argument an
 cmd.common.notarget:Du siehst gerade keinen Shop an!
+cmd.common.noshopforid:Die angegebene UUID stimmt mit keinem Shop überein.
 cmd.create.invalidtype:Ungültiger EntityType (verwende Tab zur Auto-Vervollständigung)
 cmd.create.entitypermission:Dieser EntityType benötigt die Berechtigung %permission%
 cmd.create.invalidvariant:Diese(n) Skin/Variante gibt es nicht für %variant% - Verwende NONE oder 0 für die standart Variante
@@ -15,6 +17,7 @@ cmd.create.playershop.limit:Du darfst nicht mehr als %limit% Shops erstellen
 cmd.create.success:Ein neuer Admin-Shop namens %name% wurde erstellt
 cmd.add.limit.adminshop:Du kannst den Vorrat in einem Admin-Shop nicht begrenzen
 cmd.add.overwrite.index:And der angegebenen Position befindet sich kein Item
+cmd.add.itemlimit:Du kannst nicht mehr als 27 items in einen Shop packen.
 cmd.add.buyprice:Der KaufPreis war nicht '~' oder eine Zahl
 cmd.add.sellprice:Der VerkaufsPreis war nicht '~' oder eine Zahl
 cmd.add.noprice:Du musst mindestens einen Betrag für KaufsPreis oder VerkaufsPreis angeben!
@@ -24,12 +27,14 @@ cmd.add.success:Item %item% wurde an Position %pos% dem Shop hinzugefügt
 cmd.add.replaced:Das Item an Position %pos% wurde durch %item% ersetzt
 cmd.identify.adminshop:dem Server
 cmd.identify.response:Ein %type% namens %name% [%id%]\nDieser Shop gehört %owner%
+cmd.identify.shiftclick:Shift-Klicken um die ID in den chat zu kopieren
 cmd.link.cancelled:Linking abgebrochen
 cmd.link.adminshop:Du kannst einem Admin-Shop keine Kiste zuweisen 
 cmd.link.notyourshop:Du darfst nur neue Kontainer an Shops zuweisen, die dir gehören
 cmd.link.hitachest:Öffne die Kiste, mit der du diesen Shop verbinden willst. Verwende '/vshop link' erneut um den Vofgang abzubrechen
 cmd.link.nochest:Du kannst nur einzelne Standart-Kisten zuweisen 
 cmd.link.missingshop:Konnte den Shop nicht finden, dem der Kontainer zugewiesen werden sollte!
+cmd.link.distance:Du bist zu weit weg! Die Distanz zum Kontainer darf %distance% Blöcke nicht überschreiten.
 cmd.link.success:Dieser Kontainer ist nun mit dem Shop verbinden. Der alte Kontainer wird nicht mehr geschützt!
 cmd.remove.invalidindex:An der angegebenen Position befindet sich kein Item
 cmd.remove.success:Item an der Position %pos% wurde vom Shop entfernt
@@ -55,6 +60,7 @@ shop.shopowner.missingitems:Dieses Item ist im Shop niicht mehr vorrätig
 shop.customer.inventoryfull:Du kannst keines dieser Items mehr tragen
 shop.shopowner.inventoryfull:Der Shop kann keine weiteren Items lagern
 shop.customer.incomelimit:Du hast deine Einkommesgrenze durch Adminshops für den Tag erreicht
+shop.customer.spendinglimit:Deine täglichen Ausgaben sind begrenzt. Versuche es morgen erneut.
 shop.chat.transaction.base:Dein Shop %shop% handelte %items%. Unterm Strich %money%.
 shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
 shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
