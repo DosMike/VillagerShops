@@ -45,26 +45,18 @@ public class InteractionHandler {
 	
 	/** return true to cancel the event in the parent */
 	static boolean clickInventory(Player source, int slot) {
-		//assume width of 9
-//		int column=slot%9, row=slot/9;
-		
 		if (!VillagerShops.openShops.containsKey(source.getUniqueId())) {
-//			VillagerShops.l("No openShop");
 			return false;
 		}
 		Optional<NPCguard> shop = VillagerShops.getNPCfromShopUUID(VillagerShops.openShops.get(source.getUniqueId()));
 		if (!shop.isPresent()) {
-//			VillagerShops.l("No NPCguard");
 			return false;
 		}
 		
 		int type = InvPrep.isSlotBuySell(slot);
 		int index = InvPrep.slotToIndex(slot);
 		if (type < 2) {
-//			stock.itemClicked(source, index, type);
 			shopItemClicked(shop.get(), source, index, type);
-//			ItemStack item = stock.getItem(index).getItem();
-//			source.sendMessage(Text.of("You ", type==0?"bought":"sold", " ", itemcount, " ", item.get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getTranslation()))));
 			
 			Sponge.getScheduler().createSyncExecutor(VillagerShops.instance).schedule(()-> {
 				Optional<Container> stockinv = source.getOpenInventory();
@@ -88,7 +80,7 @@ public class InteractionHandler {
 		Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
 		if (!acc.isPresent()) return 0;
 		Optional<UUID> shopOwner = shop.getShopOwner();
-		Optional<UniqueAccount> acc2 = shopOwner.isPresent()?VillagerShops.getEconomy().getOrCreateAccount(shopOwner.get()):Optional.empty();
+		Optional<UniqueAccount> acc2 = shopOwner.flatMap(uuid -> VillagerShops.getEconomy().getOrCreateAccount(uuid));
 		if (shopOwner.isPresent() && !acc2.isPresent()) return 0;
 		
 		StockItem item = prep.getItem(index);
@@ -104,7 +96,8 @@ public class InteractionHandler {
 						.replace("%balance%", Text.of(TextColors.GOLD, VillagerShops.nf(acc.get().getBalance(currency)), currency.getSymbol(), TextColors.RESET))
 						.replace("%payed%", Text.of(TextColors.RED, "-", String.format("%.2f", finalPrice), TextColors.RESET)) 
 						.replace("%amount%", Text.of(TextColors.YELLOW, result.getTradedItems(), TextColors.RESET))
-						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getName())) ))
+						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME)
+								.orElse(Text.of(FieldResolver.getType(item.getItem()).getTranslation().get(VillagerShops.playerLocale(player)))) ))
 						.resolve(player).orElse(Text.of("[items bought]")
 						));
 				if (shop.getShopOwner().isPresent()) {
@@ -123,7 +116,7 @@ public class InteractionHandler {
 						.replace("%balance%", Text.of(TextColors.GOLD, VillagerShops.nf(acc.get().getBalance(currency)), currency.getSymbol(), TextColors.RESET))
 						.replace("%payed%", Text.of(TextColors.GREEN, "+", String.format("%.2f", finalPrice), TextColors.RESET)) 
 						.replace("%amount%", Text.of(TextColors.YELLOW, result.getTradedItems(), TextColors.RESET))
-						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getTranslation().get())) ))
+						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getTranslation().get(VillagerShops.playerLocale(player)))) ))
 						.resolve(player).orElse(Text.of("[items bought]")
 						));
 				if (shop.getShopOwner().isPresent()) {

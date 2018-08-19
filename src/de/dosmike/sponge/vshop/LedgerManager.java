@@ -1,31 +1,5 @@
 package de.dosmike.sponge.vshop;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
-import javax.sql.DataSource;
-
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
@@ -43,9 +17,22 @@ import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
 public class LedgerManager {
 	
-	private static Map<UUID, Set<Transaction>> spamless = new HashMap<>(); //mapping shopID to transactions that happened for that shop
+	private static final Map<UUID, Set<Transaction>> spamless = new HashMap<>(); //mapping shopID to transactions that happened for that shop
 	public static void backstuffChat(Transaction transaction) {
 		synchronized(spamless) {
 			Set<Transaction> v;
@@ -71,13 +58,13 @@ public class LedgerManager {
 			amount += data.amount;
 			money += data.payed;
 		}
-		Text toText(ItemType type) {
+		Text toText(ItemType type, Locale locale) {
 			boolean gain = money>=0;
 			return Text.of(
 					(gain?TextColors.GREEN:TextColors.RED), 
 					(gain?"+"+money:money.toString()), currency.getSymbol(), 
 					TextColors.RESET, gain?" ":" -", amount, " ", 
-					type.getName()
+					type.getTranslation().get(locale)
 					);
 		}
 		@Override
@@ -113,7 +100,7 @@ public class LedgerManager {
 				List<Text> items = data.entrySet().stream()
 					.sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
 					.filter(idl->idl.getValue().amount!=0 && idl.getValue().money!=0) //filter transactions, that cancel each other out
-					.map((Entry<ItemType, DataCollector> idl)->idl.getValue().toText(idl.getKey()))
+					.map((Entry<ItemType, DataCollector> idl)->idl.getValue().toText(idl.getKey(), VillagerShops.playerLocale(online)))
 					.collect(Collectors.toList());
 				if (items.isEmpty()) continue; //all transactions cancelled each other out, so basically nothing changed
 				List<Text> icl = income.entrySet().stream()
@@ -164,12 +151,12 @@ public class LedgerManager {
 			String displayName = "???";
 			if (type.isPresent()) {
 				display = ItemStack.of(type.get(), amount);
-				displayName = display.getType().getName();
+				displayName = display.getType().getTranslation().get(VillagerShops.playerLocale(viewer));
 			} else {
 				display = ItemStack.builder()
 					.itemType(ItemTypes.GLASS)
 					.add(Keys.DISPLAY_NAME, Text.of("???"))
-					.add(Keys.ITEM_LORE, Arrays.asList(new Text[]{ Text.of(TextColors.WHITE, "ID: ", itemID) }))
+					.add(Keys.ITEM_LORE, Collections.singletonList(Text.of(TextColors.WHITE, "ID: ", itemID)))
 					.build();
 			}
 //			Currency c = VillagerShops.getInstance().CurrencyByName(currency);
@@ -230,10 +217,10 @@ public class LedgerManager {
 			else return Text.of(Text.builder(user.get().getName()).color(TextColors.BLUE)
 					.onHover(TextActions.showText(Text.of(
 							TextColors.WHITE, "UUID: ", TextColors.GRAY, player.toString(),
-							TextColors.WHITE, "Last Seen: ", 
-								(user.get().isOnline() 
+							TextColors.WHITE, "Last Seen: ",
+								(user.get().isOnline()
 										? Text.of(TextColors.GREEN, "Online")
-										: Text.of(TextColors.GRAY, user.get().get(Keys.LAST_DATE_PLAYED).orElse(Instant.now()).toString())) 
+										: Text.of(TextColors.GRAY, user.get().get(Keys.LAST_DATE_PLAYED).orElse(Instant.now()).toString()))
 					))).build(), TextColors.RESET);
 		}
 		
@@ -298,32 +285,26 @@ public class LedgerManager {
 	}
 	
 	public static Future<List<Transaction>> getLedgerFor(User user) {
-		Future<List<Transaction>> result = //new CompletableFuture<>();
-			VillagerShops.getAsyncScheduler().submit(new Callable<List<Transaction>>(){
-				@Override
-					public List<Transaction> call() throws Exception {
-						String sql = "SELECT `customer`, `vendor`, `item`, `slot`, `amount`, `price`, `currency`, `date` FROM `vshopledger` WHERE `vendor`=? ORDER BY `ID` DESC LIMIT 250;";
-						List<Transaction> transactions = new LinkedList<>();
-						for (NPCguard npc : VillagerShops.getNPCguards()) 
-							if (npc.isShopOwner(user.getUniqueId()))
-							    try (Connection conn = getDataSource().getConnection();
-							         PreparedStatement stmt = conn.prepareStatement(sql)) {
-							    	
-							    	stmt.setString(1, npc.getIdentifier().toString());
-							    	ResultSet results = stmt.executeQuery();
-							        while (results.next()) {
-							            transactions.add(Transaction.fromDatabase(results));
-							        }
-							        results.close();
-							    } catch (SQLException e) {
-							    	VillagerShops.getSyncScheduler().execute(()->e.printStackTrace());
-								}
+		return VillagerShops.getAsyncScheduler().submit(() -> {
+				String sql1 = "SELECT `customer`, `vendor`, `item`, `slot`, `amount`, `price`, `currency`, `date` FROM `vshopledger` WHERE `vendor`=? ORDER BY `ID` DESC LIMIT 250;";
+				List<Transaction> transactions = new LinkedList<>();
+				for (NPCguard npc : VillagerShops.getNPCguards())
+					if (npc.isShopOwner(user.getUniqueId()))
+						try (Connection conn = getDataSource().getConnection();
+							 PreparedStatement stmt = conn.prepareStatement(sql1)) {
+
+							stmt.setString(1, npc.getIdentifier().toString());
+							ResultSet results = stmt.executeQuery();
+							while (results.next()) {
+								transactions.add(Transaction.fromDatabase(results));
+							}
+							results.close();
+						} catch (SQLException e) {
+							VillagerShops.getSyncScheduler().execute(e::printStackTrace);
+						}
 //					    VillagerShops.getSyncScheduler().execute(()->VillagerShops.l("Found %d entries", transactions.size()));
-					    return transactions;
-					}
-				});
-		
-		return result;
+				return transactions;
+			});
 	}
 	
 	/** return success */

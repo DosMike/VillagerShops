@@ -37,7 +37,7 @@ public class FieldResolver {
 		try {
 			Collection<T> result = Sponge.getRegistry().getAllOf(clazz);
 			if (field < 0 || field > result.size()) return null;
-			return result.toArray(new CatalogType[result.size()])[field];
+			return result.toArray(new CatalogType[0])[field];
 		} catch (Exception e) {
 //			e.printStackTrace();
 			return null;

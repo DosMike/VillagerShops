@@ -13,6 +13,7 @@ import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollectio
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.entity.Entity;
@@ -57,6 +58,7 @@ public class VillagerShops {
 	
 	private EconomyService economyService = null;
 	private PluginTranslation translator = null;
+	private LanguageService languageService = null;
 	private UserStorageService userStorage = null;
 	private IncomeLimiterService incomeLimiter = null;
 	private SpongeExecutorService asyncScheduler = null;
@@ -67,13 +69,14 @@ public class VillagerShops {
 		if (event.getService().equals(EconomyService.class)) {
 			economyService = (EconomyService) event.getNewProvider();
 		} else if (event.getService().equals(LanguageService.class)) {
-			LanguageService languageService = (LanguageService) event.getNewProvider();
+			languageService = (LanguageService) event.getNewProvider();
 			translator = languageService.registerTranslation(this); //add this plugin to langswitch
 		} else if (event.getService().equals(UserStorageService.class)) {
 			userStorage = (UserStorageService) event.getNewProvider();
 		}
 	}
 	public static PluginTranslation getTranslator() { return instance.translator; }
+	public static LanguageService getLangSwitch() { return instance.languageService; }
 	public static EconomyService getEconomy() { return instance.economyService; }
 	public static UserStorageService getUserStorage() { return instance.userStorage; }
 	public static IncomeLimiterService getIncomeLimiter() { return instance.incomeLimiter; }
@@ -95,7 +98,7 @@ public class VillagerShops {
 	//this flag should be set every time the npcs list is changed, or a property of a shop changes
 	//or a item was added or removed from the shop
 	boolean npcsDirty = false;  
-	private static List<NPCguard> npcs = new LinkedList<NPCguard>();
+	private static final List<NPCguard> npcs = new LinkedList<>();
 	static void addNPCguard(NPCguard add) {
 		synchronized(npcs) {
 			npcs.add(add);
@@ -201,11 +204,12 @@ public class VillagerShops {
 			ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
 			try {
 				ConfigurationNode root = configManager.load(options);
-				npcs = root.getNode("shops").getValue(NPCguardSerializer.tokenListNPCguard);
+				npcs.clear();
+				npcs.addAll(
+						root.getNode("shops").getValue(NPCguardSerializer.tokenListNPCguard)
+				);
 			} catch (Exception e1) {
 				e1.printStackTrace();
-			} finally {
-				if (npcs == null) npcs = new LinkedList<>();
 			}
 			npcsDirty = false;
 		}
@@ -234,8 +238,7 @@ public class VillagerShops {
 				
 				incomeLimiter.loadFromConfig(earningValues, spendingValues, dayStamp);
 			}
-		} catch (Exception e1) {
-		}
+		} catch (Exception e1) {/**/}
 	}
 	public Currency CurrencyByName(String name) {
 		if (name != null) {
@@ -303,23 +306,17 @@ public class VillagerShops {
 	static long ledgerChatTimer = System.currentTimeMillis();
 	public static void startTimers() {
 		getSyncScheduler().scheduleWithFixedDelay(
-				new Runnable() {
-					@Override
-					public void run() {
-						synchronized(npcs) {
-							for (NPCguard npc : npcs)
-								npc.tick();
-						}
+				() -> {
+					synchronized(npcs) {
+						for (NPCguard npc : npcs)
+							npc.tick();
 					}
 				}, 100, 100, TimeUnit.MILLISECONDS);
 		getSyncScheduler().scheduleWithFixedDelay(
-				new Runnable() {
-					@Override
-					public void run() {
-						if (System.currentTimeMillis()-ledgerChatTimer > 15000) {
-							LedgerManager.dumpChat();
-							ledgerChatTimer = System.currentTimeMillis();
-						}
+				() -> {
+					if (System.currentTimeMillis()-ledgerChatTimer > 15000) {
+						LedgerManager.dumpChat();
+						ledgerChatTimer = System.currentTimeMillis();
 					}
 				}, 1, 1, TimeUnit.SECONDS);
 	}
@@ -359,13 +356,13 @@ public class VillagerShops {
 	
 	public static void closeShopInventories() {
 		for (Entry<UUID,UUID> shop : openShops.entrySet()) {
-			Player p = Sponge.getServer().getPlayer(shop.getKey()).orElse(null);
-			if (p != null) p.closeInventory();
+			Sponge.getServer().getPlayer(shop.getKey())
+					.ifPresent(Player::closeInventory);
 		}
 		openShops.clear();
 	}
 	public static void closeShopInventories(UUID shopID) {
-		List<UUID> rem = new LinkedList<UUID>();
+		List<UUID> rem = new LinkedList<>();
 		for (Entry<UUID,UUID> shop : openShops.entrySet()) {
 			if (shop.getValue().equals(shopID)) {
 				Player p = Sponge.getServer().getPlayer(shop.getKey()).orElse(null);
@@ -392,5 +389,9 @@ public class VillagerShops {
 	/** format a bigDecimal to a precision of 3, because everything else makes no sense in currency context */
 	public static String nf(BigDecimal value) {
 		return value.round(new MathContext(3, RoundingMode.HALF_EVEN)).toString();
+	}
+
+	public static Locale playerLocale(CommandSource viewer) {
+		return getLangSwitch().getSelectedLocale(viewer);
 	}
 }

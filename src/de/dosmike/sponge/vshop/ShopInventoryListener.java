@@ -35,11 +35,7 @@ public class ShopInventoryListener implements Consumer<ClickInventoryEvent>{
 		}
 		
 		int slotIndex=-1;
-		
-		//thanks for this great API so far *eyes rolling*
-		
-		//Inventory target = event.getTargetInventory().query(OrderedInventory.class); //not working
-		
+
 		//items we added hold a slotum value, so we can simply check for that and retrieve the correct slot
 		//props to codeHusky for figuring the slotnum workaround...
 		Optional<Object> unsafeslot = event.getCursorTransaction().getDefault().toContainer().get(DataQuery.of("UnsafeData", "vShopSlotNum"));
@@ -61,9 +57,4 @@ public class ShopInventoryListener implements Consumer<ClickInventoryEvent>{
 		}
 		event.setCancelled(true);
 	}
-	
-	/*void drizzleInventory(Inventory i, String p) {
-		VillagerShops.l("%s%s", p, i.getClass().getSimpleName());
-		for (Inventory ii : i) drizzleInventory(ii, p+"+");
-	}*/
 }

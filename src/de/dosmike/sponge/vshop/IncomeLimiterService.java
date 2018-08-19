@@ -105,7 +105,7 @@ public class IncomeLimiterService {
 	}
 	
 	/** increase a users earning value, reducing the remainder for the day.
-	 * This method will use getRemainingIncome and return the amount this player can hold from {@link amount} */
+	 * This method will use getRemainingIncome and return the amount this player can hold from {@param amount} */
 	public BigDecimal registerIncome(Player player, BigDecimal amount) {
 		Optional<BigDecimal> ore = getRemainingIncome(player);
 		if (!ore.isPresent()) return BigDecimal.ZERO;

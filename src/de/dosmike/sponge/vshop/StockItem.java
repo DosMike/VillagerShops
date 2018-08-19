@@ -1,16 +1,8 @@
 package de.dosmike.sponge.vshop;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.entity.living.Villager;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
@@ -24,6 +16,13 @@ import org.spongepowered.api.service.economy.transaction.ResultType;
 import org.spongepowered.api.service.economy.transaction.TransactionResult;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public class StockItem {
 	private ItemStack item;
@@ -83,7 +82,7 @@ public class StockItem {
 		if (sellprice == null) return ItemStack.empty(); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
-		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());
+		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
 		desc.add(Text.of(TextColors.GREEN, (item.getQuantity()>1
 				? VillagerShops.getTranslator().localText("shop.item.sell.stack")
 					.replace("%price%", String.format("%.2f", sellprice))
@@ -118,7 +117,7 @@ public class StockItem {
 		if (buyprice == null) return ItemStack.empty(); //nothing
 		Text cs = currency.getSymbol();
 		ItemStack dis = item.copy();
-		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<Text>());
+		List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
 		desc.add(Text.of(TextColors.RED, (item.getQuantity()>1
 				? VillagerShops.getTranslator().localText("shop.item.buy.stack")
 					.replace("%price%", String.format("%.2f", buyprice))
@@ -151,7 +150,7 @@ public class StockItem {
 	
 	/** Tries to take a certain amount of items represented by this item from the inventory 
 	 * @param quantity the amount of items supposed to take, overriding the default in item  
-	 * @returns the amount of items taken out of the inventory */
+	 * @return the amount of items taken out of the inventory */
 	public int getFrom(Inventory inv, int quantity) {
 		int ammountLeft = quantity;
 		Inventory result = inv.queryAny(item);
@@ -172,7 +171,7 @@ public class StockItem {
 	
 	/** Tries to take the represented item with the given quantity from the inventory.
 	 * If the item has max stock, it will get the minimum of remaining stock and available items. 
-	 * @returns the amount of items taken out of the inventory */
+	 * @return the amount of items taken out of the inventory */
 	public int getFrom(Inventory inv) {
 		return getFrom(inv, maxStock<=0?item.getQuantity():Math.min(item.getQuantity(), maxStock-stocked));
 	}

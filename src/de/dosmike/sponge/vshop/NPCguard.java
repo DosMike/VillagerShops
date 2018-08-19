@@ -68,15 +68,12 @@ public class NPCguard {
 			if (!chunk.loadChunk(false)) 
 				throw new RuntimeException("Unable to load chunk for shop to remove old entity");
 		}
-		/*chunk.getEntity(le.getUniqueId()).ifPresent(ent->{
-			if (ent instanceof Living) ent.remove();
-		});*/
 		if (le != null && !le.isRemoved())
 			le.remove();
 		loc = newLoc;
 	}
 	public void setLoc(Location<World> loc) {
-		this.loc = new Location<World>(loc.getExtent(), loc.getBlockX()+0.5, loc.getY(), loc.getBlockZ()+0.5);
+		this.loc = new Location<>(loc.getExtent(), loc.getBlockX()+0.5, loc.getY(), loc.getBlockZ()+0.5);
 		VillagerShops.instance.npcsDirty = true;
 	}
 
@@ -101,8 +98,7 @@ public class NPCguard {
 							.resolve(forPlayer).orElse(Text.of("[vShop] ", displayName==null?Text.of():displayName)))
 					))
 				.listener(ClickInventoryEvent.class, sil);
-		Inventory inv = preparator.getInventory(builder, forPlayer);
-		return inv;
+		return preparator.getInventory(builder, forPlayer);
 	}
 	
 	/** recounts items in the shop container for playershops */
@@ -220,7 +216,7 @@ public class NPCguard {
 		VillagerShops.instance.npcsDirty = true;
 	}
 	public boolean isShopOwner(UUID player) {
-		return playershopholder==null?false:playershopholder.equals(player);
+		return playershopholder != null && playershopholder.equals(player);
 	}
 	public Optional<Inventory> getStockInventory() {
 		if (playershopholder==null) return Optional.empty();
@@ -301,7 +297,7 @@ public class NPCguard {
 //				    }
 				}
 			}
-		} else if (le != null) {
+		} else {
 			if (!le.isLoaded() || !chunk.isPresent() || !chunk.get().isLoaded()) {
 				le = null;	//allowing minecraft to free the resources
 			} else  if (le.isRemoved() || le.get(Keys.HEALTH).orElse(1.0)<=0) { 

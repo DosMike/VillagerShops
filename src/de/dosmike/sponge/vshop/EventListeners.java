@@ -28,25 +28,6 @@ import org.spongepowered.api.world.extent.Extent;
 import com.flowpowered.math.vector.Vector3i;
 
 public class EventListeners {
-
-	/*@Listener
-	public void onPlayerInteractEntity(InteractEntityEvent.Primary event) {
-		Optional<Player> cause = event.getCause().first(Player.class);
-		Entity target = event.getTargetEntity();
-		if (cause.isPresent())
-			if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.left))
-//				event.setCancelled(true);
-				;//canceling this event throws some huge errors... so i wont, npcs will respawn
-	}@Listener
-	public void onAttackEntity(AttackEntityEvent event) {
-		Optional<Player> cause = event.getCause().first(Player.class);
-		Entity target = event.getTargetEntity();
-		if (cause.isPresent()){
-			if (VillagerShops.getNPCfromLocation(target.getLocation()).isPresent()) {
-				event.setBaseOutputDamage(0);
-			}
-		}	
-	}*/
 	
 	@Listener
 	public void onAttackEntity(DamageEntityEvent event) {
@@ -80,30 +61,14 @@ public class EventListeners {
 	}
 
 	@Listener
-		public void onInventoryClosed(InteractInventoryEvent.Close event) {
-			Optional<Player> cause = event.getCause().first(Player.class);
-			if (cause.isPresent()) {
-				UUID target = cause.get().getUniqueId();
-				VillagerShops.openShops.remove(target);
-				VillagerShops.actionUnstack.remove(target);
-	//			l("%s closed an inventory", cause.get().getName());
-			} else {
-	//			l("An inventory was closed");
-			}
+	public void onInventoryClosed(InteractInventoryEvent.Close event) {
+		Optional<Player> cause = event.getCause().first(Player.class);
+		if (cause.isPresent()) {
+			UUID target = cause.get().getUniqueId();
+			VillagerShops.openShops.remove(target);
+			VillagerShops.actionUnstack.remove(target);
 		}
-
-	//TODO + why this is important:
-		// in case a admin/plugin opens a inventory over another inventory we will still assume we're in the shop inventory
-		@Listener
-		public void onInventoryOpened(InteractInventoryEvent.Open event) {
-			Optional<Player> cause = event.getCause().first(Player.class);
-			if (cause.isPresent()) {
-	//			openShops.remove(cause.get().getUniqueId());
-//				VillagerShops.l("%s opened and inventory %s", cause.get().getName(), event.getTargetInventory().getName());
-			} else {
-//				VillagerShops.w("Can't get player opening inventory");
-			}
-		}
+	}
 
 	@Listener
 	public void onDropItem(DropItemEvent event) {

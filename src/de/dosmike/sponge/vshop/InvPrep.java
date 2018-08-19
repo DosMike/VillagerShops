@@ -14,7 +14,7 @@ public class InvPrep {
 	
 	public static final int RowsPerItem=2; // 2 and 3 tested, 2 now recommended
 	
-	List<StockItem> items = new LinkedList<StockItem>();
+	List<StockItem> items = new LinkedList<>();
 	
 	public void addItem(StockItem si) {
 		items.add(si);
@@ -57,7 +57,7 @@ public class InvPrep {
 		return inv;
 	}
 	
-	/** @returns 0 for buy, 1 for sell, >1 for spacer */
+	/** @return 0 for buy, 1 for sell, >1 for spacer */
 	public static int isSlotBuySell(int inventoryIndex) {
 		return ((int)(inventoryIndex/9))%RowsPerItem;
 	}

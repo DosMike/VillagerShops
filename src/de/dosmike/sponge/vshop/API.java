@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Chunk;
@@ -66,10 +67,7 @@ public class API {
 			if (!chunk.loadChunk(false)) 
 				throw new RuntimeException("Unable to load chunk for shop to remove old entity");
 		}
-		chunk.getEntity(shop.getLe().getUniqueId()).ifPresent(ent->{
-			//if (ent instanceof Living) 
-				ent.remove();
-		});
+		chunk.getEntity(shop.getLe().getUniqueId()).ifPresent(Entity::remove);
 	}
 	
 	
