@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.entity.living.Villager;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
@@ -63,6 +64,9 @@ public class StockItem {
 	public int getMaxStock() {
 		return maxStock;
 	}
+	public void setMaxStock(int stockLimit) {
+		maxStock = stockLimit;
+	}
 	public int getStocked() {
 		return maxStock>0?stocked:item.getQuantity();
 	}
@@ -86,7 +90,7 @@ public class StockItem {
 					.replace("%itemprice%", Text.of(String.format("%.2f", sellprice/(double)item.getQuantity())))
 					.replace("%currency%", cs)
 					.resolve(player).orElse(
-						Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", sellprice), cs, String.format(" (á %.2f", sellprice/(double)item.getQuantity()), cs, ')')
+						Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", sellprice), cs, String.format(" (ï¿½ %.2f", sellprice/(double)item.getQuantity()), cs, ')')
 						)
 				: VillagerShops.getTranslator().localText("shop.item.sell.one")
 				.replace("%price%", String.format("%.2f", sellprice))
@@ -121,7 +125,7 @@ public class StockItem {
 					.replace("%itemprice%", Text.of(String.format("%.2f", buyprice/(double)item.getQuantity())))
 					.replace("%currency%", cs)
 					.resolve(player).orElse(
-						Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs, String.format(" (á %.2f", buyprice/(double)item.getQuantity()), cs, ')')
+						Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs, String.format(" (ï¿½ %.2f", buyprice/(double)item.getQuantity()), cs, ')')
 						)
 				: VillagerShops.getTranslator().localText("shop.item.buy.one")
 				.replace("%price%", String.format("%.2f", buyprice))
@@ -177,6 +181,7 @@ public class StockItem {
 		Optional<UniqueAccount> account = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
 		if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
 		Account acc = account.get();
+		boolean spendingsLimited = VillagerShops.getIncomeLimiter().isSpendingsLimited(player);
 		
 		Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
 		int amount = Math.min(invSpace(playerInv), item.getQuantity()); //buy at max the configured amount
@@ -195,11 +200,29 @@ public class StockItem {
 			
 			//account transaction
 			BigDecimal price = new BigDecimal(amount * buyprice/item.getQuantity());
+			if (spendingsLimited) {
+				BigDecimal spendable = VillagerShops.getIncomeLimiter().getRemainingSpendings(player).orElse(price);
+				price = price.min(spendable);
+				//pre check amount for special message
+				int preamount = price.divide(BigDecimal.valueOf(buyprice/item.getQuantity()), RoundingMode.FLOOR).intValue();
+				if (preamount < 1) return ShopResult.CUSTOMER_SPENDING_LIMIT;
+				else { //recalculate amount/price for available spendings
+					amount = preamount;
+					price = new BigDecimal(amount * buyprice/item.getQuantity());
+				}
+			}
 			TransactionResult res = acc.transfer(account2.get(), currency, price, Sponge.getCauseStackManager().getCurrentCause());
 			
 			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS))  { //not enough money for this amount of items
 				//try to find a affordable amount
 				BigDecimal balance = acc.getBalance(currency);
+				if (spendingsLimited) {
+					BigDecimal spendable = VillagerShops.getIncomeLimiter().getRemainingSpendings(player).orElse(price);
+					balance = balance.min(spendable);
+					//pre check amount for special message
+					int preamount = balance.divide(BigDecimal.valueOf(buyprice/item.getQuantity()), RoundingMode.FLOOR).intValue();
+					if (preamount < 1) return ShopResult.CUSTOMER_SPENDING_LIMIT;
+				}
 				if (balance.compareTo(BigDecimal.ZERO)>0) {
 					//resize stack to fit balance
 					int fixedamount = balance.divide(BigDecimal.valueOf(buyprice/item.getQuantity()), RoundingMode.FLOOR).intValue();
@@ -211,14 +234,19 @@ public class StockItem {
 					
 					//try again
 					TransactionResult res2 = acc.transfer(account2.get(), currency, price, Sponge.getCauseStackManager().getCurrentCause());
-					if (res2.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.SHOPOWNER_HIGH_BALANCE; //idk in what order transactions fail, so check this here as well
-					else if (!res2.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
+					if (res2.getResult().equals(ResultType.ACCOUNT_NO_SPACE))
+						return ShopResult.SHOPOWNER_HIGH_BALANCE; //idk in what order transactions fail, so check this here as well
+					else if (!res2.getResult().equals(ResultType.SUCCESS))
+						return ShopResult.GENERIC_FAILURE;
 				} else 
 					return ShopResult.CUSTOMER_LOW_BALANCE;
 			}
 			else if (res.getResult().equals(ResultType.ACCOUNT_NO_SPACE)) return ShopResult.SHOPOWNER_HIGH_BALANCE;
 			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
-			
+
+			if (spendingsLimited)
+				VillagerShops.getIncomeLimiter().registerSpending(player, price);
+
 			//item transaction
 			ItemStack stack = getItem();
 			stack.setQuantity(amount);
@@ -229,11 +257,29 @@ public class StockItem {
 		} else {
 			//account transaction
 			BigDecimal price = new BigDecimal(amount * buyprice/item.getQuantity());
+			if (spendingsLimited) {
+				BigDecimal spendable = VillagerShops.getIncomeLimiter().getRemainingSpendings(player).orElse(price);
+				price = price.min(spendable);
+				//pre check amount for special message
+				int preamount = price.divide(BigDecimal.valueOf(buyprice/item.getQuantity()), RoundingMode.FLOOR).intValue();
+				if (preamount < 1) return ShopResult.CUSTOMER_SPENDING_LIMIT;
+				else { //recalculate amount/price for available spendings
+					amount = preamount;
+					price = new BigDecimal(amount * buyprice/item.getQuantity());
+				}
+			}
 			TransactionResult res = acc.withdraw(currency, price, Sponge.getCauseStackManager().getCurrentCause());
 			
 			if (res.getResult().equals(ResultType.ACCOUNT_NO_FUNDS)) { //not enough money for this amount of items
 				//try to find a affordable amount
 				BigDecimal balance = acc.getBalance(currency);
+				if (spendingsLimited) {
+					BigDecimal spendable = VillagerShops.getIncomeLimiter().getRemainingSpendings(player).orElse(price);
+					balance = balance.min(spendable);
+					//pre check amount for special message
+					int preamount = balance.divide(BigDecimal.valueOf(buyprice/item.getQuantity()), RoundingMode.FLOOR).intValue();
+					if (preamount < 1) return ShopResult.CUSTOMER_SPENDING_LIMIT;
+				}
 				if (balance.compareTo(BigDecimal.ZERO)>0) {
 					//resize stack to fit balance
 					int fixedamount = balance.divide(BigDecimal.valueOf(buyprice/item.getQuantity()), RoundingMode.FLOOR).intValue();
@@ -250,7 +296,10 @@ public class StockItem {
 					return ShopResult.CUSTOMER_LOW_BALANCE;
 			}
 			else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
-			
+
+			if (spendingsLimited)
+				VillagerShops.getIncomeLimiter().registerSpending(player, price);
+
 			//item transaction
 			ItemStack stack = getItem();
 			stack.setQuantity(amount);
@@ -298,8 +347,8 @@ public class StockItem {
 		} else {
 			//account transaction
 			BigDecimal price = new BigDecimal(amount * sellprice/item.getQuantity());
-			if (VillagerShops.getIncomeLimiter().applicableFor(player)) {
-				Optional<BigDecimal> limited = VillagerShops.getIncomeLimiter().remainderFor(player);
+			if (VillagerShops.getIncomeLimiter().isIncomeLimited(player)) {
+				Optional<BigDecimal> limited = VillagerShops.getIncomeLimiter().getRemainingIncome(player);
 				if (limited.isPresent()) {
 					price = price.min(limited.get()); //get the max possibble income for today
 					
@@ -312,7 +361,7 @@ public class StockItem {
 					price = new BigDecimal(amount * sellprice/item.getQuantity());
 					
 					//additional transaction
-					VillagerShops.getIncomeLimiter().payout(player, price); 
+					VillagerShops.getIncomeLimiter().registerIncome(player, price);
 				}
 			}
 			TransactionResult res = acc.deposit(currency, price, Sponge.getCauseStackManager().getCurrentCause());

@@ -101,7 +101,7 @@ public class InteractionHandler {
 			if (result.getTradedItems()>0) {
 				finalPrice = item.getBuyPrice()*(double)result.getTradedItems()/(double)item.getItem().getQuantity();
 				player.sendMessage(VillagerShops.getTranslator().localText("shop.buy.message")
-						.replace("%balance%", Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET))
+						.replace("%balance%", Text.of(TextColors.GOLD, VillagerShops.nf(acc.get().getBalance(currency)), currency.getSymbol(), TextColors.RESET))
 						.replace("%payed%", Text.of(TextColors.RED, "-", String.format("%.2f", finalPrice), TextColors.RESET)) 
 						.replace("%amount%", Text.of(TextColors.YELLOW, result.getTradedItems(), TextColors.RESET))
 						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getName())) ))
@@ -120,7 +120,7 @@ public class InteractionHandler {
 			if (result.getTradedItems()>0) {
 				finalPrice = item.getSellPrice()*(double)result.getTradedItems()/(double)item.getItem().getQuantity();
 				player.sendMessage(VillagerShops.getTranslator().localText("shop.sell.message")
-						.replace("%balance%", Text.of(TextColors.GOLD, acc.get().getBalance(currency), currency.getSymbol(), TextColors.RESET))
+						.replace("%balance%", Text.of(TextColors.GOLD, VillagerShops.nf(acc.get().getBalance(currency)), currency.getSymbol(), TextColors.RESET))
 						.replace("%payed%", Text.of(TextColors.GREEN, "+", String.format("%.2f", finalPrice), TextColors.RESET)) 
 						.replace("%amount%", Text.of(TextColors.YELLOW, result.getTradedItems(), TextColors.RESET))
 						.replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(FieldResolver.getType(item.getItem()).getTranslation().get())) ))
