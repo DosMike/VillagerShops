@@ -1,0 +1,66 @@
+permission.missing:阁下没有使用进行此操作的权限！
+option.invalidvalue:适用于玩家 %player% 的选项 '%option%' 或其权限组不为数字或为负值。请确保为正值。若阁下是玩家的话则请将此问题汇报给服务器管理员。
+cmd.description.short:/vshop <命令> <选项>
+cmd.description.long:请看向阁下想要编辑的商店！ 选项:\nCREATE : [--at <位置>] <实体类型> [--skin <皮肤>] [名称]\n    皮肤应为适用于此生物的有效皮肤\n    位置应格式化为: 世界/X/Y/Z/角度\nADD : [-o <索引>] [-l <限制>] <~|购买价格> <~|售出价格> [货币] (存货量)\n    - 价格选项将禁用此选项，需要至少一个选项\n    -l 参数可限制玩家商店中此物品的最大存货量\n	-o 参数可用于替换在索引中的物品，从 1 开始\nREMOVE : <索引>\n    查看商店库存中的数量，从 1 开始\nDELETE : (无参数)\nLINK : (无参数)\n    随后阁下需要开启箱子并与玩家玩家商店关联。再次使用此命令以取消。\nIDENTIFY / ID : (无参数)\nRELOAD : (无参数)\n    尝试重新载入 Sponge:Human 实体皮肤\nLIST : [玩家]\n    列出 (玩家的) 所有商店列表与其传送点及查看存货
+cmd.playeronly:此命令仅限玩家使用
+cmd.missingargument:请指定参数
+cmd.common.notarget:阁下所看向的方向没有商店！
+cmd.common.noshopforid:指定的 UUID 未匹配任意商店。
+cmd.create.invalidtype:无效实体类型 (请使用 Tab 以自动补全)
+cmd.create.entitypermission:此实体类型需要权限 %permission%
+cmd.create.invalidvariant:未为 %variant% 找到此风格/变体 - 请使用 NONE 或 0 以使用默认风格/变体
+cmd.create.playershop.missingcontainer:阁下需要在玩家商店下放置容器！
+cmd.create.invalidpos:位置应格式化为 世界/X/Y/Z/角度
+cmd.create.invalidworld:此世界不存在
+cmd.create.playershop.success:已创建名为 %name% 的新玩家商店
+cmd.create.playershop.limit:阁下无法创建多于 %limit% 个商店
+cmd.create.success:已创建名为 %name% 的管理商店
+cmd.add.limit.adminshop:阁下无法向管理商店添加存货限制
+cmd.add.overwrite.index:指定位置暂无物品
+cmd.add.itemlimit:阁下无法在商店打包多于 27 个物品。
+cmd.add.buyprice:购买价格不为 '~' 或为小数
+cmd.add.sellprice:支付价格不为 '~' 或为小数
+cmd.add.noprice:阁下需要指定至少一个购买价格与支付价格
+cmd.add.negativeprice:价格无法为负数
+cmd.add.itemisair:请在手中拿着欲销售的物品
+cmd.add.success:已在 %pos% 添加物品 %item% 至商店
+cmd.add.replaced:位于 %pos% 的物品已被 %item% 所替换
+cmd.remove.invalidindex:指定地点暂无物品
+cmd.remove.success:已从商店移除位于 %pos% 的物品
+cmd.identify.adminshop:服务器
+cmd.identify.response:名为 %name% [%id%] 的 %type% 商店\n此商店由 %owner% 所拥有
+cmd.identify.shiftclick:点击 Shift 以复制编号至聊天框-
+cmd.link.cancelled:已取消关联
+cmd.link.adminshop:阁下无法关联管理商店至箱子
+cmd.link.notyourshop:阁下只可重新关联自己的商店与箱子
+cmd.link.hitachest:请开启阁下想要关联至此商店的箱子。再次输入 '/vshop link' 以取消
+cmd.link.nochest:阁下只可关联至普通箱子
+cmd.link.missingshop:无法找到应关联至此箱子的商店
+cmd.link.distance:阁下距离过远！离容器的距离不可超过 %distance% 个方块。
+cmd.link.success:此箱子现已关联到商店。旧容器已不再受保护！
+cmd.deleted:已删除商店！
+cmd.saved:已保存商店！
+cmd.reloaded:重新载入完毕！
+cmd.ledger.invalid:阁下不可对目标使用 -t
+shop.title:[村民商店] %name%
+shop.item.buy.one:购买价格: §f %currency%%price%
+shop.item.buy.stack:购买价格: §f %currency%%price% (á %currency%%itemprice%)
+shop.item.sell.one:售出价格: §f %currency%%price%
+shop.item.sell.stack:售出价格: §f %currency%%price% (á %currency%%itemprice%)
+shop.item.stock:存货: %amount%/%max%
+shop.buy.message:%balance% (%payed%): 购买 %amount%x %item%
+shop.sell.message:%balance% (%payed%): 销售 %amount%x %item%
+shop.generic.transactionfailure:交易错误！ - 请汇报至开发者
+shop.customer.highbalance:阁下的账户无法拥有更多金钱
+shop.shopowner.highbalance:店主账户已达到限制
+shop.customer.lowbalance:阁下的余额不足
+shop.shopowner.lowbalance:店主余额不足
+shop.customer.missingitems:阁下没有足够的物品
+shop.shopowner.missingitems:此物品暂无存货
+shop.customer.inventoryfull:阁下无法携带更多物品
+shop.shopowner.inventoryfull:商店无法存储更多物品
+shop.customer.incomelimit:阁下今天已达到来自管理商店的收入限制
+shop.customer.incomelimit:阁下一天所花费的金额已被限制。请明天再试。
+shop.chat.transaction.base:阁下的商店 %shop% 售出了 %items%。总利润 %money%。
+shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
