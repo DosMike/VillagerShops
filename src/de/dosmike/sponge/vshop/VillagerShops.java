@@ -211,11 +211,7 @@ public class VillagerShops {
 
     @Listener
     public void onWorldsSave(SaveWorldEvent event) {
-        if (npcsDirty && System.currentTimeMillis() - lastSave > 10000) { //not more than every 10 seconds
-            l("Saving VillagerShops...");
-            lastSave = System.currentTimeMillis();
-            saveConfigs();
-        }
+        saveConfigs();
     }
 
     @Listener
@@ -295,6 +291,12 @@ public class VillagerShops {
     @SuppressWarnings("serial")
     public void saveConfigs() {
         synchronized (npcs) {
+            if (!npcsDirty || System.currentTimeMillis() - lastSave < 10000) { //not more than every 10 seconds
+                return;
+            }
+            l("Saving VillagerShops...");
+            lastSave = System.currentTimeMillis();
+
             ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
             try {
                 ConfigurationNode root = configManager.createEmptyNode(options);

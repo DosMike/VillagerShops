@@ -136,7 +136,7 @@ public class CommandRegistra {
                         }
                     }
                     npc.setVariant(var);
-                    if (!var.equalsIgnoreCase("none") && npc.getVariant() == null) {
+                    if (!var.equalsIgnoreCase("none") && npc.getVariant().toString().equalsIgnoreCase("none")) {
                         player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                                 lang.local("cmd.create.invalidvariant")
                                         .replace("%variant%", npc.getNpcType().getTranslation().get(VillagerShops.playerLocale(player)))

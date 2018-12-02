@@ -271,13 +271,20 @@ public class NPCguard {
                         try {
                             variant.attach(shop);
                         } catch (Exception e) {
-                            VillagerShops.l("Variant no longer suported! Did the EntityType change?");
+                            VillagerShops.l("Variant no longer supported! Did the EntityType change?");
                         }
 
                     shop.offer(Keys.DISPLAY_NAME, displayName);
 
                     if (w.spawnEntity(shop)) {
                         lastKnown = shop.getUniqueId();
+                    } else {
+                        VillagerShops.w("Unable to spawn shop %s - Check spawn protection and chunk limits at %s %d %d %d!",
+                                shop.getUniqueId().toString(),
+                                shop.getLocation().getExtent().getName(),
+                                shop.getLocation().getBlockX(),
+                                shop.getLocation().getBlockY(),
+                                shop.getLocation().getBlockZ());
                     }
 //				    }
                 }

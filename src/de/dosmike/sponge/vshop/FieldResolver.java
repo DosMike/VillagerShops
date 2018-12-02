@@ -52,12 +52,18 @@ public class FieldResolver {
          */
         public String toString() {
             if (values.isEmpty()) return "NONE";
-            return StringUtils.join(values.values().stream().map(o -> {
-                if (o instanceof CatalogType) {
-                    return ((CatalogType) o).getId();
-                }
-                return o.toString();
-            }).collect(Collectors.toList()), VARIANT_CONCATINATOR);
+            try {
+                return StringUtils.join(values.values().stream().map(o -> {
+                    if (o instanceof CatalogType) {
+                        return ((CatalogType) o).getId();
+                    } else if (o != null)
+                        return o.toString();
+                    return "NONE";
+                }).collect(Collectors.toList()), VARIANT_CONCATINATOR);
+            } catch (NullPointerException invalidSkin) {
+                /* might need further investigation */
+                return "NONE";
+            }
         }
     }
 
@@ -90,7 +96,7 @@ public class FieldResolver {
             for (int i = 0; i < catalogs.length; i++)
                 if (catalogs[i] != null) {
                     values[i] = Sponge.getRegistry().getType(catalogs[i], s).orElse(values[i]);
-                    VillagerShops.l("Asked registry %s for a type %s: %s", catalogs[i].getSimpleName(), s, values[i]);
+                    //VillagerShops.l("Asked registry %s for a type %s: %s", catalogs[i].getSimpleName(), s, values[i]);
                 }
         }
         Map<Key, Object> result = new HashMap<>();
@@ -122,8 +128,8 @@ public class FieldResolver {
         }
         List<Set<String>> suggestions = new LinkedList<>();
         GeneratePermutations(perKey, suggestions, 0, null);
-        for (Set<String> s : suggestions)
-            VillagerShops.l("%s %s", keys[0].getName(), StringUtils.join(s, "; "));
+//        for (Set<String> s : suggestions)
+//            VillagerShops.l("%s %s", keys[0].getName(), StringUtils.join(s, "; "));
         return suggestions.stream().filter(set->!set.contains("none"))
                 .map(set->StringUtils.join(set, VARIANT_CONCATINATOR))
                 .collect(Collectors.toSet());
