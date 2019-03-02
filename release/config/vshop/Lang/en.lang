@@ -62,5 +62,5 @@ shop.shopowner.inventoryfull:The shop can not stock more items
 shop.customer.incomelimit:You have hit your income limit from admin shops for the day
 shop.customer.incomelimit:The amount you can spend a day is limited. Try again tomorrow.
 shop.chat.transaction.base:Your shop %shop% sold %items%. In total %money%.
-shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
-shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item%\n  %timestamp%
+shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item%\n  %timestamp%

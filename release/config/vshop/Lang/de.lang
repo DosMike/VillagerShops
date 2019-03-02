@@ -62,5 +62,5 @@ shop.shopowner.inventoryfull:Der Shop kann keine weiteren Items lagern
 shop.customer.incomelimit:Du hast deine Einkommesgrenze durch Adminshops für den Tag erreicht
 shop.customer.spendinglimit:Deine täglichen Ausgaben sind begrenzt. Versuche es morgen erneut.
 shop.chat.transaction.base:Dein Shop %shop% handelte %items%. Unterm Strich %money%.
-shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
-shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item%\n  %timestamp%
+shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item%\n  %timestamp%

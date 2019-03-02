@@ -2,10 +2,10 @@
   "modid": "vshop",
   "name": "VillagerShops",
   "description": "Set up Mobs of any type as admin shop. Shops will use a Inventory-Menu to buy/sell items",
-  "version": "1.9",
+  "version": "2.0-beta1",
   "url": "https://github.com/DosMike/VillagerShops",
   "authorList": [ "DosMike" ],
   "useDependencyInformation": "true",
-  "requiredMods": [ "langswitch", "spongeapi" ],
-  "dependencies": [ "langswitch", "spongeapi" ]
+  "requiredMods": [ "langswitch@[1.3,)", "megamenus@[0.1,)", "spongeapi@[7.0.0,)" ],
+  "dependencies": [ "langswitch@[1.3,)", "megamenus@[0.1,)", "spongeapi@[7.0.0,)" ]
 }]
