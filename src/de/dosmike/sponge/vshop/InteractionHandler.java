@@ -53,6 +53,7 @@ public class InteractionHandler {
                 renderer.setRenderListener(new OnRenderStateListener() {
                     @Override
                     public boolean closed(MenuRenderer render, IMenu menu, Player viewer) {
+                        VillagerShops.actionUnstack.remove(viewer.getUniqueId());
                         VillagerShops.openShops.remove(viewer.getUniqueId());
                         return false;
                     }

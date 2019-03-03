@@ -59,24 +59,6 @@ public class EventListeners {
         }
     }
 
-    @Listener
-    public void onInventoryClosed(InteractInventoryEvent.Close event) {
-        Optional<Player> cause = event.getCause().first(Player.class);
-        if (cause.isPresent()) {
-            UUID target = cause.get().getUniqueId();
-            VillagerShops.openShops.remove(target);
-            VillagerShops.actionUnstack.remove(target);
-        }
-    }
-
-    @Listener
-    public void onDropItem(DropItemEvent event) {
-        Optional<Player> clicker = event.getCause().first(Player.class);
-        if (!clicker.isPresent()) return;
-        if (!VillagerShops.openShops.containsKey(clicker.get().getUniqueId())) return;
-        event.setCancelled(true);
-    }
-
     /**
      * protect playershop crates
      */
