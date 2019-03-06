@@ -42,7 +42,7 @@ public class InteractionHandler {
                 VillagerShops.w("Container was supposed to be at %s", shop.playershopcontainer);
             } else if (shop.getPreparator().size() > 0) {
                 shop.updateStock();
-                int idealHeight = Math.min(2 + ((int) Math.ceil((double) shop.getPreparator().size() / 9.0) - 1), 6);
+                int idealHeight = Math.min(2 + 2*((int) Math.ceil((double) shop.getPreparator().size() / 9.0) - 1), 6);
                 VillagerShops.openShops.put(source.getUniqueId(), shop.getIdentifier());
                 //bound renderer for possibly localized title
                 GuiRenderer renderer = (GuiRenderer) shop.getMenu().createGuiRenderer(idealHeight, true);
