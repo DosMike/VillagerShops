@@ -42,7 +42,7 @@ public class EventListeners {
         Optional<Player> cause = event.getCause().first(Player.class);
         Entity target = event.getTargetEntity();
         if (cause.isPresent())
-            if (InteractionHandler.clickEntity(cause.get(), target, InteractionHandler.Button.right))
+            if (InteractionHandler.clickEntity(cause.get(), target/*, InteractionHandler.Button.right*/))
                 event.setCancelled(true);
     }
 
@@ -57,24 +57,6 @@ public class EventListeners {
                     event.setCancelled(true);
             }
         }
-    }
-
-    @Listener
-    public void onInventoryClosed(InteractInventoryEvent.Close event) {
-        Optional<Player> cause = event.getCause().first(Player.class);
-        if (cause.isPresent()) {
-            UUID target = cause.get().getUniqueId();
-            VillagerShops.openShops.remove(target);
-            VillagerShops.actionUnstack.remove(target);
-        }
-    }
-
-    @Listener
-    public void onDropItem(DropItemEvent event) {
-        Optional<Player> clicker = event.getCause().first(Player.class);
-        if (!clicker.isPresent()) return;
-        if (!VillagerShops.openShops.containsKey(clicker.get().getUniqueId())) return;
-        event.setCancelled(true);
     }
 
     /**
@@ -92,10 +74,8 @@ public class EventListeners {
             if (g.playershopcontainer != null &&
                     g.playershopcontainer.getExtent().equals(tex) &&
                     g.playershopcontainer.getBlockPosition().equals(tv3)) {
-//				VillagerShops.l("Is Stock Container");
                 if ((g.playershopholder != null && !g.playershopholder.equals(source.get().getUniqueId())) &&
                         (!source.get().hasPermission("vshop.edit.admin"))) {
-//					VillagerShops.l("But not yours!");
                     event.setCancelled(true);
                     return;
                 }

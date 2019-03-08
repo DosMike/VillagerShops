@@ -32,6 +32,8 @@ import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.EconomyService;
 import org.spongepowered.api.service.user.UserStorageService;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -45,9 +47,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(id = "vshop", name = "VillagerShops",
-        version = "1.9.1", authors = {"DosMike"},
+        version = "2.0", authors = {"DosMike"},
         dependencies = {
-                @Dependency(id = "langswitch", optional = false)
+                @Dependency(id = "langswitch", optional = false, version = "[1.3,)"),
+                @Dependency(id = "megamenus", optional = false, version = "[0.1,)")
         })
 public class VillagerShops {
 
@@ -218,7 +221,6 @@ public class VillagerShops {
     public void onServerStopping(GameStoppingEvent event) {
         terminateNPCs();
         saveConfigs();
-//		npcs.clear(); //could interfere with a later save?
     }
 
     public void loadConfigs() {
@@ -303,6 +305,7 @@ public class VillagerShops {
                 root.getNode("shops").setValue(NPCguardSerializer.tokenListNPCguard, npcs);
                 configManager.save(root);
             } catch (Exception e1) {
+                Sponge.getServer().getBroadcastChannel().send(Text.of(TextColors.RED, "[VShop] Error: ", e1.getMessage()));
                 e1.printStackTrace();
             }
             npcsDirty = false;
@@ -329,6 +332,7 @@ public class VillagerShops {
 
             limitManager.save(root);
         } catch (Exception e1) {
+            Sponge.getServer().getBroadcastChannel().send(Text.of(TextColors.RED, "[VShop] Error: ", e1.getMessage()));
             e1.printStackTrace();
         }
     }
@@ -344,7 +348,6 @@ public class VillagerShops {
                 if (e != null) e.remove();
             }
         }
-        //npcs.clear();
     }
 
     public static void stopTimers() {

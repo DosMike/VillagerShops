@@ -52,7 +52,7 @@ public class CommandRegistra {
         };
 
         children = new HashMap<>();
-        children.put(Arrays.asList("create"), CommandSpec.builder()
+        children.put(Collections.singletonList("create"), CommandSpec.builder()
                 .arguments(
                         GenericArguments.flags().valueFlag(
                                 GenericArguments.string(Text.of("position")), "-at"
@@ -67,35 +67,22 @@ public class CommandRegistra {
                                 GenericArguments.onlyOne(GenericArguments.catalogedElement(Text.of("EntityType"), EntityType.class)),
                                 GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("Name")))
                         ))
-//                .arguments(
-//                        GenericArguments.flags().valueFlag(
-//                                GenericArguments.string(Text.of("position")), "-at"
-//                        ).valueFlag(
-//                                GenericArguments.string(Text.of("Skin")), "-skin"
-//                        ).buildWith(GenericArguments.seq(
-//                                GenericArguments.onlyOne(GenericArguments.catalogedElement(Text.of("EntityType"), EntityType.class)),
-//                                GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("Name")))
-//                        ))
                 ).executor((src, args) -> {
 
                     if (!(src instanceof Player)) {
-                        src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
-                        return CommandResult.success();
+                        throw new CommandException(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
                     }
                     Player player = (Player) src;
 
                     if (!player.hasPermission("vshop.edit.admin") &&
                             !player.hasPermission("vshop.edit.player")) {
-                        player.sendMessage(Text.of(TextColors.RED,
+                        throw new CommandException(Text.of(TextColors.RED,
                                 lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
-
-                        return CommandResult.success();
                     }
                     boolean adminshop = player.hasPermission("vshop.edit.admin");
 
                     if (!adminshop) {
                         Optional<String> option = player.getOption("vshop.option.playershop.limit");
-//						VillagerShops.l("limit:"+option.orElse("?"));
                         int limit = -1;
                         try {
                             limit = Integer.parseInt(option.orElse("-1"));
@@ -107,9 +94,8 @@ public class CommandRegistra {
                                 if (npc.isShopOwner(pid)) cnt++;
 
                             if (cnt >= limit) {
-                                player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+                                throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                         lang.local("cmd.create.playershop.limit").replace("%limit%", limit).resolve(player).orElse("[limit reached]")));
-                                return CommandResult.success();
                             }
                         }
                     }
@@ -122,26 +108,26 @@ public class CommandRegistra {
                     InvPrep prep = new InvPrep();
                     npc.setNpcType((EntityType) args.getOne("EntityType").orElse(null));
                     if (npc.getNpcType() == null) {
-                        player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+                        throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                 lang.local("cmd.create.invalidtype").resolve(player).orElse("[invalid type]")));
-                        return CommandResult.success();
                     }
                     if (!adminshop) {
                         String entityPermission = npc.getNpcType().getId();
                         entityPermission = "vshop.create." + entityPermission.replace(':', '.').replace("_", "").replace("-", "");
                         if (!player.hasPermission(entityPermission)) {
-                            player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+                            throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                     lang.local("cmd.create.entitypermission").replace("%permission%", entityPermission).resolve(player).orElse("[entity permission missing]")));
-                            return CommandResult.success();
                         }
                     }
                     npc.setVariant(var);
-                    if (!var.equalsIgnoreCase("none") && npc.getVariant().toString().equalsIgnoreCase("none")) {
-                        player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+                    //var wanted, but none returned/found
+                    if (!"none".equalsIgnoreCase(var) &&
+                            (npc.getVariant()==null ||
+                            "none".equalsIgnoreCase(npc.getVariant().toString()))) {
+                        throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                 lang.local("cmd.create.invalidvariant")
                                         .replace("%variant%", npc.getNpcType().getTranslation().get(VillagerShops.playerLocale(player)))
                                         .resolve(player).orElse("[invalid variant]")));
-                        return CommandResult.success();
                     }
                     Location<World> createAt = player.getLocation();
                     double rotateYaw = player.getHeadRotation().getY();
@@ -152,16 +138,14 @@ public class CommandRegistra {
                         }
                         Optional<World> w = Sponge.getServer().getWorld(parts[0]);
                         if (!w.isPresent()) {
-                            player.sendMessage(Text.of(TextColors.RED, "[vShop] ", lang.local("cmd.create.invalidworld").resolve(player).orElse("[Invalid pos]")));
-                            return CommandResult.success();
+                            throw new CommandException(Text.of(TextColors.RED, "[vShop] ", lang.local("cmd.create.invalidworld").resolve(player).orElse("[Invalid pos]")));
                         }
                         createAt = w.get().getLocation(Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
                         rotateYaw = Double.parseDouble(parts[4]);
                         while (rotateYaw > 180) rotateYaw -= 360;
                         while (rotateYaw <= -180) rotateYaw += 360;
                     } catch (Exception e) {
-                        player.sendMessage(Text.of(TextColors.RED, "[vShop] ", lang.local("cmd.create.invalidpos").resolve(player).orElse("[Invalid pos]")));
-                        return CommandResult.success();
+                        throw new CommandException(Text.of(TextColors.RED, "[vShop] ", lang.local("cmd.create.invalidpos").resolve(player).orElse("[Invalid pos]")));
                     }
 
                     npc.setDisplayName(displayName);
@@ -174,9 +158,8 @@ public class CommandRegistra {
                         playershop = true;
                     } catch (Exception e) {
                         if (!adminshop) {
-                            player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+                            throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                     lang.local("cmd.create.playershop.missingcontainer").resolve(player).orElse("[no chest below]")));
-                            return CommandResult.success();
                         }
                     }
                     VillagerShops.addNPCguard(npc);
@@ -186,7 +169,7 @@ public class CommandRegistra {
 
                     return CommandResult.success();
                 }).build());
-        children.put(Arrays.asList("add"), CommandSpec.builder()
+        children.put(Collections.singletonList("add"), CommandSpec.builder()
                 .arguments(GenericArguments.flags().valueFlag(
                         GenericArguments.integer(Text.of("limit")), "l"
                         ).valueFlag(
@@ -313,7 +296,7 @@ public class CommandRegistra {
 
                     return CommandResult.success();
                 }).build());
-        children.put(Arrays.asList("remove"), CommandSpec.builder()
+        children.put(Collections.singletonList("remove"), CommandSpec.builder()
                 .arguments(
                         GenericArguments.integer(Text.of("Index"))
                 ).executor((src, args) -> {
@@ -354,7 +337,7 @@ public class CommandRegistra {
 
                     return CommandResult.success();
                 }).build());
-        children.put(Arrays.asList("delete"), CommandSpec.builder()
+        children.put(Collections.singletonList("delete"), CommandSpec.builder()
                 .arguments(
                         GenericArguments.none()
                 ).executor((src, args) -> {
@@ -389,7 +372,7 @@ public class CommandRegistra {
 
                     return CommandResult.success();
                 }).build());
-        children.put(Arrays.asList("save"), CommandSpec.builder()
+        children.put(Collections.singletonList("save"), CommandSpec.builder()
                 .permission("vshop.edit.admin")
                 .arguments(
                         GenericArguments.none()
@@ -397,19 +380,13 @@ public class CommandRegistra {
                     VillagerShops.getInstance().saveConfigs();
                     src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                             lang.local("cmd.saved").resolve(src).orElse("[saved]")));
-//					src.sendMessage(Text.of("With the change to auto-save, this command became obsolete"));
                     return CommandResult.success();
                 }).build());
-        children.put(Arrays.asList("reload"), CommandSpec.builder()
+        children.put(Collections.singletonList("reload"), CommandSpec.builder()
                 .permission("vshop.edit.admin")
                 .arguments(
                         GenericArguments.none()
                 ).executor((src, args) -> {
-//					VillagerShops.terminateNPCs();
-//					VillagerShops.getInstance().loadConfigs();
-//					VillagerShops.startTimers();
-//					src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
-//							lang.local("cmd.reloaded").resolve(src).orElse("[reloaded]")));
                     VillagerShops.getNPCguards().stream().filter(shop -> shop.getNpcType().equals(EntityTypes.HUMAN) && shop.getVariant() != null).forEach(shop -> {
                         if (shop.getVariant() instanceof UUID) {
                             shop.getLe().remove(Keys.SKIN_UNIQUE_ID);
@@ -526,7 +503,7 @@ public class CommandRegistra {
                                 lang.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
                     } else {
                         Optional<UUID> owner = npc.get().getShopOwner();
-                        Optional<Player> powner = owner.isPresent() ? Sponge.getServer().getPlayer(owner.get()) : Optional.empty();
+                        Optional<Player> powner = owner.flatMap(uuid -> Sponge.getServer().getPlayer(uuid));
                         String ownername = owner.isPresent()
                                 ? (powner.isPresent()
                                 ? powner.get().getName()
@@ -549,7 +526,7 @@ public class CommandRegistra {
 
                     return CommandResult.success();
                 }).build());
-        children.put(Arrays.asList("link"), CommandSpec.builder()
+        children.put(Collections.singletonList("link"), CommandSpec.builder()
                 .permission("vshop.edit.linkchest")
                 .arguments(
                         GenericArguments.none()
@@ -568,7 +545,7 @@ public class CommandRegistra {
 
                     return CommandResult.success();
                 }).build());
-        children.put(Arrays.asList("tphere"), CommandSpec.builder()
+        children.put(Collections.singletonList("tphere"), CommandSpec.builder()
                 .permission("vshop.edit.move")
                 .arguments(
                         GenericArguments.uuid(Text.of("shopid"))
@@ -626,12 +603,6 @@ public class CommandRegistra {
                 ).executor((src, args) -> {
                     if (args.hasAny("Target") && args.hasAny("t")) {
                         throw new CommandException(lang.localText("cmd.ledger.invalid").resolve(src).orElse(Text.of("[Choose one argument]")));
-//					} else if (args.hasAny("t")) {
-//						if (!(src instanceof Player)) {
-//							throw new CommandException(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
-//						} else {
-//							//TODO toggle caht spam
-//						}
                     } else if (!args.hasAny("Target") && !(src instanceof Player)) {
                         throw new CommandException(lang.localText("cmd.missingargument").resolve(src).orElse(Text.of("[Missing argument]")));
                     } else {

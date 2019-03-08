@@ -39,7 +39,7 @@ public class API {
     public static void delete(NPCguard shop) {
         VillagerShops.stopTimers();
         VillagerShops.closeShopInventories(shop.getIdentifier());
-        shop.getLe().remove();
+        disintegrate(shop);//shop.getLe().remove();
         VillagerShops.removeNPCguard(shop);
         VillagerShops.startTimers();
     }
@@ -62,7 +62,7 @@ public class API {
      * something like prepare a shop to be modified
      */
     public static void disintegrate(NPCguard shop) {
-        Optional<Chunk> c = shop.getLoc().getExtent().getChunkAtBlock(shop.getLoc().getBiomePosition());
+        Optional<Chunk> c = shop.getLoc().getExtent().getChunkAtBlock(shop.getLoc().getBlockPosition());
         if (!c.isPresent())
             throw new RuntimeException("Chunk for shop not available!");
         Chunk chunk = c.get();
