@@ -13,6 +13,7 @@ import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.player.User;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -74,7 +75,6 @@ public class FieldResolver {
         catalogs = new Class[keys.length];
         for (int i = 0; i < keys.length; i++) {
             Class<?> clz = keys[i].getElementToken().getRawType();
-//            VillagerShops.l("Target Type: %s, is CT %s",clz.getSimpleName(), CatalogType.class.isAssignableFrom(clz));
             if (CatalogType.class.isAssignableFrom(clz))
                 catalogs[i] = (Class<CatalogType>) clz;
             else
@@ -96,7 +96,6 @@ public class FieldResolver {
             for (int i = 0; i < catalogs.length; i++)
                 if (catalogs[i] != null) {
                     values[i] = Sponge.getRegistry().getType(catalogs[i], s).orElse(values[i]);
-                    //VillagerShops.l("Asked registry %s for a type %s: %s", catalogs[i].getSimpleName(), s, values[i]);
                 }
         }
         Map<Key, Object> result = new HashMap<>();
@@ -128,8 +127,6 @@ public class FieldResolver {
         }
         List<Set<String>> suggestions = new LinkedList<>();
         GeneratePermutations(perKey, suggestions, 0, null);
-//        for (Set<String> s : suggestions)
-//            VillagerShops.l("%s %s", keys[0].getName(), StringUtils.join(s, "; "));
         return suggestions.stream().filter(set->!set.contains("none"))
                 .map(set->StringUtils.join(set, VARIANT_CONCATINATOR))
                 .collect(Collectors.toSet());
@@ -215,11 +212,19 @@ public class FieldResolver {
         public KeyAttacher validate(String magicVariant) {
             UUID uuid = null;
             if (patUUID.matcher(magicVariant).matches()) {
+                if (magicVariant.indexOf('-') < 0) {
+                    magicVariant = magicVariant.substring(0, 8) + "-" + magicVariant.substring(8, 12) + "-" + magicVariant.substring(12, 16) + "-" + magicVariant.substring(16, 20) + "-" + magicVariant.substring(20);
+                }
                 uuid = UUID.fromString(magicVariant);
             } else {
-                User user = VillagerShops.getUserStorage().get(magicVariant).orElse(null);
-                if (user == null) return null;
-                uuid = user.getUniqueId();
+                try {
+                    User user = VillagerShops.getUserStorage()
+                            .get(magicVariant).orElse(null);
+                    if (user != null)
+                        uuid = user.getUniqueId();
+                } catch (Exception e) {
+                    /* ignore invalid values */
+                }
             }
             Map<Key, Object> result = new HashMap<>();
             result.put(Keys.SKIN_UNIQUE_ID, uuid);

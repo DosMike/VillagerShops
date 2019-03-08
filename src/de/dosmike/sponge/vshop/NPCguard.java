@@ -1,17 +1,20 @@
 package de.dosmike.sponge.vshop;
 
 import com.flowpowered.math.vector.Vector3d;
+import de.dosmike.sponge.megamenus.api.IMenu;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
+import org.spongepowered.api.entity.living.Humanoid;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.InventoryArchetypes;
 import org.spongepowered.api.item.inventory.property.InventoryTitle;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Chunk;
@@ -84,19 +87,8 @@ public class NPCguard {
         return preparator;
     }
 
-    /**
-     * @param forPlayer translate items descriptions for this player if applicable
-     */
-    public Inventory getInventory(UUID forPlayer) {
-        ShopInventoryListener sil = new ShopInventoryListener(this);
-        Inventory.Builder builder = Inventory.builder().of(InventoryArchetypes.CHEST)
-                .property("inventorytitle", new InventoryTitle(Text.of(TextColors.DARK_AQUA,
-                        VillagerShops.getTranslator().localText("shop.title")
-                                .replace("%name%", Text.of(TextColors.RESET, displayName == null ? Text.of() : displayName))
-                                .resolve(forPlayer).orElse(Text.of("[vShop] ", displayName == null ? Text.of() : displayName)))
-                ))
-                .listener(ClickInventoryEvent.class, sil);
-        return preparator.getInventory(builder, forPlayer);
+    public IMenu getMenu() {
+        return preparator.getMenu();
     }
 
     /**
@@ -108,6 +100,7 @@ public class NPCguard {
 
     public void setPreparator(InvPrep preparator) {
         this.preparator = preparator;
+        preparator.updateMenu(true);
         VillagerShops.instance.npcsDirty = true;
     }
 
@@ -165,7 +158,6 @@ public class NPCguard {
         }
         if (variant != null) {
             variantName = variant.toString();
-//			variantName = variant instanceof CatalogType ? ((CatalogType)variant).getId() : variant.toString();
         } else
             variantName = fieldName; //maybe valid later?
 
@@ -198,11 +190,9 @@ public class NPCguard {
         Location<World> scan = getLoc().sub(0, 0.5, 0);
         Optional<TileEntity> te = scan.getTileEntity();
         if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier) te.get()).getInventory().capacity() < 27) {
-//		if (!scan.getBlockType().equals(BlockTypes.CHEST)) 
             scan = scan.sub(0, 1, 0);
             te = scan.getTileEntity();
             if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier) te.get()).getInventory().capacity() < 27)
-//			if (!scan.getBlockType().equals(BlockTypes.CHEST))
                 throw new IllegalStateException("Shop is not placed above a chest");
         }
 
@@ -220,9 +210,7 @@ public class NPCguard {
         try {
             Optional<TileEntity> te = playershopcontainer.getTileEntity();
             if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier) te.get()).getInventory().capacity() < 27)
-//			if (!playershopcontainer.getBlockType().equals(BlockTypes.CHEST))
                 throw new RuntimeException("ContainerBlock not Chest");
-//			TileEntityCarrier chest = (TileEntityCarrier) playershopcontainer.getTileEntity().get();
             return Optional.of(((TileEntityCarrier) te.get()).getInventory());
         } catch (Exception e) {
             VillagerShops.w("Could not receive container for Playershop at " + loc.getExtent().getName() + " " + loc.getBlockPosition());
@@ -255,14 +243,12 @@ public class NPCguard {
                                     displayName.equals(ent.get(Keys.DISPLAY_NAME).orElse(null)))) {    //check if npc already belongs to a different shop
                         le = ent;
                         le.setLocationAndRotation(loc, rot);
+
                         break;
                     }
                 }
                 if (le == null) { //unable to restore
-//					Optional<Entity> ent = w.createEntity(npcType, loc.getPosition());
                     Entity shop = w.createEntity(npcType, loc.getPosition());
-//				    if (ent.isPresent()) {
-//				        Entity shop = ent.get();
                     shop.offer(Keys.AI_ENABLED, false);
                     shop.offer(Keys.IS_SILENT, true);
 
@@ -286,7 +272,6 @@ public class NPCguard {
                                 shop.getLocation().getBlockY(),
                                 shop.getLocation().getBlockZ());
                     }
-//				    }
                 }
             }
         } else {

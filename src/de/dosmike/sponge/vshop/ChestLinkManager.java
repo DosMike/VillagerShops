@@ -45,7 +45,6 @@ public class ChestLinkManager {
         PluginTranslation l = VillagerShops.getTranslator();
 
         if (!activeLinker.containsKey(player.getUniqueId())) {
-            //player.sendMessage(Text.of("You need to /vshop link a playershop first"));
             return false;
         } else if (carrier.getInventory().capacity() < 27) {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",

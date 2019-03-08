@@ -131,17 +131,15 @@ public class LedgerManager {
         String itemID;
         int amount;
         Double payed;
-        int slot;
         Instant timestamp;
         Currency currency;
         private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        public Transaction(UUID customer, UUID vendor, Double money, Currency currency, int slot, ItemType type, int amount) {
+        public Transaction(UUID customer, UUID vendor, Double money, Currency currency, ItemType type, int amount) {
             this.customer = customer;
             this.vendor = vendor;
             this.itemID = type.getId();
             this.amount = amount;
-            this.slot = slot;
             this.payed = money;
             this.currency = currency;
             timestamp = Instant.now();
@@ -180,7 +178,6 @@ public class LedgerManager {
                     .replace("%item%", Text.of(TextStyles.ITALIC, Text.builder(displayName)
                             .onHover(TextActions.showItem(display.createSnapshot()))
                             .build(), "§r")) //reset won't properly work for me for some reason
-                    .replace("%index%", slot)
                     .replace("%price%", gain ? payed : -payed)
                     .replace("%currency%", currency.getSymbol())
                     .replace("%timestamp%", format.format(formatCalendar.getTime()))
@@ -241,7 +238,6 @@ public class LedgerManager {
             result.customer = UUID.fromString(args.getString("customer"));
             result.vendor = UUID.fromString(args.getString("vendor"));
             result.itemID = args.getString("item");
-            result.slot = args.getInt("slot");
             result.amount = args.getInt("amount");
             result.payed = args.getDouble("price");
             result.currency = VillagerShops.getInstance().CurrencyByName(args.getString("currency"));
@@ -256,15 +252,14 @@ public class LedgerManager {
         public void toDatabase() {
             VillagerShops.getAsyncScheduler().execute(() -> {
                 try (Connection con = getDataSource().getConnection();
-                     PreparedStatement statement = con.prepareStatement("INSERT INTO `vshopledger`(`customer`, `vendor`, `item`, `slot`, `amount`, `price`, `currency`) VALUES (?,?,?,?,?,?,?);")) {
+                     PreparedStatement statement = con.prepareStatement("INSERT INTO `vshopledger`(`customer`, `vendor`, `item`, `amount`, `price`, `currency`) VALUES (?,?,?,?,?,?);")) {
                     con.setAutoCommit(true);
                     statement.setString(1, customer.toString());
                     statement.setString(2, vendor.toString());
                     statement.setString(3, itemID);
-                    statement.setInt(4, slot);
-                    statement.setInt(5, amount);
-                    statement.setDouble(6, payed);
-                    statement.setString(7, currency.getId());
+                    statement.setInt(4, amount);
+                    statement.setDouble(5, payed);
+                    statement.setString(6, currency.getId());
                     statement.execute();
                 } catch (SQLException e) {
                     VillagerShops.w("Saving a player shop transaction to the ledger database failed: (%d) %s", e.getErrorCode(), e.getMessage());
@@ -288,7 +283,6 @@ public class LedgerManager {
                         "`customer` varchar(40) NOT NULL,\n" +
                         "`vendor` varchar(40) NOT NULL,\n" +
                         "`item` varchar(255) NOT NULL,\n" +
-                        "`slot` int(11) NOT NULL,\n" +
                         "`amount` int(11) NOT NULL,\n" +
                         "`price` double NOT NULL,\n" +
                         "`currency` varchar(40) NOT NULL,\n" +
@@ -301,7 +295,7 @@ public class LedgerManager {
 
     public static Future<List<Transaction>> getLedgerFor(User user) {
         return VillagerShops.getAsyncScheduler().submit(() -> {
-            String sql1 = "SELECT `customer`, `vendor`, `item`, `slot`, `amount`, `price`, `currency`, `date` FROM `vshopledger` WHERE `vendor`=? ORDER BY `ID` DESC LIMIT 250;";
+            String sql1 = "SELECT `customer`, `vendor`, `item`, `amount`, `price`, `currency`, `date` FROM `vshopledger` WHERE `vendor`=? ORDER BY `ID` DESC LIMIT 250;";
             List<Transaction> transactions = new LinkedList<>();
             for (NPCguard npc : VillagerShops.getNPCguards())
                 if (npc.isShopOwner(user.getUniqueId()))
@@ -317,7 +311,6 @@ public class LedgerManager {
                     } catch (SQLException e) {
                         VillagerShops.getSyncScheduler().execute(e::printStackTrace);
                     }
-//					    VillagerShops.getSyncScheduler().execute(()->VillagerShops.l("Found %d entries", transactions.size()));
             return transactions;
         });
     }
@@ -345,7 +338,6 @@ public class LedgerManager {
                     i++;
                 }
                 if (i > 0) pages.add(page.build());
-//				VillagerShops.getSyncScheduler().execute(()->VillagerShops.l("Built %d pages", pages.size()));
 
                 VillagerShops.getSyncScheduler().execute(() -> { //post back to main thread
                     if (viewer instanceof Player) {
@@ -362,7 +354,6 @@ public class LedgerManager {
                                 .build()
                                 .sendTo(viewer);
                     }
-//					VillagerShops.getSyncScheduler().execute(()->VillagerShops.l("Opened Ledger"));
                 });
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();

@@ -1,5 +1,10 @@
 package de.dosmike.sponge.vshop;
 
+import de.dosmike.sponge.langswitch.LangSwitch;
+import de.dosmike.sponge.megamenus.api.elements.IIcon;
+import de.dosmike.sponge.megamenus.api.elements.MButton;
+import de.dosmike.sponge.megamenus.api.elements.concepts.IElement;
+import de.dosmike.sponge.megamenus.impl.elements.IElementImpl;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
@@ -85,82 +90,6 @@ public class StockItem {
         int count = 0;
         for (Inventory s : result.slots()) count += s.totalItems();
         stocked = Math.min(maxStock, count);
-    }
-
-    /**
-     * create a Item with custom description adding the sell-price for a stack with the present size
-     */
-    public ItemStack getSellDisplayItem(int patchedSlot, UUID player) {
-        if (sellprice == null) return ItemStack.empty(); //nothing
-        Text cs = currency.getSymbol();
-        ItemStack dis = item.copy();
-        List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
-        desc.add(Text.of(TextColors.GREEN, (item.getQuantity() > 1
-                ? VillagerShops.getTranslator().localText("shop.item.sell.stack")
-                .replace("%price%", String.format("%.2f", sellprice))
-                .replace("%itemprice%", Text.of(String.format("%.2f", sellprice / (double) item.getQuantity())))
-                .replace("%currency%", cs)
-                .resolve(player).orElse(
-                        Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", sellprice), cs, String.format(" (� %.2f", sellprice / (double) item.getQuantity()), cs, ')')
-                )
-                : VillagerShops.getTranslator().localText("shop.item.sell.one")
-                .replace("%price%", String.format("%.2f", sellprice))
-                .replace("%currency%", cs)
-                .resolve(player).orElse(
-                        Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", sellprice), cs)
-                )
-        )));
-        if (maxStock > 0)
-            desc.add(Text.of(TextColors.GRAY,
-                    VillagerShops.getTranslator().localText("shop.item.stock")
-                            .replace("%amount%", getStocked())
-                            .replace("%max%", maxStock)
-                            .resolve(player).orElse(
-                            Text.of(String.format("In Stock: %d/%d", getStocked(), maxStock))
-                    )));
-
-        dis.offer(Keys.ITEM_LORE, desc);
-
-        return ItemStack.builder().fromContainer(
-                dis.toContainer().set(DataQuery.of("UnsafeData", "vShopSlotNum"), patchedSlot)).build();
-    }
-
-    /**
-     * create a Item with custom description adding the buy-price for a stack with the present size
-     */
-    public ItemStack getBuyDisplayItem(int patchedSlot, UUID player) {
-        if (buyprice == null) return ItemStack.empty(); //nothing
-        Text cs = currency.getSymbol();
-        ItemStack dis = item.copy();
-        List<Text> desc = dis.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
-        desc.add(Text.of(TextColors.RED, (item.getQuantity() > 1
-                ? VillagerShops.getTranslator().localText("shop.item.buy.stack")
-                .replace("%price%", String.format("%.2f", buyprice))
-                .replace("%itemprice%", Text.of(String.format("%.2f", buyprice / (double) item.getQuantity())))
-                .replace("%currency%", cs)
-                .resolve(player).orElse(
-                        Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs, String.format(" (� %.2f", buyprice / (double) item.getQuantity()), cs, ')')
-                )
-                : VillagerShops.getTranslator().localText("shop.item.buy.one")
-                .replace("%price%", String.format("%.2f", buyprice))
-                .replace("%currency%", cs)
-                .resolve(player).orElse(
-                        Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", buyprice), cs)
-                )
-        )));
-        if (maxStock > 0)
-            desc.add(Text.of(TextColors.GRAY,
-                    VillagerShops.getTranslator().localText("shop.item.stock")
-                            .replace("%amount%", getStocked())
-                            .replace("%max%", maxStock)
-                            .resolve(player).orElse(
-                            Text.of(String.format("In Stock: %d/%d", getStocked(), maxStock))
-                    )));
-
-        dis.offer(Keys.ITEM_LORE, desc);
-
-        return ItemStack.builder().fromContainer(
-                dis.toContainer().set(DataQuery.of("UnsafeData", "vShopSlotNum"), patchedSlot)).build();
     }
 
     /**
