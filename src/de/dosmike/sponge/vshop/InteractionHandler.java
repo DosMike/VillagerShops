@@ -41,6 +41,7 @@ public class InteractionHandler {
                     VillagerShops.w("Owner: %s", shop.getShopOwner().get().toString());
                 VillagerShops.w("Container was supposed to be at %s", shop.playershopcontainer);
             } else if (shop.getPreparator().size() > 0) {
+                if (VillagerShops.openShops.containsKey(source.getUniqueId())) return true;
                 shop.updateStock();
                 int idealHeight = Math.min(2 + 2*((int) Math.ceil((double) shop.getPreparator().size() / 9.0) - 1), 6);
                 VillagerShops.openShops.put(source.getUniqueId(), shop.getIdentifier());

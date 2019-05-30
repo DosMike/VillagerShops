@@ -1,36 +1,51 @@
 package de.dosmike.sponge.vshop;
 
-import de.dosmike.sponge.langswitch.LangSwitch;
-import de.dosmike.sponge.megamenus.api.elements.IIcon;
-import de.dosmike.sponge.megamenus.api.elements.MButton;
-import de.dosmike.sponge.megamenus.api.elements.concepts.IElement;
-import de.dosmike.sponge.megamenus.impl.elements.IElementImpl;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
-import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.Slot;
 import org.spongepowered.api.item.inventory.entity.Hotbar;
 import org.spongepowered.api.item.inventory.entity.MainPlayerInventory;
+import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.Account;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.service.economy.transaction.ResultType;
 import org.spongepowered.api.service.economy.transaction.TransactionResult;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.format.TextColors;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
 public class StockItem {
     private ItemStack item;
+
+    public enum FilterOptions {
+        /** All item NBT has to match */
+        NORMAL,
+        /**
+         * Entries from the items at /UnsafeDamage will be removed before comparing.
+         * This includes pre 1.13 /meta values
+         */
+        IGNORE_DAMAGE,
+        /**
+         * Compare item types only, ignoring all NBT (including damage)
+         */
+        IGNORE_NBT;
+        public static FilterOptions of(String v) {
+            for (FilterOptions o : values()) {
+                if (v.equalsIgnoreCase(o.name()))
+                    return o;
+            }
+            throw new NoSuchElementException("No such Filter: "+v);
+        }
+    };
+    private FilterOptions option = FilterOptions.NORMAL;
 
     private Currency currency; //currency to use
     private Double sellprice = null, buyprice = null; //This IS the STACK price
@@ -85,8 +100,27 @@ public class StockItem {
         return maxStock > 0 ? stocked : item.getQuantity();
     }
 
+    private Inventory filterInventory(Inventory inv) {
+        long count = 0L;
+        Inventory filtered;
+        if (option == FilterOptions.IGNORE_NBT) {
+            filtered = inv.query(QueryOperationTypes.ITEM_TYPE.of(item.getType()));
+        } else if (option == FilterOptions.IGNORE_DAMAGE) {
+            DataContainer j = item.toContainer()
+                    .remove(DataQuery.of("UnsafeDamage")); //TODO remove quantity
+            filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of((i)->
+                i.toContainer()
+                        .remove(DataQuery.of("UnsafeDamage")) //TODO remove quantity
+                        .equals(j)
+            ));
+        } else {
+            filtered = inv.query(QueryOperationTypes.ITEM_STACK_IGNORE_QUANTITY.of(item));
+        }
+        return filtered;
+    }
+
     public void updateStock(Inventory container) {
-        Inventory result = container.queryAny(item);
+        Inventory result = filterInventory(container);
         int count = 0;
         for (Inventory s : result.slots()) count += s.totalItems();
         stocked = Math.min(maxStock, count);
@@ -100,7 +134,7 @@ public class StockItem {
      */
     public int getFrom(Inventory inv, int quantity) {
         int ammountLeft = quantity;
-        Inventory result = inv.queryAny(item);
+        Inventory result = filterInventory(inv);
         for (Inventory s : result.slots()) {
             ItemStack onSlot = s.poll(ammountLeft).orElse(null);
             if (onSlot == null) continue;
@@ -332,15 +366,14 @@ public class StockItem {
      * count for each slot, how many of the item it could accept
      */
     private int invSpace(Inventory i) {
-        ItemStack detector = getItem();
         int space = 0, c;
-        Inventory result = i.queryAny(detector);
+        Inventory result = filterInventory(i);
         for (Inventory s : result.slots()) {
             Slot slot = (Slot) s;
             c = slot.getStackSize();
-            if (c > 0) space += (detector.getMaxStackQuantity() - c);
+            if (c > 0) space += (item.getMaxStackQuantity() - c);
         }
-        space += (i.capacity() - i.size()) * detector.getMaxStackQuantity();
+        space += (i.capacity() - i.size()) * item.getMaxStackQuantity();
         return space;
     }
 
@@ -348,9 +381,8 @@ public class StockItem {
      * figure out how much of item the inventory can supply
      */
     private int invSupply(Inventory i) {
-        ItemStack detector = getItem();
         int available = 0;
-        available = i.queryAny(detector).totalItems();
+        available = filterInventory(i).totalItems();
         return available;
     }
 }
