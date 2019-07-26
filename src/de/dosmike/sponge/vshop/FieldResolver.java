@@ -43,8 +43,9 @@ public class FieldResolver {
 
         public void attach(Entity entity) {
             for (Map.Entry<Key, Object> entry : values.entrySet()) {
-                entity.offer(entry.getKey(), entry.getValue())
-                        .ifNotSuccessful(() -> new RuntimeException("Key not supported"));
+                if (entry.getValue()!=null)
+                    entity.offer(entry.getKey(), entry.getValue())
+                            .ifNotSuccessful(() -> new RuntimeException("Key not supported"));
             }
         }
 

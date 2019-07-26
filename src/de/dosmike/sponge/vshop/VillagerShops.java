@@ -448,7 +448,7 @@ public class VillagerShops {
      * format a bigDecimal to a precision of 3, because everything else makes no sense in currency context
      */
     public static String nf(BigDecimal value) {
-        return value.round(new MathContext(3, RoundingMode.HALF_EVEN)).toString();
+        return value.round(new MathContext(3, RoundingMode.HALF_EVEN)).toPlainString();
     }
 
     public static Locale playerLocale(CommandSource viewer) {

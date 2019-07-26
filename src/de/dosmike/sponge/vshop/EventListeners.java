@@ -5,7 +5,12 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.ai.Goal;
+import org.spongepowered.api.entity.ai.GoalTypes;
+import org.spongepowered.api.entity.ai.task.builtin.creature.AttackLivingAITask;
 import org.spongepowered.api.entity.explosive.Explosive;
+import org.spongepowered.api.entity.living.Agent;
+import org.spongepowered.api.entity.living.Creature;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
@@ -13,6 +18,7 @@ import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.entity.DamageEntityEvent;
 import org.spongepowered.api.event.entity.InteractEntityEvent;
+import org.spongepowered.api.event.entity.ai.AITaskEvent;
 import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
@@ -34,7 +40,8 @@ public class EventListeners {
         if (!(event.getTargetEntity() instanceof Living)) return;
         Living target = (Living) event.getTargetEntity();
 
-        if (VillagerShops.isNPCused(target)) event.setCancelled(true);
+        if (VillagerShops.isNPCused(target))
+            event.setCancelled(true);
     }
 
     @Listener
@@ -123,13 +130,16 @@ public class EventListeners {
     public void onPlayerDisconnect(ClientConnectionEvent.Disconnect event) {
         ChestLinkManager.cancel(event.getTargetEntity());
     }
-	
-	
-	/*@Listener //uncomment when ready
-	public void onAiTargetEntity(SetAttackTargetEvent event) {
-		event.getTarget().ifPresent(target->{
-			if (VillagerShops.isNPCused(target)) 
-				event.setCancelled(true); //would probably be better to set a different target
-		});
-	}*/
+
+
+//    @Listener //someone that knows how to do that please :D
+//    public void onAiTargetEntity(AITaskEvent event) {
+//        if (event.getGoal().getType().equals(GoalTypes.TARGET)) {
+//            Agent agent = event.getGoal().getOwner();
+//            if (VillagerShops.isNPCused(agent)) {
+//                event.getGoal().clear();
+//            }
+//        }
+//    }
 }
+

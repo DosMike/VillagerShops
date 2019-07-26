@@ -87,7 +87,7 @@ public class LedgerManager {
                 if (!vendor.get().getShopOwner().isPresent()) continue; //not playershop
                 Optional<User> owner = VillagerShops.getUserStorage().get(vendor.get().getShopOwner().get());
                 if (!owner.isPresent() || !owner.get().isOnline()) continue; //player no more present or disconnected
-                Player online = owner.get().getPlayer().get();
+                Player online = owner.get().getPlayer().orElse(null);
 
                 Map<Currency, Double> income = new HashMap<>(); //currency -> money
                 Map<ItemType, DataCollector> data = new HashMap<>();
@@ -115,7 +115,8 @@ public class LedgerManager {
                         .map((Entry<Currency, Double> ice) -> Text.of((ice.getValue() < 0 ? TextColors.RED : TextColors.GREEN), (ice.getValue() < 0 ? ice.getValue().toString() : "+" + ice.getValue()), ice.getKey().getSymbol(), TextColors.RESET))
                         .collect(Collectors.toList());
 
-                online.sendMessage(VillagerShops.getTranslator().localText("shop.chat.transaction.base")
+                if (online != null)
+                    online.sendMessage(VillagerShops.getTranslator().localText("shop.chat.transaction.base")
                         .replace("%shop%", Transaction.shopText(e.getKey()))
                         .replace("%items%", Text.joinWith(Text.of(", "), items))
                         .replace("%money%", Text.joinWith(Text.of(", "), icl))
