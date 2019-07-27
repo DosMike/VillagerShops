@@ -12,6 +12,7 @@ import org.spongepowered.api.entity.explosive.Explosive;
 import org.spongepowered.api.entity.living.Agent;
 import org.spongepowered.api.entity.living.Creature;
 import org.spongepowered.api.entity.living.Living;
+import org.spongepowered.api.entity.living.Villager;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
@@ -125,10 +126,15 @@ public class EventListeners {
         });
     }
 
-
     @Listener
     public void onPlayerDisconnect(ClientConnectionEvent.Disconnect event) {
         ChestLinkManager.cancel(event.getTargetEntity());
+
+        /* remove the playerstates to prevent memory bloat */
+        VillagerShops.getNPCguards().stream()
+                .map(NPCguard::getPreparator)
+                .map(InvPrep::getMenu)
+                .forEach(m->m.clearPlayerState(event.getTargetEntity().getUniqueId()));
     }
 
 

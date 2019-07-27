@@ -203,7 +203,7 @@ public class CommandRegistra {
 
                         InvPrep prep = npc.get().getPreparator();
 
-                        int overwriteindex = -1;
+                        int overwriteindex = -1; //-1 to append
                         if (args.hasAny("slot")) {
                             int testslot = args.<Integer>getOne("slot").get();
                             if (testslot > prep.size() || testslot < 1) {
@@ -213,11 +213,11 @@ public class CommandRegistra {
                                 overwriteindex = testslot - 1;
                             }
                         }
-                        if (overwriteindex < 0 && prep.size() >= 27) {
-                            player.sendMessage(Text.of(TextColors.RED,
-                                    lang.local("cmd.add.itemlimit").resolve(player).orElse("[item limit reached]")));
-                            return CommandResult.success();
-                        }
+//                        if (overwriteindex < 0 && prep.size() >= 27) {
+//                            player.sendMessage(Text.of(TextColors.RED,
+//                                    lang.local("cmd.add.itemlimit").resolve(player).orElse("[item limit reached]")));
+//                            return CommandResult.success();
+//                        }
                         Double buyFor, sellFor;
                         int limit = 0;
                         if (args.hasAny("limit")) {
@@ -267,7 +267,9 @@ public class CommandRegistra {
                             return CommandResult.success();
                         }
                         VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
-                        StockItem newItem = new StockItem(item.get(), sellFor, buyFor, VillagerShops.getInstance().CurrencyByName((String) args.getOne("Currency").orElse(null)), limit);
+                        ItemStack single =item.get().copy();
+                        single.setQuantity(1);
+                        StockItem newItem = new StockItem(single, sellFor, buyFor, VillagerShops.getInstance().CurrencyByName((String) args.getOne("Currency").orElse(null)), limit);
                         if (overwriteindex < 0) {
                             prep.addItem(newItem);
 

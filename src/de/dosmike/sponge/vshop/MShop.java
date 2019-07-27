@@ -11,25 +11,37 @@ import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
+import java.awt.event.MouseEvent;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-public class MShop extends IElementImpl implements IClickable {
+public final class MShop extends IElementImpl implements IClickable {
+
+    public static final String MENU_SHOP_QUANTITY = "quantity";
 
     private StockItem stockItem;
-    private boolean isSellSlot;
-    public MShop(StockItem stockItem, boolean sell) {
+    public MShop(StockItem stockItem) {
         this.stockItem = stockItem;
-        this.isSellSlot = sell;
     }
 
     private OnClickListener clickListener = (element, player, button, shift)-> {
+        boolean doBuy;
+        if (button == MouseEvent.BUTTON1) {
+            doBuy = true;
+        } else if (button == MouseEvent.BUTTON2) {
+            doBuy = false;
+        } else return;
         UUID shopID = VillagerShops.openShops.get(player.getUniqueId());
         if (shopID == null) return;
         NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
         if (shop == null) return;
-        int change = InteractionHandler.shopItemClicked(player, shop, stockItem, !isSellSlot);
+
+        int quantity = Math.min(
+                getParent().getPlayerState(player).getInt(MENU_SHOP_QUANTITY).orElse(InvPrep.MENU_QUANTITY_SPINNER_VALUES[0]),
+                stockItem.getItem().getMaxStackQuantity()
+        );
+        int change = InteractionHandler.shopItemClicked(player, shop, stockItem, doBuy, quantity);
         if (change > 0 && stockItem.getMaxStock()>0) {
             shop.getStockInventory().ifPresent(stock->stockItem.updateStock(stock));
             invalidate();
@@ -53,14 +65,20 @@ public class MShop extends IElementImpl implements IClickable {
 
     @Override
     public MShop copy() {
-        MShop copy = new MShop(stockItem, isSellSlot);
+        MShop copy = new MShop(stockItem);
         copy.setPosition(getPosition());
         return copy;
     }
 
     @Override
     public IIcon getIcon(Player viewer) {
-        return IIcon.of(stockItem.getItem());
+        int quantity = Math.min(
+                getParent().getPlayerState(viewer).getInt(MENU_SHOP_QUANTITY).orElse(InvPrep.MENU_QUANTITY_SPINNER_VALUES[0]),
+                stockItem.getItem().getMaxStackQuantity()
+        );
+        ItemStack display = stockItem.getItem().copy();
+        display.setQuantity(quantity);
+        return IIcon.of(display);
     }
 
     @Override
@@ -74,15 +92,43 @@ public class MShop extends IElementImpl implements IClickable {
         List<Text> lore = stockItem.getItem().get(Keys.ITEM_LORE).orElse(new LinkedList<>());
 
         Text currency = stockItem.getCurrency().getSymbol();
-        if (isSellSlot) {
-            if (item.getQuantity() > 1) {
-                lore.add(Text.of(TextColors.GREEN,
-                        VillagerShops.getTranslator().localText("shop.item.sell.stack")
-                                .replace("%price%", String.format("%.2f", stockItem.getSellPrice()))
-                                .replace("%itemprice%", Text.of(String.format("%.2f", stockItem.getSellPrice() / (double) item.getQuantity())))
+        int quantity = Math.min(
+                getParent().getPlayerState(viewer).getInt(MENU_SHOP_QUANTITY).orElse(InvPrep.MENU_QUANTITY_SPINNER_VALUES[0]),
+                stockItem.getItem().getMaxStackQuantity()
+        );
+        if (stockItem.getBuyPrice() != null) {
+            if (quantity > 1) {
+                double stackBuyPrice = quantity * stockItem.getBuyPrice();
+                lore.add(Text.of(TextColors.RED,
+                        VillagerShops.getTranslator().localText("shop.item.buy.stack")
+                                .replace("%price%", String.format("%.2f", stackBuyPrice))
+                                .replace("%itemprice%", Text.of(String.format("%.2f", stockItem.getBuyPrice())))
                                 .replace("%currency%", currency)
                                 .resolve(viewer).orElse(
-                                        Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", stockItem.getSellPrice()), currency, String.format(" (á %.2f", stockItem.getSellPrice() / (double) item.getQuantity()), currency, ')')
+                                Text.of("shop.item.buy.stack")
+                        )
+                ));
+            } else {
+                lore.add(Text.of(TextColors.RED,
+                        VillagerShops.getTranslator().localText("shop.item.buy.one")
+                                .replace("%price%", String.format("%.2f", stockItem.getBuyPrice()))
+                                .replace("%currency%", currency)
+                                .resolve(viewer).orElse(
+                                Text.of("shop.item.buy.one")
+                        )
+                ));
+            }
+        }
+        if (stockItem.getSellPrice() != null) {
+            if (quantity > 1) {
+                double stackSellPrice = quantity * stockItem.getSellPrice();
+                lore.add(Text.of(TextColors.GREEN,
+                        VillagerShops.getTranslator().localText("shop.item.sell.stack")
+                                .replace("%price%", String.format("%.2f", stackSellPrice))
+                                .replace("%itemprice%", Text.of(String.format("%.2f", stockItem.getSellPrice())))
+                                .replace("%currency%", currency)
+                                .resolve(viewer).orElse(
+                                        Text.of("shop.item.sell.stack")
                                 )
                         ));
             } else {
@@ -91,28 +137,7 @@ public class MShop extends IElementImpl implements IClickable {
                                 .replace("%price%", String.format("%.2f", stockItem.getSellPrice()))
                                 .replace("%currency%", currency)
                                 .resolve(viewer).orElse(
-                                        Text.of(TextColors.GREEN, "Sell for: ", TextColors.WHITE, String.format("%.2f", stockItem.getSellPrice()), currency)
-                                )
-                        ));
-            }
-        } else {
-            if (item.getQuantity() > 1) {
-                lore.add(Text.of(TextColors.RED,
-                        VillagerShops.getTranslator().localText("shop.item.buy.stack")
-                                .replace("%price%", String.format("%.2f", stockItem.getBuyPrice()))
-                                .replace("%itemprice%", Text.of(String.format("%.2f", stockItem.getBuyPrice() / (double) item.getQuantity())))
-                                .replace("%currency%", currency)
-                                .resolve(viewer).orElse(
-                                        Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", stockItem.getBuyPrice()), currency, String.format(" (á %.2f", stockItem.getBuyPrice() / (double) item.getQuantity()), currency, ')')
-                                )
-                        ));
-            } else {
-                lore.add(Text.of(TextColors.RED,
-                        VillagerShops.getTranslator().localText("shop.item.buy.one")
-                                .replace("%price%", String.format("%.2f", stockItem.getBuyPrice()))
-                                .replace("%currency%", currency)
-                                .resolve(viewer).orElse(
-                                        Text.of(TextColors.RED, "Buy for: ", TextColors.WHITE, String.format("%.2f", stockItem.getBuyPrice()), currency)
+                                        Text.of("shop.item.sell.one")
                                 )
                         ));
             }
@@ -123,7 +148,7 @@ public class MShop extends IElementImpl implements IClickable {
                             .replace("%amount%", stockItem.getStocked())
                             .replace("%max%", stockItem.getMaxStock())
                             .resolve(viewer).orElse(
-                            Text.of(String.format("In Stock: %d/%d", stockItem.getStocked(), stockItem.getMaxStock()))
+                            Text.of("shop.item.stock")
                     )));
 
         return lore;

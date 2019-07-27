@@ -55,8 +55,11 @@ public class StockItem {
 
     public StockItem(ItemStack itemstack, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
         item = itemstack.copy();
-        if (sellfor != null && sellfor >= 0) sellprice = sellfor;
-        if (buyfor != null && buyfor >= 0) buyprice = buyfor;
+        //legacy load
+        double quantity = itemstack.getQuantity();
+        item.setQuantity(1);
+        if (sellfor != null && sellfor >= 0) sellprice = sellfor/quantity;
+        if (buyfor != null && buyfor >= 0) buyprice = buyfor/quantity;
         this.currency = currency;
         maxStock = stockLimit;
     }
@@ -160,14 +163,14 @@ public class StockItem {
         return getFrom(inv, maxStock <= 0 ? item.getQuantity() : Math.min(item.getQuantity(), maxStock - stocked));
     }
 
-    public ShopResult buy(Player player, NPCguard shop) {
+    public ShopResult buy(Player player, NPCguard shop, int maxAmount) {
         Optional<UniqueAccount> account = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
         if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
         Account acc = account.get();
         boolean spendingsLimited = VillagerShops.getIncomeLimiter().isSpendingsLimited(player);
 
         Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
-        int amount = Math.min(invSpace(playerInv), item.getQuantity()); //buy at max the configured amount
+        int amount = Math.min(invSpace(playerInv), maxAmount); //buy at max the specified amount
         if (amount <= 0) return ShopResult.CUSTOMER_INVENTORY_FULL;
 
         Optional<Inventory> stock = shop.getStockInventory();
@@ -290,13 +293,13 @@ public class StockItem {
         }
     }
 
-    public ShopResult sell(Player player, NPCguard shop) {
+    public ShopResult sell(Player player, NPCguard shop, int maxAmount) {
         Optional<UniqueAccount> account = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
         if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
         Account acc = account.get();
 
         Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
-        int amount = Math.min(invSupply(playerInv), item.getQuantity()); //buy at max the configured amount
+        int amount = Math.min(invSupply(playerInv), maxAmount); //buy at max the specified amount
         if (amount <= 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
 
         Optional<Inventory> stock = shop.getStockInventory();
