@@ -1,9 +1,12 @@
 VillagerShops
 =====
 
-### [This plugin requires LangSwitch](https://github.com/DosMike/LangSwitch)
-
+### [This plugin requires LangSwitch](https://github.com/DosMike/LangSwitch)  
 Feel free to open an issue on the git to share your translations
+
+
+**If you're updating from 1.x to 2.x you'll have to delete ledger db in config/vshop.**
+### [Version 2.0+ requires MegaMenus](https://ore.spongepowered.org/DosMike/Mega-Menus)
 
 Description:
 -----
@@ -76,3 +79,9 @@ Chat messages will notify playershop owners about purchases in all their shops e
 
 Shops save with the world now, this means that editing shops via config got extremely unreliable and made the old behaviour of `/vshop reload` useless. Instead this command will now try to reload skins for `sponge:human` shops.   
 Even though I set the skin correctly they sometimes seem to not load/be sent to the player, so `/vshop reload` will reapply the skin.
+
+(In-)Compatibility
+-----
+
+* **Pixelmon** will replace various vanilla mobs with Pixelmon versions resulting in VillagerShops spamming mobs
+* **InventoryTweaks** has to be installed client side only - otherwise item dupes may happen
