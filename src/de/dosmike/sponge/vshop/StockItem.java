@@ -45,10 +45,10 @@ public class StockItem {
             throw new NoSuchElementException("No such Filter: "+v);
         }
     };
-    private FilterOptions option = FilterOptions.NORMAL;
+    private FilterOptions nbtfilter = FilterOptions.NORMAL;
 
     private Currency currency; //currency to use
-    private Double sellprice = null, buyprice = null; //This IS the STACK price
+    private Double sellprice = null, buyprice = null; //This IS the SINGLE ITEM price
 
     //caution: maxStock does not actually hold information about the size of the stock container!
     private int maxStock = 0, stocked = 0;
@@ -57,11 +57,15 @@ public class StockItem {
         item = itemstack.copy();
         //legacy load
         double quantity = itemstack.getQuantity();
-        item.setQuantity(1);
-        if (sellfor != null && sellfor >= 0) sellprice = sellfor/quantity;
-        if (buyfor != null && buyfor >= 0) buyprice = buyfor/quantity;
+        this.item.setQuantity(1);
+        if (sellfor != null && sellfor >= 0) this.sellprice = sellfor/quantity;
+        if (buyfor != null && buyfor >= 0) this.buyprice = buyfor/quantity;
         this.currency = currency;
-        maxStock = stockLimit;
+        this.maxStock = stockLimit;
+    }
+    public StockItem(ItemStack itemstack, Double sellfor, Double buyfor, Currency currency, int stockLimit, FilterOptions nbtfilter) {
+        this(itemstack, sellfor, buyfor, currency, stockLimit);
+        this.nbtfilter = nbtfilter;
     }
 
     public ItemStack getItem() {
@@ -82,6 +86,10 @@ public class StockItem {
 
     public void setSellPrice(Double price) {
         sellprice = price;
+    }
+
+    public FilterOptions getNbtFilter() {
+        return nbtfilter;
     }
 
     /**
@@ -106,14 +114,18 @@ public class StockItem {
     private Inventory filterInventory(Inventory inv) {
         long count = 0L;
         Inventory filtered;
-        if (option == FilterOptions.IGNORE_NBT) {
+        if (nbtfilter == FilterOptions.IGNORE_NBT) {
             filtered = inv.query(QueryOperationTypes.ITEM_TYPE.of(item.getType()));
-        } else if (option == FilterOptions.IGNORE_DAMAGE) {
+        } else if (nbtfilter == FilterOptions.IGNORE_DAMAGE) {
+            DataQuery dqStackSize = DataQuery.of("Count"); //not interesting for filtering
+            DataQuery dqDamageMeta = DataQuery.of("UnsafeDamage"); //used for variants up to mc 1.12.2
             DataContainer j = item.toContainer()
-                    .remove(DataQuery.of("UnsafeDamage")); //TODO remove quantity
+                    .remove(dqDamageMeta)
+                    .remove(dqStackSize);
             filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of((i)->
                 i.toContainer()
-                        .remove(DataQuery.of("UnsafeDamage")) //TODO remove quantity
+                        .remove(dqDamageMeta)
+                        .remove(dqStackSize)
                         .equals(j)
             ));
         } else {

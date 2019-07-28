@@ -105,6 +105,7 @@ public class InteractionHandler {
         double finalPrice;
 
         if (doBuy) {
+            if (item.getBuyPrice() == null) return 0;
             result = item.buy(player, shop, amount);
             if (result.getTradedItems() > 0) {
                 finalPrice = item.getBuyPrice() * (double) result.getTradedItems() / (double) item.getItem().getQuantity();
@@ -125,6 +126,7 @@ public class InteractionHandler {
                 player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
             }
         } else {
+            if (item.getSellPrice() == null) return 0;
             result = item.sell(player, shop, amount);
             if (result.getTradedItems() > 0) {
                 finalPrice = item.getSellPrice() * (double) result.getTradedItems() / (double) item.getItem().getQuantity();

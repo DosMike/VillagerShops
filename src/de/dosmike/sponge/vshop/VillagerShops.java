@@ -47,7 +47,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(id = "vshop", name = "VillagerShops",
-        version = "2.0", authors = {"DosMike"},
+        version = "2.1.0", authors = {"DosMike"},
         dependencies = {
                 @Dependency(id = "langswitch", optional = false, version = "[1.3,)"),
                 @Dependency(id = "megamenus", optional = false, version = "[0.1,)")

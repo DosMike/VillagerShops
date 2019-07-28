@@ -29,6 +29,7 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import javax.annotation.Nullable;
+import java.text.Normalizer;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -174,6 +175,8 @@ public class CommandRegistra {
                         GenericArguments.integer(Text.of("limit")), "l"
                         ).valueFlag(
                         GenericArguments.integer(Text.of("slot")), "o"
+                        ).valueFlag(
+                        GenericArguments.enumValue(Text.of("nbt"), StockItem.FilterOptions.class), "-nbt"
                         ).buildWith(GenericArguments.seq(
                         GenericArguments.onlyOne(GenericArguments.string(Text.of("BuyPrice"))),
                         GenericArguments.onlyOne(GenericArguments.string(Text.of("SellPrice"))),
@@ -229,6 +232,10 @@ public class CommandRegistra {
                                 limit = args.<Integer>getOne("limit").orElse(0);
                             }
                         }
+                        StockItem.FilterOptions nbtfilter = StockItem.FilterOptions.NORMAL;
+                        if (args.hasAny("nbt")) {
+                            nbtfilter = args.<StockItem.FilterOptions>getOne("nbt").orElse(StockItem.FilterOptions.NORMAL);
+                        }
 
                         String parse = args.getOne("BuyPrice").orElse("~").toString();
                         try {
@@ -269,7 +276,9 @@ public class CommandRegistra {
                         VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
                         ItemStack single =item.get().copy();
                         single.setQuantity(1);
-                        StockItem newItem = new StockItem(single, sellFor, buyFor, VillagerShops.getInstance().CurrencyByName((String) args.getOne("Currency").orElse(null)), limit);
+                        StockItem newItem = new StockItem(single, sellFor, buyFor,
+                                VillagerShops.getInstance().CurrencyByName((String) args.getOne("Currency").orElse(null)),
+                                limit, nbtfilter);
                         if (overwriteindex < 0) {
                             prep.addItem(newItem);
 
