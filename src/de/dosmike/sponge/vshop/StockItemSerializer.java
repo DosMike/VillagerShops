@@ -15,6 +15,7 @@ public class StockItemSerializer implements TypeSerializer<StockItem> {
         if (item.getSellPrice() != null) value.getNode("sellprice").setValue(item.getSellPrice());
         if (item.getCurrency() != null) value.getNode("currency").setValue(item.getCurrency().getId());
         if (item.getMaxStock() > 0) value.getNode("stocklimit").setValue(item.getMaxStock());
+        value.getNode("nbtfilter").setValue(item.getNbtFilter().toString());
     }
 
     @Override
@@ -24,7 +25,8 @@ public class StockItemSerializer implements TypeSerializer<StockItem> {
                 ii.getNode("sellprice").getDouble(-1),
                 ii.getNode("buyprice").getDouble(-1),
                 VillagerShops.getInstance().CurrencyByName(ii.getNode("currency").getString(null)),
-                ii.getNode("stocklimit").getInt(0)
+                ii.getNode("stocklimit").getInt(0),
+                StockItem.FilterOptions.of(ii.getNode("nbtfilter").getString("NORMAL"))
         );
     }
 }

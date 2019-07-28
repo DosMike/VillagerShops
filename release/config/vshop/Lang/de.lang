@@ -64,3 +64,8 @@ shop.customer.spendinglimit:Deine täglichen Ausgaben sind begrenzt. Versuche es
 shop.chat.transaction.base:Dein Shop %shop% handelte %items%. Unterm Strich %money%.
 shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
 shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.quantity.name:Verkaufsmenge
+shop.quantity.items1:1 Item
+shop.quantity.items16:16 Items
+shop.quantity.items32:32 Items
+shop.quantity.items64:64 Items

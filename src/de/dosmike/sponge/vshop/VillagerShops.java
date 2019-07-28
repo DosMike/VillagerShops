@@ -47,7 +47,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(id = "vshop", name = "VillagerShops",
-        version = "2.0", authors = {"DosMike"},
+        version = "2.1.0", authors = {"DosMike"},
         dependencies = {
                 @Dependency(id = "langswitch", optional = false, version = "[1.3,)"),
                 @Dependency(id = "megamenus", optional = false, version = "[0.1,)")
@@ -448,7 +448,8 @@ public class VillagerShops {
      * format a bigDecimal to a precision of 3, because everything else makes no sense in currency context
      */
     public static String nf(BigDecimal value) {
-        return value.round(new MathContext(3, RoundingMode.HALF_EVEN)).toString();
+        return value.add(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP).toPlainString();
+//        return value.round(new MathContext(3, RoundingMode.HALF_EVEN)).toPlainString();
     }
 
     public static Locale playerLocale(CommandSource viewer) {

@@ -3,13 +3,18 @@ package de.dosmike.sponge.vshop;
 import de.dosmike.sponge.megamenus.api.IMenu;
 import de.dosmike.sponge.megamenus.api.MenuRenderer;
 import de.dosmike.sponge.megamenus.api.listener.OnRenderStateListener;
+import de.dosmike.sponge.megamenus.api.state.StateObject;
+import de.dosmike.sponge.megamenus.impl.BaseMenuImpl;
 import de.dosmike.sponge.megamenus.impl.GuiRenderer;
 import de.dosmike.sponge.megamenus.impl.RenderManager;
+import de.dosmike.sponge.megamenus.impl.util.MenuUtil;
+import org.apache.commons.lang3.ArrayUtils;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.Container;
+import org.spongepowered.api.item.inventory.property.SlotPos;
 import org.spongepowered.api.item.inventory.type.OrderedInventory;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
@@ -41,8 +46,10 @@ public class InteractionHandler {
                     VillagerShops.w("Owner: %s", shop.getShopOwner().get().toString());
                 VillagerShops.w("Container was supposed to be at %s", shop.playershopcontainer);
             } else if (shop.getPreparator().size() > 0) {
+                if (VillagerShops.openShops.containsKey(source.getUniqueId())) return true;
                 shop.updateStock();
-                int idealHeight = Math.min(2 + 2*((int) Math.ceil((double) shop.getPreparator().size() / 9.0) - 1), 6);
+//                int idealHeight = Math.min(2 + 2*((int) Math.ceil((double) shop.getPreparator().size() / 9.0) - 1), 6);
+                int idealHeight = Math.max(2, Math.min((int)Math.ceil(shop.getPreparator().size()/9.0)+1, 6)); // 2 - 6 rows
                 VillagerShops.openShops.put(source.getUniqueId(), shop.getIdentifier());
                 //bound renderer for possibly localized title
                 GuiRenderer renderer = (GuiRenderer) shop.getMenu().createGuiRenderer(idealHeight, true);
@@ -50,6 +57,22 @@ public class InteractionHandler {
                         VillagerShops.getTranslator().localText("shop.title")
                                 .replace("%name%", Text.of(TextColors.RESET, shop.getDisplayName() == null ? Text.of() : shop.getDisplayName()))
                                 .resolve(source).orElse(Text.of("[vShop] ", shop.getDisplayName() == null ? Text.of() : shop.getDisplayName()))));
+
+                //relink player state value to the spinner
+                IMenu minstance = renderer.getMenu();
+                SlotPos posBR = new SlotPos(8,idealHeight-1);
+                int qsi = ArrayUtils.indexOf(InvPrep.MENU_QUANTITY_SPINNER_VALUES,
+                        minstance.getPlayerState(source)
+                                .getInt(MShop.MENU_SHOP_QUANTITY)
+                                .orElse(64));
+                for (int i = 1; i <= minstance.pages(); i++)
+                    MenuUtil.getElementAt(minstance, i, posBR).ifPresent(e->{
+                        if (e instanceof MSpinnerIndex) {
+                            ((MSpinnerIndex) e).setSelectedIndex(qsi);
+                            e.invalidate();
+                        }
+                    });
+
                 renderer.setRenderListener(new OnRenderStateListener() {
                     @Override
                     public boolean closed(MenuRenderer render, IMenu menu, Player viewer) {
@@ -66,10 +89,11 @@ public class InteractionHandler {
     }
 
     /**
-     * tries to buy or sell the item and returns the ammount of actuall items bought/sold<br>
+     * tries to buy or sell the item and returns the amount of actual items bought/sold<br>
      * @param shop is required by the calling method, and thus is passed to prevent double lookup
+     * @param amount is no longer related to the stack size added, but a menu state value
      */
-    static int shopItemClicked(Player player, NPCguard shop, StockItem item, boolean doBuy) {
+    static int shopItemClicked(Player player, NPCguard shop, StockItem item, boolean doBuy, int amount) {
         Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
         if (!acc.isPresent()) return 0;
         Optional<UUID> shopOwner = shop.getShopOwner();
@@ -81,7 +105,8 @@ public class InteractionHandler {
         double finalPrice;
 
         if (doBuy) {
-            result = item.buy(player, shop);
+            if (item.getBuyPrice() == null) return 0;
+            result = item.buy(player, shop, amount);
             if (result.getTradedItems() > 0) {
                 finalPrice = item.getBuyPrice() * (double) result.getTradedItems() / (double) item.getItem().getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.buy.message")
@@ -101,7 +126,8 @@ public class InteractionHandler {
                 player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
             }
         } else {
-            result = item.sell(player, shop);
+            if (item.getSellPrice() == null) return 0;
+            result = item.sell(player, shop, amount);
             if (result.getTradedItems() > 0) {
                 finalPrice = item.getSellPrice() * (double) result.getTradedItems() / (double) item.getItem().getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.sell.message")

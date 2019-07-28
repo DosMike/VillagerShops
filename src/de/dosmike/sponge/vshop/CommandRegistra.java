@@ -29,6 +29,7 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import javax.annotation.Nullable;
+import java.text.Normalizer;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -174,6 +175,8 @@ public class CommandRegistra {
                         GenericArguments.integer(Text.of("limit")), "l"
                         ).valueFlag(
                         GenericArguments.integer(Text.of("slot")), "o"
+                        ).valueFlag(
+                        GenericArguments.enumValue(Text.of("nbt"), StockItem.FilterOptions.class), "-nbt"
                         ).buildWith(GenericArguments.seq(
                         GenericArguments.onlyOne(GenericArguments.string(Text.of("BuyPrice"))),
                         GenericArguments.onlyOne(GenericArguments.string(Text.of("SellPrice"))),
@@ -203,7 +206,7 @@ public class CommandRegistra {
 
                         InvPrep prep = npc.get().getPreparator();
 
-                        int overwriteindex = -1;
+                        int overwriteindex = -1; //-1 to append
                         if (args.hasAny("slot")) {
                             int testslot = args.<Integer>getOne("slot").get();
                             if (testslot > prep.size() || testslot < 1) {
@@ -213,11 +216,11 @@ public class CommandRegistra {
                                 overwriteindex = testslot - 1;
                             }
                         }
-                        if (overwriteindex < 0 && prep.size() >= 27) {
-                            player.sendMessage(Text.of(TextColors.RED,
-                                    lang.local("cmd.add.itemlimit").resolve(player).orElse("[item limit reached]")));
-                            return CommandResult.success();
-                        }
+//                        if (overwriteindex < 0 && prep.size() >= 27) {
+//                            player.sendMessage(Text.of(TextColors.RED,
+//                                    lang.local("cmd.add.itemlimit").resolve(player).orElse("[item limit reached]")));
+//                            return CommandResult.success();
+//                        }
                         Double buyFor, sellFor;
                         int limit = 0;
                         if (args.hasAny("limit")) {
@@ -228,6 +231,10 @@ public class CommandRegistra {
                             } else {
                                 limit = args.<Integer>getOne("limit").orElse(0);
                             }
+                        }
+                        StockItem.FilterOptions nbtfilter = StockItem.FilterOptions.NORMAL;
+                        if (args.hasAny("nbt")) {
+                            nbtfilter = args.<StockItem.FilterOptions>getOne("nbt").orElse(StockItem.FilterOptions.NORMAL);
                         }
 
                         String parse = args.getOne("BuyPrice").orElse("~").toString();
@@ -267,7 +274,11 @@ public class CommandRegistra {
                             return CommandResult.success();
                         }
                         VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
-                        StockItem newItem = new StockItem(item.get(), sellFor, buyFor, VillagerShops.getInstance().CurrencyByName((String) args.getOne("Currency").orElse(null)), limit);
+                        ItemStack single =item.get().copy();
+                        single.setQuantity(1);
+                        StockItem newItem = new StockItem(single, sellFor, buyFor,
+                                VillagerShops.getInstance().CurrencyByName((String) args.getOne("Currency").orElse(null)),
+                                limit, nbtfilter);
                         if (overwriteindex < 0) {
                             prep.addItem(newItem);
 

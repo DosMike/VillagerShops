@@ -285,6 +285,7 @@ public class NPCguard {
                     if ((++lookAroundTicks > 15 && VillagerShops.rng.nextInt(10) == 0) || lookAroundTicks > 100) {
                         Living mo = (Living) le;
                         lookAroundTicks = 0;
+
                         mo.setHeadRotation(new Vector3d(VillagerShops.rng.nextFloat() * 30 - 14, rot.getY() + VillagerShops.rng.nextFloat() * 60 - 30, 0.0));
                     }
                 }

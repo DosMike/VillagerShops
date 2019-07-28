@@ -16,17 +16,18 @@ You can also name the shop mobs and set the variant (Villager profession).<br>
 *Please note that you require any economy Plugin for this to work*<br>
 <sub>Let's just never mention the Bukkit-version...</sub>
 
-Latest Version: 1.9 (2018-08-17)<br>
-(Written, compiled and tested for spongevanilla-1.12-7.1.0-BETA-97)
+Latest Version: 2.1 (2019-07-28)<br>
+(Written, compiled and tested for spongevanilla-1.12.2-7.1.6)
 
 Commands
 -----
 
-For every edit command but create, please look at the shop
+For every edit command but create, please look at the shop  
+(The commands are written as Usage Messages, you can google docopt for more information)
 
 - `/vshop create [--at <World/X/Y/Z/Rotation>] <EntityType> [--skin <Skin>] [DisplayName]`
 - `/vshop delete` (deletes shop)
-- `/vshop add [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] [-o <Index>]`
+- `/vshop add [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] [-o <Index>] [--nbt <ignore_nbt|ignore_damage|normal>]`
 - `/vshop remove <Index>` (removes item from shop)
 - `/vshop link` (connect a playershop to a different chest)
 - `/vshop identify` or `/vshop id`
