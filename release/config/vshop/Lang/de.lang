@@ -17,7 +17,8 @@ cmd.create.playershop.limit:Du darfst nicht mehr als %limit% Shops erstellen
 cmd.create.success:Ein neuer Admin-Shop namens %name% wurde erstellt
 cmd.add.limit.adminshop:Du kannst den Vorrat in einem Admin-Shop nicht begrenzen
 cmd.add.overwrite.index:And der angegebenen Position befindet sich kein Item
-cmd.add.itemlimit:Du kannst nicht mehr als 27 items in einen Shop packen.
+cmd.add.filter.nooredict:Der server usterstützt OreDict nicht
+cmd.add.filter.oredictchoice:Das Item hat mehrere OreDict Einträge. Bitte wähle einen:
 cmd.add.buyprice:Der KaufPreis war nicht '~' oder eine Zahl
 cmd.add.sellprice:Der VerkaufsPreis war nicht '~' oder eine Zahl
 cmd.add.noprice:Du musst mindestens einen Betrag für KaufsPreis oder VerkaufsPreis angeben!
@@ -48,6 +49,9 @@ shop.item.buy.stack:Kaufen:§f %price%%currency% (á %itemprice%%currency%)
 shop.item.sell.one:Verkaufen:§f %price%%currency%
 shop.item.sell.stack:Verkaufen:§f %price%%currency% (á %itemprice%%currency%)
 shop.item.stock:Auf Lager: %amount%/%max%
+shop.item.filter.damage:Kauft beschädigte Items
+shop.item.filter.nbt:Kauft alle Items mit Daten (NBT)
+shop.item.filter.oredict:Kauft alle OreDict %oredict%
 shop.buy.message:%balance% (%payed%): %amount%x %item% gekauft
 shop.sell.message:%balance% (%payed%): %amount%x %item% verkauft
 shop.generic.transactionfailure:Fehler bei der Transaktion! - Bitte dem Enwickler melden
@@ -65,7 +69,11 @@ shop.chat.transaction.base:Dein Shop %shop% handelte %items%. Unterm Strich %mon
 shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
 shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
 shop.quantity.name:Verkaufsmenge
-shop.quantity.items1:1 Item
-shop.quantity.items16:16 Items
-shop.quantity.items32:32 Items
-shop.quantity.items64:64 Items
+shop.quantity.items.single:Einzelne Items
+shop.quantity.items.quarter:Viertel Stacks
+shop.quantity.items.half:Halbe Stacks
+shop.quantity.items.full:Ganze Stacks
+shop.removemode.name:Items entfernen
+shop.removemode.lore1:Klicke hier, um Items zu entfernen. Wähle die Items
+shop.removemode.lore2:aus und klicke erneut, um das löschen zu bestätigen.
+shop.item.markedforremoval:Dieses Item wird entfernt

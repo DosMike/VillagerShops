@@ -17,7 +17,8 @@ cmd.create.playershop.limit:You may not create more than %limit% shops
 cmd.create.success:Created a new admin shop called %name%
 cmd.add.limit.adminshop:You can't add stock limits to an admin-shop
 cmd.add.overwrite.index:There is no item on the specified position
-cmd.add.itemlimit:You can't pack more than 27 items in a shop.
+cmd.add.filter.nooredict:This server does not support OreDict
+cmd.add.filter.oredictchoice:The item you're about to add has multiple OreDict entries. Please choose one:
 cmd.add.buyprice:The BuyPrice was not '~' or a decimal
 cmd.add.sellprice:The SellPrice was not '~ or a decimal
 cmd.add.noprice:You need to specify at lease one of BuyPrice and SellPrice
@@ -48,6 +49,9 @@ shop.item.buy.stack:Buy for:§f %currency%%price% (á %currency%%itemprice%)
 shop.item.sell.one:Sell for:§f %currency%%price%
 shop.item.sell.stack:Sell for:§f %currency%%price% (á %currency%%itemprice%)
 shop.item.stock:In Stock: %amount%/%max%
+shop.item.filter.damage:Buys damaged items
+shop.item.filter.nbt:Buys items with any data (NBT)
+shop.item.filter.oredict:Buys any OreDict %oredict%
 shop.buy.message:%balance% (%payed%): Buying %amount%x %item%
 shop.sell.message:%balance% (%payed%): Selling %amount%x %item%
 shop.generic.transactionfailure:Error on transaction! - Please report to the developer
@@ -65,7 +69,11 @@ shop.chat.transaction.base:Your shop %shop% sold %items%. In total %money%.
 shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
 shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
 shop.quantity.name:Shop Quantity
-shop.quantity.items1:1 Item
-shop.quantity.items16:16 Items
-shop.quantity.items32:32 Items
-shop.quantity.items64:64 Items
+shop.quantity.items.single:Einzelne Items
+shop.quantity.items.quarter:Viertel Stacks
+shop.quantity.items.half:Halbe Stacks
+shop.quantity.items.full:Ganze Stacks
+shop.removemode.name:Remove Items
+shop.removemode.lore1:Click here to remove items. Select the
+shop.removemode.lore2:items and click again to confirm removal.
+shop.item.markedforremoval:This item will be removed

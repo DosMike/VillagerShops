@@ -11,16 +11,16 @@ Feel free to open an issue on the git to share your translations
 Description:
 -----
 
-This plugin allows you to set up villagers or other mobs as shops.<br>
-They will sell items as **admin shop** (this means infinite stock), or as **player shops** if placed above a chest.<br>
-The shop will be displayed as two row inventory you can modify with chat commands as admin or if you own the shop.<br>
-Buy items from the top row and sell them at the bottom row.<br>
-You can also name the shop mobs and set the variant (Villager profession).<br>
-*Please note that you require any economy Plugin for this to work*<br>
-<sub>Let's just never mention the Bukkit-version...</sub>
+This plugin allows you to set up villagers or other mobs as shops.  
+They will sell items as **admin shop** (this means infinite stock), or as **player shops** if placed above a chest.  
+The shop will be displayed as inventory over multiple pages you can modify with chat commands as admin or if you own the shop.  
+Buy items with a primary click and sell them with a secondary click (usually primary is the left mouse button).  
+You can also name the shop mobs and set the variant (Villager profession).  
+Additionally you can set items to ignore damage, nbt or use oredict entries.  
+*Please note that your server needs any economy Plugin for this to work*  
 
-Latest Version: 2.1 (2019-07-28)<br>
-(Written, compiled and tested for spongevanilla-1.12.2-7.1.6)
+Latest Version: 2.2.1 (2019-08-14)<br>
+(Written, compiled and tested for spongevanilla-1.12.2-7.2.0)
 
 Commands
 -----
@@ -30,12 +30,12 @@ For every edit command but create, please look at the shop
 
 - `/vshop create [--at <World/X/Y/Z/Rotation>] <EntityType> [--skin <Skin>] [DisplayName]`
 - `/vshop delete` (deletes shop)
-- `/vshop add [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] [-o <Index>] [--nbt <ignore_nbt|ignore_damage|normal>]`
+- `/vshop add [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] [-o <Index>] [--nbt <ignore_nbt|ignore_damage|oredict|normal>]`
 - `/vshop remove <Index>` (removes item from shop)
 - `/vshop link` (connect a playershop to a different chest)
 - `/vshop identify` or `/vshop id`
 - `/vshop save`
-- `/vshop reload` (reapply skins on sponge:human entities)
+- `/vshop reload` (reload settings.conf)
 - `/vshop ledger [Player]` or `/vshop log [Player]` (display last 100 transactions the players shops made)
 - `/vshop list [Player]` (list all shops, offer invsee for player shops and tp)
 - `/vshop tphere <Shop ID>` moves a shop by id (`/vshop identify`) to your current location
@@ -85,3 +85,20 @@ Even though I set the skin correctly they sometimes seem to not load/be sent to 
 
 * **Pixelmon** will replace various vanilla mobs with Pixelmon versions resulting in VillagerShops spamming mobs
 * **InventoryTweaks** has to be installed client side only - otherwise item dupes may happen
+
+External Connections
+-----
+
+**[Version Checker](https://github.com/DosMike/SpongePluginVersionChecker)**  
+This plugin uses a version checker to notify you about available updates.  
+This updater is **disabled by default** and can be enabled in `config/vshop/settings.conf`
+by setting the value `VersionChecker` to `true`.    
+If enabled it will asynchronously check (once per server start) if the Ore repository has any updates.  
+This will *only print update notes into the server log*, no files are being downlaoded!
+
+**Translation Downloads**  
+If you don't want to download translations from GtiHub or can't find them you can turn on
+AutoDownloading in the `config/vshop/settings.conf`. If you start the server or `/vshop reload`
+with this setting enabled and no tranlations can be found on your server it will automatically 
+pull the latest translation files from GitHub and place them into `config/vshop/Lang` for you. 
+*Once the downloads finish you'll have to restart the server.*
