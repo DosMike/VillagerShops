@@ -60,7 +60,7 @@ shop.shopowner.highbalance:Das Bankkonto des Shop-Besitzers ist voll
 shop.customer.lowbalance:Du hast nicht genug Geld
 shop.shopowner.lowbalance:Der Shop-Besitzer hat nicht mehr genug Geld
 shop.customer.missingitems:Du hast nicht genügend Items
-shop.shopowner.missingitems:Dieses Item ist im Shop niicht mehr vorrätig
+shop.shopowner.missingitems:Dieses Item ist im Shop nicht mehr vorrätig
 shop.customer.inventoryfull:Du kannst keines dieser Items mehr tragen
 shop.shopowner.inventoryfull:Der Shop kann keine weiteren Items lagern
 shop.customer.incomelimit:Du hast deine Einkommesgrenze durch Adminshops für den Tag erreicht
