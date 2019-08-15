@@ -1,0 +1,166 @@
+plugins {
+    id 'java'
+    id 'maven'
+    id 'org.spongepowered.plugin' version '0.9.0'
+    id 'com.github.johnrengelman.shadow' version '5.1.0'
+}
+
+group = 'com.github.dosmike'
+
+//auto fetch version from McMod.info
+def jsonFile = file('src/main/resources/mcmod.info')
+def parsedJson = new groovy.json.JsonSlurper().parseText(jsonFile.text)
+def pluginid = parsedJson[0].modid
+if (version == 'unspecified') {
+    // jitpack will inject and expect it's own version (e.g. master-SNAPSHOT)
+    version = parsedJson[0].version
+}
+assert (pluginid instanceof String) && !((String)pluginid).isEmpty()
+println rootProject.name + ' (' + pluginid + ') version ' + version
+
+//might be static an ugly, but works and is not expected to change
+def baseArtifactName = rootProject.name+'-'+version+'.jar'
+def baseArtifactFile = file("./build/libs/${baseArtifactName}").toString()
+def fileNamePattern = ~'(?i)^(?!(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.[^.]*)?$)[^<>:\"/\\\\|?*\\x00-\\x1F]*[^<>:\"/\\\\|?*\\x00-\\x1F\\ .]$'
+assert baseArtifactName ==~ fileNamePattern
+
+def serverDir = 'G:/Sonstige/VanillaSponge/server'
+def gnupgDir = 'G:/Sonstige/VanillaSponge/GnuPG'
+
+sourceCompatibility = 1.8 // java 8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    jcenter()
+    maven { url "https://jitpack.io" }
+    maven { url "https://files.minecraftforge.net/maven" }
+}
+configurations {
+    //don't get dependencies of these dependencies, would bloat uber jar
+    shadow.transitive false
+}
+
+
+
+dependencies {
+    compile 'org.jetbrains:annotations:16.0.2'
+    compile 'org.spongepowered:spongeapi:7.2.0-SNAPSHOT'
+    compile 'com.github.DosMike:MegaMenus:master-SNAPSHOT'
+    compile 'com.github.DosMike:LangSwitch:master-SNAPSHOT'
+    shadow 'com.github.DosMike:SpongePluginVersionChecker:master-SNAPSHOT'
+}
+
+
+
+task removeOldVersions() {
+    def artifactNamePattern = ~"${rootProject.name}-[0-9]+[\\.0-9]*\\.jar"
+    delete fileTree('./build/libs').include {
+        it.file.name ==~ artifactNamePattern &&
+                it.file.name != baseArtifactName
+    }
+    if (new File(serverDir).exists())
+        delete fileTree("${serverDir}/mods").include {
+            it.file.name ==~ artifactNamePattern &&
+                    it.file.name != baseArtifactName
+        }
+}
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+task uberJar(type:ShadowJar, group:'_Plugin', dependsOn:removeOldVersions) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude 'META-INF/**'
+    manifest {
+        attributes('Implementation-Title': project.name,
+                'Implementation-Version': project.version)
+    }
+    configurations = [project.configurations.shadow]
+    //relocate the version checker to avoid problems with different versions of versionChecker in different plugins
+    //conveniently the plugin id supports a limited character set that can be used as package name
+    relocate('de.dosmike.sponge', 'shadow.dosmike.versionchecker.'+pluginid) {
+        //don't relocate my actual plugins - yes, includes are paths!
+        include "de/dosmike/sponge/VersionChecker"
+        include "de/dosmike/sponge/VersionChecker\$Version"
+    }
+    from(sourceSets.main.resources)
+    from(sourceSets.main.output)
+    classifier = null
+}
+task pushToServer(type: Copy, group:'_Plugin', dependsOn:uberJar) {
+    if (new File(serverDir).exists()) {
+        from './build/libs'
+        into file("${serverDir}/mods")
+        include baseArtifactName
+    }
+}
+task _runServer(type: Exec,group:'_Plugin', dependsOn:pushToServer) {
+    if (new File(serverDir).exists()) {
+        workingDir file(serverDir)
+        //double cmd to detach from ide terminal
+        commandLine 'cmd', '/c', 'start', 'cmd', '/c', 'startServer.bat'
+    }
+}
+task rebuild(group:'_Plugin') {
+    dependsOn clean
+    mustRunAfter clean
+    finalizedBy uberJar
+}
+
+//for generating the jar
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name,
+                'Implementation-Version': project.version)
+    }
+}
+
+//i tried the singing plugin but the config described on the gradle page did not work
+//so here's the easy way of signing a plugin without having to get the keyId
+task signing(type:Exec, group:'_Plugin', dependsOn:uberJar) {
+    if (new File(gnupgDir).exists()) {
+        workingDir file(gnupgDir)
+        commandLine 'cmd', '/c', 'gpg2', '--output', "${baseArtifactFile}.sig", '--detach-sig', baseArtifactFile
+        //store the output instead of printing to the console:
+        standardOutput = new ByteArrayOutputStream()
+        //extension method stopTomcat.output() can be used to obtain the output:
+        ext.output = {
+            return standardOutput.toString()
+        }
+    }
+}
+
+//Rest is here in order to use this project as dependency (taken from jitpack example)
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives uberJar
+    archives sourcesJar
+    archives javadocJar
+}
+
+// To specify a license in the pom:
+install {
+    repositories.mavenInstaller {
+        pom.project {
+            licenses {
+                license {
+                    name 'MIT License'
+                    url 'https://github.com/DosMike/VillagerShops/blob/master/LICENSE'
+                    distribution 'repo'
+                }
+            }
+        }
+    }
+}
+
+wrapper {
+    gradleVersion = "5.2.1"
+    distributionType = Wrapper.DistributionType.ALL
+}
