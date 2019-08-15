@@ -44,10 +44,10 @@ configurations {
 
 
 dependencies {
-    compile 'org.jetbrains:annotations:16.0.2'
-    compile 'org.spongepowered:spongeapi:7.2.0-SNAPSHOT'
-    compile 'com.github.DosMike:MegaMenus:master-SNAPSHOT'
-    compile 'com.github.DosMike:LangSwitch:master-SNAPSHOT'
+    compileOnly 'org.jetbrains:annotations:16.0.2'
+    compileOnly 'org.spongepowered:spongeapi:7.2.0-SNAPSHOT'
+    compileOnly 'com.github.DosMike:MegaMenus:master-SNAPSHOT'
+    compileOnly 'com.github.DosMike:LangSwitch:master-SNAPSHOT'
     shadow 'com.github.DosMike:SpongePluginVersionChecker:master-SNAPSHOT'
 }
 
