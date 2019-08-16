@@ -2,7 +2,6 @@ package de.dosmike.sponge.vshop.shops;
 
 import com.google.common.reflect.TypeToken;
 import de.dosmike.sponge.vshop.Utilities;
-import de.dosmike.sponge.vshop.VillagerShops;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;

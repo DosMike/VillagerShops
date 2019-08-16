@@ -1,8 +1,8 @@
 package de.dosmike.sponge.vshop.shops;
 
 import de.dosmike.sponge.vshop.Utilities;
-import de.dosmike.sponge.vshop.systems.LedgerManager;
 import de.dosmike.sponge.vshop.VillagerShops;
+import de.dosmike.sponge.vshop.systems.LedgerManager;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;

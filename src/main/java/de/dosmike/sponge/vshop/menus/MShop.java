@@ -5,11 +5,12 @@ import de.dosmike.sponge.megamenus.api.elements.concepts.IClickable;
 import de.dosmike.sponge.megamenus.api.listener.OnClickListener;
 import de.dosmike.sponge.megamenus.api.state.StateObject;
 import de.dosmike.sponge.megamenus.impl.elements.IElementImpl;
-import de.dosmike.sponge.vshop.*;
+import de.dosmike.sponge.vshop.ConfigSettings;
+import de.dosmike.sponge.vshop.Utilities;
+import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.shops.InteractionHandler;
 import de.dosmike.sponge.vshop.shops.NPCguard;
 import de.dosmike.sponge.vshop.shops.StockItem;
-import de.dosmike.sponge.vshop.systems.GameDictHelper;
 import org.apache.commons.lang3.NotImplementedException;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
@@ -107,8 +108,8 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
             // of the iicon will reset (and resources)
             if (stockItem.getOreDictEntry().isPresent()) {
                 icon = IIcon.builder().addFrameItemStacks(
-                        GameDictHelper.getAll(stockItem.getOreDictEntry().get()).stream()
-                                .map(s -> ItemStack.builder().fromSnapshot(s).quantity(quantity).build())
+                        stockItem.getAllOreDictEntries().stream()
+                                .map(e -> ItemStack.builder().fromSnapshot(e.getTemplate()).quantity(quantity).build())
                                 .collect(Collectors.toList())
                 ).setFPS(1d).build();
             } else {

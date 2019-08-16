@@ -1,14 +1,14 @@
 package de.dosmike.sponge.vshop.shops;
 
-import de.dosmike.sponge.vshop.systems.GameDictHelper;
 import de.dosmike.sponge.vshop.VillagerShops;
+import de.dosmike.sponge.vshop.systems.GameDictHelper;
+import org.spongepowered.api.GameDictionary;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.item.inventory.Slot;
 import org.spongepowered.api.item.inventory.entity.Hotbar;
 import org.spongepowered.api.item.inventory.entity.MainPlayerInventory;
@@ -21,10 +21,7 @@ import org.spongepowered.api.service.economy.transaction.TransactionResult;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class StockItem {
     private ItemStack item;
@@ -63,6 +60,12 @@ public class StockItem {
     //caution: maxStock does not actually hold information about the size of the stock container!
     private int maxStock = 0, stocked = 0;
 
+    /** This is a cache for valid itemStackSnapshots that  */
+    private List<GameDictionary.Entry> oreDictEntries = new LinkedList<>();
+    public List<GameDictionary.Entry> getAllOreDictEntries() {
+        return oreDictEntries;
+    }
+
     public StockItem(ItemStack itemstack, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
         item = itemstack.copy();
         //legacy load
@@ -80,11 +83,11 @@ public class StockItem {
     /** forces filterOption to OREDICT
      * @throws IllegalArgumentException if oredict entry not found */
     public StockItem(String oreDictEntry, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
-        List<ItemStackSnapshot> dictd = GameDictHelper.getAll(oreDictEntry);
-        if (dictd.isEmpty()) throw new IllegalArgumentException("No Game Dictionary entry for "+oreDictEntry);
+        this.oreDictEntries = GameDictHelper.getAll(oreDictEntry);
+        if (oreDictEntries.isEmpty()) throw new IllegalArgumentException("No Game Dictionary entry for "+oreDictEntry);
 
         this.oreDictEntry = oreDictEntry;
-        item = dictd.get(0).createStack();
+        item = oreDictEntries.get(0).getTemplate().createStack();
         if (sellfor != null && sellfor >= 0) this.sellprice = sellfor;
         if (buyfor != null && buyfor >= 0) this.buyprice = buyfor;
         this.currency = currency;
@@ -157,7 +160,9 @@ public class StockItem {
                         .equals(j)
             ));
         } else if (nbtfilter == FilterOptions.OREDICT) {
-            filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of(new GameDictHelper.GameDictPredicate(oreDictEntry)));
+            filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of(i ->
+                oreDictEntries.stream().anyMatch(e->e.matches(i))
+            ));
         } else {
             filtered = inv.query(QueryOperationTypes.ITEM_STACK_IGNORE_QUANTITY.of(item));
         }

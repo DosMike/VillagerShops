@@ -274,7 +274,7 @@ public class CommandRegistra {
                     }
                     StockItem newItem;
                     if (nbtfilter.equals(StockItem.FilterOptions.OREDICT)) {
-                        Set<String> keys = GameDictHelper.getKeys(item.get());
+                        Collection<String> keys = GameDictHelper.getKeys(item.get());
                         VillagerShops.l("Found oredict entries: %s", String.join(", ", keys));
                         if (keys.size() > 1){
                             _displayAddItemOreDictSelector(player, npc.get().getIdentifier(), keys, sellFor, buyFor,
@@ -743,7 +743,7 @@ public class CommandRegistra {
         return res;
     }
 
-    private static void _displayAddItemOreDictSelector(Player player, UUID shopid, Set<String> keys, Double buy, Double sell, Currency currency, int limit, int position) {
+    private static void _displayAddItemOreDictSelector(Player player, UUID shopid, Collection<String> keys, Double buy, Double sell, Currency currency, int limit, int position) {
         List<Text> pages = new LinkedList<>();
         Text.Builder builder = Text.builder(
                 VillagerShops.getTranslator().local("cmd.add.filter.oredictchoice").resolve(player).orElse("cmd.add.filter.oredictchoice")
