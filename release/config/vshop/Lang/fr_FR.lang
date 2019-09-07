@@ -1,8 +1,11 @@
 permission.missing:Vous n'avez pas la permission pour cette action!
+option.invalidvalue:L'option '%option%' pour le joueur %player% ou les permissions de son groupe ne sont ni numériques ni négatives. Un nombre entier positif est requis. Si vous êtes un joueur, merci de remonter le problème aux administrateurs.
 cmd.description.short:/vshop <commande> <options>
 cmd.description.long:Il faut toujours regarder le shop à éditer ! Options :\nCREATE : [--at <Position>] <Type d'entité> [--skin <Skin>] [Nom]\n    Le skin doit être valide pour ce type de mob\n    Format des positions : world/x/y/z/rotation\nADD : [-o <Index>] [-l <Limite>] <~|Prix achat> <~|Prix vente> [Monnaie] (Tenir l'objet)\n    Mettre une tilde ~ ou un prix, un des deux est requis\n    Le flag -l limite le stock maximum de l'objet pour les shops joueurs (facultatif)\n    Le flag -o sert à remplacer l'objet à l'emplacement donné qui commence à 1\nREMOVE : <Index>\n    Enlève l'objet en vente à l'emplacement donné, commence à 1\nDELETE : (Pas d'argument)\n    Supprime le shop en vue\nLINK : (Pas d'argument)\n    Après utilisation, vous devez ouvrir un coffre pour le lier à un shop joueur.\n    Utiliser de nouveau pour annuler le lien.\nIDENTIFY / ID : (Pas d'argument)\n    Donne des informations sur le shop en vue\nRELOAD : (Pas d'argument)\n    Tente de recharger les skins pour les entités de type Sponge:Human\nLIST : [Joueur]\n    Liste tous les shops (d'un joueur) avec un lien de tp et son contenu
 cmd.playeronly:Cette commande doit être exécutée par un joueur!
+cmd.missingargument:Un argument est nécessaire
 cmd.common.notarget:Il n'y a pas de shop dans votre direction!
+cmd.common.noshopforid:L'UUID entrée n'a aucun shop correspondant
 cmd.create.invalidtype:Entité non valide (touche tab pour l'auto-complétion)
 cmd.create.entitypermission:Ce type d'entité requiert la permission %permission%
 cmd.create.invalidvariant:Aucune variante trouvée pour %variant% - Utilisez NONE ou 0 pour avoir le skin par défaut
@@ -14,6 +17,8 @@ cmd.create.playershop.limit:Vous ne pouvez pas créer plus de %limit% shops
 cmd.create.success:Nouvel admin shop créé avec le nom %name%
 cmd.add.limit.adminshop:Vous ne pouvez pas ajouter de limite au stock d'un shop admin
 cmd.add.overwrite.index:Il n'y a pas d'objet à la position donnée
+cmd.add.filter.nooredict:Ce serveur n'est pas compatible avec OreDict
+cmd.add.filter.oredictchoice:L'objet que vous essayez d'ajouter a plusieurs possibilités OreDict. Merci d'en choisir une :
 cmd.add.buyprice:Le prix d'achat n'était pas '~' ou un nombre
 cmd.add.sellprice:Le prix de vente n'était pas '~' ou un nombre
 cmd.add.noprice:Vous devez spécifier au moins un prix d'achat ou de vente
@@ -25,24 +30,30 @@ cmd.remove.invalidindex:L'objet à la position donné n'existe pas
 cmd.remove.success:L'objet numéro %pos% a été retiré du shop
 cmd.identify.adminshop:Le Serveur
 cmd.identify.response:Un %type% nommé %name% [%id%]\nCe shop appartient à %owner%
+cmd.identify.shiftclick:Shift-clic pour copier l'id dans le chat
 cmd.link.cancelled:Le lien a été annulé
 cmd.link.adminshop:Vous ne pouvez pas lien un shop admin à un coffre
 cmd.link.notyourshop:Vous ne pouvez pas relier des coffres qui ne sont pas à vous!
 cmd.link.hitachest:Oouvrez le coffre que vous voulez relier à ce shop (/vshop link pour annuler)
 cmd.link.nochest:Vous ne pouvez lier que des coffres normaux
 cmd.link.missingshop:Impossible de trouver le shop à relier à ce coffre
+cmd.link.distance:Vous êtes trop loin! La distance avec le contenant ne doit pas dépasser %distance% blocs.
 cmd.link.success:Ce coffre est maintenant reliée au shop. L'ancien conteneur n'est plus protégé!
 cmd.deleted:Le shop a été supprimé!
 cmd.saved:Les shops ont été enregistrés
 cmd.reloaded:Configuration rechargée!
+cmd.ledger.invalid:Vous ne pouvez pas utiliser -t avec un pnj en vue
 shop.title:[vShop] %name%
 shop.item.buy.one:Acheter pour:§f %price%%currency%
 shop.item.buy.stack:one:Acheter pour:§f %price%%currency% (%itemprice%%currency% pièce)
 shop.item.sell.one:Vendre pour:§f %price%%currency%
 shop.item.sell.stack:Vendre pour:§f %price%%currency% (%itemprice%%currency% pièce)
 shop.item.stock:En stock: %amount%/%max%
-shop.buy.message:%balance% (%payed%): Achat de %amount% x %item%
-shop.sell.message:%balance% (%payed%): vente de %amount% x %item%
+shop.item.filter.damage:Achète des objets endommagés
+shop.item.filter.nbt:Achète des objets personnalisés (NBT)
+shop.item.filter.oredict:Achète n'importe quel OreDict %oredict%
+shop.buy.message:§6%currency%%balance%§r (§c-%currency%%payed%§r): Achat de %amount% x %item%
+shop.sell.message:§6%currency%%balance%§r (§a+%currency%%payed%§r): vente de %amount% x %item%
 shop.generic.transactionfailure:Erreur pendant la transaction - Veuillez contacter le développeur
 shop.customer.highbalance:Le solde maximum du compte est atteint
 shop.shopowner.highbalance:Le solde maximum du compte du gérant est atteint
@@ -52,4 +63,17 @@ shop.customer.missingitems:Vous n'avez pas assez d'objets
 shop.shopowner.missingitems:L'objet n'est pas en stock
 shop.customer.inventoryfull:Vous ne pouvez pas porter plus d'objets
 shop.shopowner.inventoryfull:Le shop n'a plus de place
-shop.customer.incomelimit:Vois avez atteint la limite de revenus d'un admin shop pour aujourd'hui
+shop.customer.incomelimit:Vous avez atteint la limite de revenus d'un admin shop pour aujourd'hui
+shop.customer.spendinglimit:Le montant maximum à dépenser par jour est limité. Réessayez demain.
+shop.chat.transaction.base:Votre shop %shop% a vendu %items%. Pour un totale de %money%.
+shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.quantity.name:Stock du shop
+shop.quantity.items.single:Objets à l'unité
+shop.quantity.items.quarter:Quarts de stacks
+shop.quantity.items.half:Demis stacks
+shop.quantity.items.full:Stacks complets
+shop.removemode.name:Supprimer des objets
+shop.removemode.lore1:Cliquez ici pour supprimer des objets. Sélectionnez les
+shop.removemode.lore2:objets et cliquez de nouveau pour confirmer la suppression.
+shop.item.markedforremoval:Cet objet va être supprimé
