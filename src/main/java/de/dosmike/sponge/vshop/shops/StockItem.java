@@ -3,10 +3,15 @@ package de.dosmike.sponge.vshop.shops;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.systems.GameDictHelper;
 import org.spongepowered.api.GameDictionary;
+import org.spongepowered.api.MinecraftVersion;
+import org.spongepowered.api.Platform;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.manipulator.mutable.item.DurabilityData;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.Slot;
@@ -38,6 +43,10 @@ public class StockItem {
          * Compare item types only, ignoring all NBT (including damage)
          */
         IGNORE_NBT,
+        /**
+         * Use the the item type (and meta pre 1.13) to compare
+         */
+        TYPE_ONLY,
         /**
          * Use the forge OreDict to check if items can sell
          */
@@ -142,14 +151,14 @@ public class StockItem {
         return maxStock > 0 ? stocked : item.getQuantity();
     }
 
+    private static final DataQuery dqStackSize = DataQuery.of("Count"); //not interesting for filtering
+    private static final DataQuery dqDamageMeta = DataQuery.of("UnsafeDamage"); //used for variants up to mc 1.12.2
     private Inventory filterInventory(Inventory inv) {
         long count = 0L;
         Inventory filtered;
         if (nbtfilter == FilterOptions.IGNORE_NBT) {
             filtered = inv.query(QueryOperationTypes.ITEM_TYPE.of(item.getType()));
         } else if (nbtfilter == FilterOptions.IGNORE_DAMAGE) {
-            DataQuery dqStackSize = DataQuery.of("Count"); //not interesting for filtering
-            DataQuery dqDamageMeta = DataQuery.of("UnsafeDamage"); //used for variants up to mc 1.12.2
             DataContainer j = item.toContainer()
                     .remove(dqDamageMeta)
                     .remove(dqStackSize);
@@ -162,6 +171,15 @@ public class StockItem {
         } else if (nbtfilter == FilterOptions.OREDICT) {
             filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of(i ->
                 oreDictEntries.stream().anyMatch(e->e.matches(i))
+            ));
+        } else if (nbtfilter == FilterOptions.TYPE_ONLY) {
+            ItemType type = item.getType();
+            int meta = (item.supports(Keys.ITEM_DURABILITY) ? 0 : item.toContainer().getInt(dqDamageMeta).orElse(0));
+            filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of(i -> {
+                        if (!i.getType().equals(type)) return false;
+                        int imeta = (i.supports(Keys.ITEM_DURABILITY) ? 0 : item.toContainer().getInt(dqDamageMeta).orElse(0));
+                        return meta == imeta;
+                    }
             ));
         } else {
             filtered = inv.query(QueryOperationTypes.ITEM_STACK_IGNORE_QUANTITY.of(item));

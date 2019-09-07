@@ -53,7 +53,9 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
         }
 
         boolean doBuy;
-        if (button == MouseEvent.BUTTON1) {
+        if (ConfigSettings.isSmartClickEnabled() && (stockItem.getBuyPrice() == null || stockItem.getSellPrice() == null)) {
+            doBuy = stockItem.getBuyPrice() != null; //smart-click: can buy? do buy - otherwise has to be sell
+        } else if (button == MouseEvent.BUTTON1) {
             doBuy = true;
         } else if (button == MouseEvent.BUTTON2) {
             doBuy = false;
@@ -125,7 +127,9 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
     public Text getName(Player viewer) {
         //marked for removal replaces the icon with barrier, this we need to supply a custom name to not display "Barrier"
         return markedForRemoval
-                ? stockItem.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(stockItem.getItem().getType().getTranslation()))
+                ? stockItem.getItem().get(Keys.DISPLAY_NAME).orElse(
+                        Text.of(stockItem.getItem().getType().getTranslation().get(Utilities.playerLocale(viewer)))
+                )
                 : null;
     }
 
@@ -151,15 +155,15 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
                 double stackBuyPrice = quantity * stockItem.getBuyPrice();
                 lore.add(Text.of(TextColors.RED,
                         VillagerShops.getTranslator().localText("shop.item.buy.stack")
-                                .replace("%price%", String.format("%.2f", stackBuyPrice))
-                                .replace("%itemprice%", Text.of(String.format("%.2f", stockItem.getBuyPrice())))
+                                .replace("%price%", Utilities.nf(stackBuyPrice, Utilities.playerLocale(viewer)))
+                                .replace("%itemprice%", Utilities.nf(stockItem.getBuyPrice(), Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
                                 .resolve(viewer).orElse(Text.of("shop.item.buy.stack"))
                         ));
             } else {
                 lore.add(Text.of(TextColors.RED,
                         VillagerShops.getTranslator().localText("shop.item.buy.one")
-                                .replace("%price%", String.format("%.2f", stockItem.getBuyPrice()))
+                                .replace("%price%", Utilities.nf(stockItem.getBuyPrice(), Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
                                 .resolve(viewer).orElse(Text.of("shop.item.buy.one"))
                         ));
@@ -170,15 +174,15 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
                 double stackSellPrice = quantity * stockItem.getSellPrice();
                 lore.add(Text.of(TextColors.GREEN,
                         VillagerShops.getTranslator().localText("shop.item.sell.stack")
-                                .replace("%price%", String.format("%.2f", stackSellPrice))
-                                .replace("%itemprice%", Text.of(String.format("%.2f", stockItem.getSellPrice())))
+                                .replace("%price%", Utilities.nf(stackSellPrice, Utilities.playerLocale(viewer)))
+                                .replace("%itemprice%", Utilities.nf(stockItem.getSellPrice(), Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
                                 .resolve(viewer).orElse(Text.of("shop.item.sell.stack"))
                         ));
             } else {
                 lore.add(Text.of(TextColors.GREEN,
                         VillagerShops.getTranslator().localText("shop.item.sell.one")
-                                .replace("%price%", String.format("%.2f", stockItem.getSellPrice()))
+                                .replace("%price%", Utilities.nf(stockItem.getSellPrice(), Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
                                 .resolve(viewer).orElse(Text.of("shop.item.sell.one"))
                         ));
@@ -192,7 +196,12 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
                             .resolve(viewer).orElse(Text.of("shop.item.stock"))
             ));
         }
-        if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.IGNORE_DAMAGE)) {
+        if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.TYPE_ONLY)) {
+            lore.add(Text.of(TextColors.GRAY,
+                    VillagerShops.getTranslator().localText("shop.item.filter.type")
+                            .resolve(viewer).orElse(Text.of("shop.item.filter.type"))
+            ));
+        } else if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.IGNORE_DAMAGE)) {
             lore.add(Text.of(TextColors.GRAY,
                     VillagerShops.getTranslator().localText("shop.item.filter.damage")
                             .resolve(viewer).orElse(Text.of("shop.item.filter.damage"))

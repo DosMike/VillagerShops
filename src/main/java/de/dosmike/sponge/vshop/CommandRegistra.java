@@ -183,7 +183,7 @@ public class CommandRegistra {
                         ).valueFlag(
                         GenericArguments.integer(Text.of("slot")), "o"
                         ).valueFlag(
-                        GenericArguments.enumValue(Text.of("nbt"), StockItem.FilterOptions.class), "-nbt"
+                        GenericArguments.enumValue(Text.of("filter"), StockItem.FilterOptions.class), "-filter"
                         ).buildWith(GenericArguments.seq(
                         GenericArguments.onlyOne(GenericArguments.string(Text.of("BuyPrice"))),
                         GenericArguments.onlyOne(GenericArguments.string(Text.of("SellPrice"))),
@@ -232,8 +232,8 @@ public class CommandRegistra {
                         }
                     }
                     StockItem.FilterOptions nbtfilter = StockItem.FilterOptions.NORMAL;
-                    if (args.hasAny("nbt")) {
-                        nbtfilter = args.<StockItem.FilterOptions>getOne("nbt").orElse(StockItem.FilterOptions.NORMAL);
+                    if (args.hasAny("filter")) {
+                        nbtfilter = args.<StockItem.FilterOptions>getOne("filter").orElse(StockItem.FilterOptions.NORMAL);
                         if (nbtfilter.equals(StockItem.FilterOptions.OREDICT) && !GameDictHelper.hasGameDict()) {
                             throw new CommandException(Text.of(TextColors.RED,
                                             lang.local("cmd.add.filter.nooredict").resolve(player).orElse("[no oredict]"))

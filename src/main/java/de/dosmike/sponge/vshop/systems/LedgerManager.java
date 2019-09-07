@@ -70,7 +70,7 @@ public class LedgerManager {
             boolean gain = money >= 0;
             return Text.of(
                     (gain ? TextColors.GREEN : TextColors.RED),
-                    (gain ? "+" + money : money.toString()), currency.getSymbol(),
+                    (gain ? "+" : ""), Utilities.nf(money, locale), currency.getSymbol(),
                     TextColors.RESET, gain ? " " : " -", amount, " ",
                     type.getTranslation().get(locale)
             );

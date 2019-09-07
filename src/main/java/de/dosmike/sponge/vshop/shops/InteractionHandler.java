@@ -69,11 +69,11 @@ public class InteractionHandler {
             if (result.getTradedItems() > 0) {
                 finalPrice = item.getBuyPrice() * (double) result.getTradedItems() / (double) item.getItem().getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.buy.message")
-                        .replace("%balance%", Text.of(TextColors.GOLD, Utilities.nf(acc.get().getBalance(currency)), currency.getSymbol(), TextColors.RESET))
-                        .replace("%payed%", Text.of(TextColors.RED, "-", String.format("%.2f", finalPrice), TextColors.RESET))
-                        .replace("%amount%", Text.of(TextColors.YELLOW, result.getTradedItems(), TextColors.RESET))
-                        .replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME)
-                                .orElse(Text.of(item.getItem().getType().getTranslation().get(Utilities.playerLocale(player))))))
+                        .replace("%balance%", Utilities.nf(acc.get().getBalance(currency), Utilities.playerLocale(player)))
+                        .replace("%currency%", currency.getSymbol())
+                        .replace("%payed%", Utilities.nf(finalPrice, Utilities.playerLocale(player)))
+                        .replace("%amount%", result.getTradedItems())
+                        .replace("%item%", item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getType().getTranslation().get(Utilities.playerLocale(player)))))
                         .resolve(player).orElse(Text.of("[items bought]")
                         ));
                 if (shop.getShopOwner().isPresent()) {
@@ -90,11 +90,12 @@ public class InteractionHandler {
             if (result.getTradedItems() > 0) {
                 finalPrice = item.getSellPrice() * (double) result.getTradedItems() / (double) item.getItem().getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.sell.message")
-                        .replace("%balance%", Text.of(TextColors.GOLD, Utilities.nf(acc.get().getBalance(currency)), currency.getSymbol(), TextColors.RESET))
-                        .replace("%payed%", Text.of(TextColors.GREEN, "+", String.format("%.2f", finalPrice), TextColors.RESET))
-                        .replace("%amount%", Text.of(TextColors.YELLOW, result.getTradedItems(), TextColors.RESET))
-                        .replace("%item%", Text.of(item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getType().getTranslation().get(Utilities.playerLocale(player))))))
-                        .resolve(player).orElse(Text.of("[items bought]")
+                        .replace("%balance%", Utilities.nf(acc.get().getBalance(currency), Utilities.playerLocale(player)))
+                        .replace("%currency%", currency.getSymbol())
+                        .replace("%payed%", Utilities.nf(finalPrice, Utilities.playerLocale(player)))
+                        .replace("%amount%", result.getTradedItems())
+                        .replace("%item%", item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getType().getTranslation().get(Utilities.playerLocale(player)))))
+                        .resolve(player).orElse(Text.of("[items sold]")
                         ));
                 if (shop.getShopOwner().isPresent()) {
                     LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), -finalPrice, item.getCurrency(), item.getItem().getType(), result.getTradedItems());
