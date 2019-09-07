@@ -52,22 +52,22 @@ shop.item.stock:Auf Lager: %amount%/%max%
 shop.item.filter.damage:Kauft beschädigte Items
 shop.item.filter.nbt:Kauft alle Items mit Daten (NBT)
 shop.item.filter.oredict:Kauft alle OreDict %oredict%
-shop.buy.message:%balance% (%payed%): %amount%x %item% gekauft
-shop.sell.message:%balance% (%payed%): %amount%x %item% verkauft
+shop.buy.message:§6%balance%%currency%§r (§c-%payed%%currency%§r): §e%amount%§rx %item% gekauft
+shop.sell.message:§6%balance%%currency%§r (§a+%payed%%currency%§r): §e%amount%§rx %item% verkauft
 shop.generic.transactionfailure:Fehler bei der Transaktion! - Bitte dem Enwickler melden
 shop.customer.highbalance:Es ist klein platz mehr auf deinem Bankkonto
 shop.shopowner.highbalance:Das Bankkonto des Shop-Besitzers ist voll 
 shop.customer.lowbalance:Du hast nicht genug Geld
 shop.shopowner.lowbalance:Der Shop-Besitzer hat nicht mehr genug Geld
 shop.customer.missingitems:Du hast nicht genügend Items
-shop.shopowner.missingitems:Dieses Item ist im Shop nicht mehr vorrätig
+shop.shopowner.missingitems:Dieses Item ist im Shop niicht mehr vorrätig
 shop.customer.inventoryfull:Du kannst keines dieser Items mehr tragen
 shop.shopowner.inventoryfull:Der Shop kann keine weiteren Items lagern
-shop.customer.incomelimit:Du hast deine Einkommesgrenze durch Adminshops für den Tag erreicht
+shop.customer.incomelimit:Du hast deine Einkommesgrenze durch Adminshops für den Tag erreicht.
 shop.customer.spendinglimit:Deine täglichen Ausgaben sind begrenzt. Versuche es morgen erneut.
 shop.chat.transaction.base:Dein Shop %shop% handelte %items%. Unterm Strich %money%.
-shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
-shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%price%%currency%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%price%%currency%§r %amount%x %item% (%index%)\n  %timestamp%
 shop.quantity.name:Verkaufsmenge
 shop.quantity.items.single:Einzelne Items
 shop.quantity.items.quarter:Viertel Stacks

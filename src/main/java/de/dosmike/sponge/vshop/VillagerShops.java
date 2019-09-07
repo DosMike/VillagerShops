@@ -19,10 +19,8 @@ import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.entity.Entity;
@@ -37,7 +35,6 @@ import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.SpongeExecutorService;
 import org.spongepowered.api.scheduler.Task;
-import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.EconomyService;
 import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
@@ -48,14 +45,14 @@ import org.spongepowered.api.world.World;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Plugin(id = "vshop", name = "VillagerShops",
-        version = "2.2.1")
+        version = "2.2.2")
 public class VillagerShops {
 
     public static void main(String[] args) { System.err.println("This plugin can not be run as executable!");
@@ -110,7 +107,7 @@ public class VillagerShops {
     }
 
     PluginContainer getContainer() {
-        return Sponge.getPluginManager().fromInstance(this).get();
+        return Sponge.getPluginManager().fromInstance(this).orElseThrow(()->new InternalError("No plugin container for self returned"));
     }
 
     @Inject
@@ -131,9 +128,9 @@ public class VillagerShops {
     //save on world if the npcs list is marked dirty
     //this flag should be set every time the npcs list is changed, or a property of a shop changes
     //or a item was added or removed from the shop
-    boolean npcsDirty = false;
+    AtomicBoolean npcsDirty = new AtomicBoolean(false);
     public void markNpcsDirty() {
-        npcsDirty=true;
+        npcsDirty.set(true);
     }
     private static final List<NPCguard> npcs = new LinkedList<>();
 
@@ -141,7 +138,7 @@ public class VillagerShops {
         synchronized (npcs) {
             npcs.add(add);
         }
-        instance.npcsDirty = true;
+        instance.npcsDirty.set(true);
     }
 
     public static Collection<NPCguard> getNPCguards() {
@@ -156,7 +153,7 @@ public class VillagerShops {
         synchronized (npcs) {
             npcs.remove(remove);
         }
-        instance.npcsDirty = true;
+        instance.npcsDirty.set(true);
     }
 
     @Inject
@@ -207,10 +204,10 @@ public class VillagerShops {
 
     long lastSave = System.currentTimeMillis();
 
-    @Listener
-    public void onWorldsSave(SaveWorldEvent event) {
-        saveShops();
-    }
+//    @Listener
+//    public void onWorldsSave(SaveWorldEvent event) {
+//        saveShops();
+//    }
 
     @Listener
     public void onServerStopping(GameStoppingEvent event) {
@@ -225,7 +222,8 @@ public class VillagerShops {
                 .build();
         try {
             CommentedConfigurationNode root = loader.load(ConfigurationOptions.defaults());
-            if (root.getNode("DefaultStackSize").isVirtual()) {
+            if (root.getNode("DefaultStackSize").isVirtual() ||
+                root.getNode("SmartClick").isVirtual()) {
                 HoconConfigurationLoader defaultLoader = HoconConfigurationLoader.builder()
                         .setURL(Sponge.getAssetManager().getAsset(this, "default_settings.conf").get().getUrl())
                         .build();
@@ -242,6 +240,7 @@ public class VillagerShops {
     private void loadShops() {
         //vshops.conf (more database than config)
         synchronized (npcs) {
+            npcsDirty.set(false);
             npcs.clear();
 
             //move legacy config
@@ -269,7 +268,6 @@ public class VillagerShops {
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
-            npcsDirty = false;
         }
         try {
             ConfigurationLoader<CommentedConfigurationNode> limitManager = HoconConfigurationLoader.builder()
@@ -302,11 +300,11 @@ public class VillagerShops {
     @SuppressWarnings("serial")
     void saveShops() {
         synchronized (npcs) {
-            if (!npcsDirty || System.currentTimeMillis() - lastSave < 10000) { //not more than every 10 seconds
+            if (!npcsDirty.getAndSet(false)) {
                 return;
             }
             l("Saving VillagerShops...");
-            lastSave = System.currentTimeMillis();
+//            lastSave = System.currentTimeMillis();
 
             ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
             try {
@@ -317,7 +315,6 @@ public class VillagerShops {
                 Sponge.getServer().getBroadcastChannel().send(Text.of(TextColors.RED, "[VShop] Error: ", e1.getMessage()));
                 e1.printStackTrace();
             }
-            npcsDirty = false;
         }
         try {
             ConfigurationLoader<CommentedConfigurationNode> limitManager = HoconConfigurationLoader.builder()
