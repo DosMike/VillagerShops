@@ -1,5 +1,6 @@
 package de.dosmike.sponge.vshop.shops;
 
+import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.systems.GameDictHelper;
 import org.spongepowered.api.GameDictionary;
@@ -69,7 +70,7 @@ public class StockItem {
     //caution: maxStock does not actually hold information about the size of the stock container!
     private int maxStock = 0, stocked = 0;
 
-    /** This is a cache for valid itemStackSnapshots that  */
+    /** This is a cache for valid itemStackSnapshots that match */
     private List<GameDictionary.Entry> oreDictEntries = new LinkedList<>();
     public List<GameDictionary.Entry> getAllOreDictEntries() {
         return oreDictEntries;
@@ -452,5 +453,19 @@ public class StockItem {
         int available = 0;
         available = filterInventory(i).totalItems();
         return available;
+    }
+
+    /** Custom toString { info } */
+    @Override
+    public String toString() {
+        return String.format("{ %s: %s, filter: %s buyprice: %s, sellprice: %s, currency: %s, limit: %s }",
+                oreDictEntry!=null ? "oredict" : "item",
+                oreDictEntry!=null ? oreDictEntry : Utilities.toString(item),
+                nbtfilter.toString(),
+                buyprice!=null ? buyprice.toString() : "N/A",
+                sellprice!=null ? sellprice.toString() : "N/A",
+                currency.getId(),
+                maxStock > 0 ? maxStock : "N/A"
+        );
     }
 }

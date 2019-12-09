@@ -30,6 +30,11 @@ public class API {
         npc.setLoc(location);
         npc.setRot(new Vector3d(0, rotation, 0));
         VillagerShops.addNPCguard(npc);
+        VillagerShops.audit("The shop %s [%s] was created via API { entity: %s, skin: %s, location: %s }",
+                displayName.toPlain(), npc.getIdentifier().toString(),
+                type.getId(), npc.getVariantName(),
+                location.getExtent().getName()+"@"+location.getBlockX()+"/"+location.getBlockY()+"/"+location.getBlockZ()+"Y"+rotation
+        );
         return npc;
     }
 
@@ -43,6 +48,11 @@ public class API {
         disintegrate(shop);//shop.getLe().remove();
         VillagerShops.removeNPCguard(shop);
         VillagerShops.startTimers();
+        VillagerShops.audit("The shop %s [%s] was deleted via API { entity: %s, skin: %s, location: %s }",
+                shop.getDisplayName().toPlain(), shop.getIdentifier().toString(),
+                shop.getNpcType().getId(), shop.getVariantName(),
+                shop.getLoc().getExtent().getName()+"@"+shop.getLoc().getBlockX()+"/"+shop.getLoc().getBlockY()+"/"+shop.getLoc().getBlockZ()+"Y"+shop.getRot()
+        );
     }
 
     public static boolean playershop(NPCguard shop, UUID user, Location<World> container) {
@@ -50,11 +60,22 @@ public class API {
             if (container != null && container.getBlockType().equals(BlockTypes.CHEST)) {
                 shop.setShopOwnerRaw(user);
                 shop.setStockContainerRaw(container);
+                VillagerShops.audit("The shop owner for %s [%s] was changed to [%s] via API { entity: %s, skin: %s, location: %s }",
+                        shop.getDisplayName().toPlain(), shop.getIdentifier().toString(),
+                        user.toString(),
+                        shop.getNpcType().getId(), shop.getVariantName(),
+                        shop.getLoc().getExtent().getName()+"@"+shop.getLoc().getBlockX()+"/"+shop.getLoc().getBlockY()+"/"+shop.getLoc().getBlockZ()+"Y"+shop.getRot()
+                );
             } else return false;
         } else {
             if (container != null) return false;
             shop.setShopOwnerRaw(null);
             shop.setStockContainerRaw(null);
+            VillagerShops.audit("The shop owner for %s [%s] was removed via API { entity: %s, skin: %s, location: %s }",
+                    shop.getDisplayName().toPlain(), shop.getIdentifier().toString(),
+                    shop.getNpcType().getId(), shop.getVariantName(),
+                    shop.getLoc().getExtent().getName()+"@"+shop.getLoc().getBlockX()+"/"+shop.getLoc().getBlockY()+"/"+shop.getLoc().getBlockZ()+"Y"+shop.getRot()
+            );
         }
         return true;
     }

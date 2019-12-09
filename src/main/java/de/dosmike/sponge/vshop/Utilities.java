@@ -1,12 +1,19 @@
 package de.dosmike.sponge.vshop;
 
+import ninja.leaping.configurate.ConfigurationNode;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.data.DataQuery;
+import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import javax.swing.text.NumberFormatter;
 import java.math.BigDecimal;
@@ -15,6 +22,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Utilities {
 
@@ -93,6 +101,85 @@ public class Utilities {
 
     public static Locale playerLocale(CommandSource viewer) {
         return VillagerShops.getLangSwitch().getSelectedLocale(viewer);
+    }
+
+    /** Custom toString name [id]<br>
+     * Player is User and CommandSource, hence separate override to avoid casting */
+    public static String toString(Player player) {
+        return toString((User)player);
+    }
+    /** Custom toString name [id] */
+    public static String toString(User user) {
+        if(user.hasPermission("vshop.permission.probe.op"))
+            return String.format("%s [%s, OP]", user.getName(), user.getUniqueId().toString());
+        else if (user.hasPermission(PermissionRegistra.ADMIN.getId()))
+            return String.format("%s [%s, Admin]", user.getName(), user.getUniqueId().toString());
+        else
+            return String.format("%s [%s]", user.getName(), user.getUniqueId().toString());
+    }
+    /** Custom toString name [id] */
+    public static String toString(CommandSource src) {
+        if (!(src instanceof Player))
+            return String.format("%s [Console]", src.getName());
+        if(src.hasPermission("vshop.permission.probe.op"))
+            return String.format("%s [%s, OP]", src.getName(), ((Player) src).getUniqueId().toString());
+        else if (PermissionRegistra.ADMIN.hasPermission(src))
+            return String.format("%s [%s, Admin]", src.getName(), ((Player) src).getUniqueId().toString());
+        else
+            return String.format("%s [%s]", src.getName(), ((Player) src).getUniqueId().toString());
+    }
+    /** Custom toString item(:meta) { more } */
+    public static String toString(ItemStack item) {
+        return toString(item.createSnapshot());
+    }
+    /** Custom toString item(:meta) { more } */
+    public static String toString(ItemStackSnapshot item) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(item.getType().getId());
+        if (item.get(Keys.ITEM_DURABILITY).isPresent()) {
+            sb.append(" { durability: ");
+            int durability = item.get(Keys.ITEM_DURABILITY).orElse(-1);
+            if (durability<0)
+                sb.append('?');
+            else
+                sb.append(durability);
+            sb.append(", ");
+        } else {
+            int meta = item.toContainer().getInt(DataQuery.of("UnsafeDamage")).orElse(-1);
+            if (meta >= 0) {
+                sb.append(':');
+                sb.append(meta);
+            }
+            sb.append(" { ");
+        }
+        item.get(Keys.DISPLAY_NAME).ifPresent(dn->{
+            sb.append("name: ");
+            sb.append(dn.toPlain());
+            sb.append(", ");
+        });
+        String enchants = item.get(Keys.ITEM_ENCHANTMENTS).map(list->
+           list.stream()
+                   .map(element->element.getType().getName()+" "+element.getLevel())
+                   .collect(Collectors.joining(", ", "[ ", " ]"))
+        ).orElse("");
+        if (!enchants.isEmpty()) {
+            sb.append("enchantments: ");
+            sb.append(enchants);
+            sb.append(", ");
+        }
+        sb.append("quantity: ");
+        sb.append(item.getQuantity());
+        sb.append(" }");
+        return sb.toString();
+    }
+    /** location world@x/y/z */
+    public static String toString(Location<World> location) {
+        return String.format("%s@%d/%d/%d",
+                location.getExtent().getName(),
+                location.getBlockX(),
+                location.getBlockY(),
+                location.getBlockZ()
+            );
     }
 
 }

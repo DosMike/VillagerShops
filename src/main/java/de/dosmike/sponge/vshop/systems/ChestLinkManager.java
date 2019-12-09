@@ -2,9 +2,12 @@ package de.dosmike.sponge.vshop.systems;
 
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
 import de.dosmike.sponge.vshop.CommandRegistra;
+import de.dosmike.sponge.vshop.PermissionRegistra;
+import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.shops.NPCguard;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
+import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
@@ -24,19 +27,22 @@ public class ChestLinkManager {
             activeLinker.remove(player.getUniqueId());
             player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                     l.local("cmd.link.cancelled").resolve(player).orElse("[linking cancelled]")));
+            VillagerShops.audit("%s cancelled chest-linking", Utilities.toString(player));
         } else if (!shop.isPresent()) {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     l.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
         } else if (!shop.get().getShopOwner().isPresent()) {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     l.local("cmd.link.adminshop").resolve(player).orElse("[admin shop]")));
-        } else if (!shop.get().isShopOwner(player.getUniqueId()) && !player.hasPermission("vshop.edit.admin")) {
+        } else if (!shop.get().isShopOwner(player.getUniqueId()) && !PermissionRegistra.ADMIN.hasPermission(player)) {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     l.local("cmd.link.notyourshop").resolve(player).orElse("[not your shop]")));
         } else {
             activeLinker.put(player.getUniqueId(), shop.get().getIdentifier());
             player.sendMessage(Text.of(TextColors.YELLOW, "[vShop] ",
                     l.local("cmd.link.hitachest").resolve(player).orElse("[hit a chest]")));
+            VillagerShops.audit("%s selected shop %s for chest-linking",
+                    Utilities.toString(player), shop.get().toString());
         }
     }
 
@@ -84,6 +90,8 @@ public class ChestLinkManager {
                 npc.get().setStockContainerRaw(carrier.getLocation());
                 player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                         l.local("cmd.link.success").resolve(player).orElse("[chest linked!]")));
+                VillagerShops.audit("%s relinked shop %s to container at %s",
+                        Utilities.toString(player), npc.get().toString(), Utilities.toString(carrier.getLocation()));
             }
             activeLinker.remove(player.getUniqueId());
         }

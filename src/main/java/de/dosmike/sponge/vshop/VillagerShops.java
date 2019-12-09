@@ -30,29 +30,34 @@ import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
-import org.spongepowered.api.event.world.SaveWorldEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.SpongeExecutorService;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.service.economy.EconomyService;
+import org.spongepowered.api.service.permission.PermissionDescription;
+import org.spongepowered.api.service.permission.PermissionService;
 import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Plugin(id = "vshop", name = "VillagerShops",
-        version = "2.2.2")
+        version = "2.3")
 public class VillagerShops {
 
     public static void main(String[] args) { System.err.println("This plugin can not be run as executable!");
@@ -71,18 +76,7 @@ public class VillagerShops {
     private IncomeLimiterService incomeLimiter = null;
     private SpongeExecutorService asyncScheduler = null;
     private SpongeExecutorService syncScheduler = null;
-
-    @Listener
-    public void onChangeServiceProvider(ChangeServiceProviderEvent event) {
-        if (event.getService().equals(EconomyService.class)) {
-            economyService = (EconomyService) event.getNewProvider();
-        } else if (event.getService().equals(LanguageService.class)) {
-            languageService = (LanguageService) event.getNewProvider();
-            translator = languageService.registerTranslation(this); //add this plugin to langswitch
-        } else if (event.getService().equals(UserStorageService.class)) {
-            userStorage = (UserStorageService) event.getNewProvider();
-        }
-    }
+    private static PermissionService permissions = null;
 
     public static PluginTranslation getTranslator() {
         return instance.translator;
@@ -105,6 +99,26 @@ public class VillagerShops {
     public static SpongeExecutorService getSyncScheduler() {
         return instance.syncScheduler;
     }
+    public static Optional<PermissionService> getPermissions() {
+        return Optional.ofNullable(permissions);
+    }
+    public static Optional<PermissionDescription.Builder> describePermission() {
+        return getPermissions().map(p->p.newDescriptionBuilder(instance));
+    }
+
+    @Listener
+    public void onChangeServiceProvider(ChangeServiceProviderEvent event) {
+        if (event.getService().equals(EconomyService.class)) {
+            economyService = (EconomyService) event.getNewProvider();
+        } else if (event.getService().equals(LanguageService.class)) {
+            languageService = (LanguageService) event.getNewProvider();
+            translator = languageService.registerTranslation(this); //add this plugin to langswitch
+        } else if (event.getService().equals(UserStorageService.class)) {
+            userStorage = (UserStorageService) event.getNewProvider();
+        } else if (event.getService().equals(PermissionService.class)) {
+            permissions = (PermissionService)event.getNewProvider();
+        }
+    }
 
     PluginContainer getContainer() {
         return Sponge.getPluginManager().fromInstance(this).orElseThrow(()->new InternalError("No plugin container for self returned"));
@@ -122,6 +136,59 @@ public class VillagerShops {
     }
 
     public static Random rng = new Random(System.currentTimeMillis());
+
+    private PrintWriter auditLog = null;
+    private static final SimpleDateFormat auditTimestampFormatter = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+    public static void audit(String format, Object... args) {
+        if (instance.auditLog == null) return;
+        String line = "[" + auditTimestampFormatter.format(new Date()) + "] " + String.format(format, args);
+        instance.auditLog.println(line);
+        instance.auditLog.flush();
+    }
+    private void createAuditLog() {
+        //prepare audit logs
+        privateConfigDir.toFile().mkdirs();
+        Path auditFile = privateConfigDir.resolve("audit.log");
+        if (Files.exists(auditFile)) {
+            ZipOutputStream zos=null;
+            FileInputStream fis=null;
+            try {
+                FileTime ft = Files.getLastModifiedTime(auditFile);
+                String formatTime = new SimpleDateFormat("yyyy-MM-dd_kk-mm-ss").format(Date.from(ft.toInstant()));
+                File zipFile = privateConfigDir.resolve("audit_" + formatTime + ".zip").toFile();
+                zos = new ZipOutputStream(new FileOutputStream(zipFile));
+                fis = new FileInputStream(auditFile.toFile());
+                zos.putNextEntry(new ZipEntry("audit.log"));
+                byte[] buffer = new byte[1024]; int read;
+                while ((read=fis.read(buffer))>0) {
+                    zos.write(buffer,0,read);
+                }
+                zos.closeEntry();
+                zos.setComment("Automatically created by VillagerShops");
+            } catch (IOException e) {
+                w("Could not archive old audit log!");
+            } finally {
+                try {fis.close();} catch (Exception ignore) {}
+                try {zos.flush();} catch (Exception ignore) {}
+                try {zos.close();} catch (Exception ignore) {}
+            }
+            try {
+                Files.delete(auditFile);
+            } catch (IOException ignore) {}
+        }
+        try {
+            auditLog = new PrintWriter(new OutputStreamWriter(new FileOutputStream(auditFile.toFile())));
+        } catch (FileNotFoundException e) {
+            w("Could not create audit log!");
+        }
+    }
+    private void closeAuditLog() {
+        if (auditLog != null) {
+            auditLog.flush();
+            auditLog.close();
+            auditLog = null;
+        }
+    }
 
     /// --- === Main Plugin stuff === --- \\\
 
@@ -213,6 +280,7 @@ public class VillagerShops {
     public void onServerStopping(GameStoppingEvent event) {
         terminateNPCs();
         saveShops();
+        closeAuditLog();
     }
 
     public void loadConfigs() {
@@ -223,7 +291,8 @@ public class VillagerShops {
         try {
             CommentedConfigurationNode root = loader.load(ConfigurationOptions.defaults());
             if (root.getNode("DefaultStackSize").isVirtual() ||
-                root.getNode("SmartClick").isVirtual()) {
+                root.getNode("SmartClick").isVirtual() ||
+                root.getNode("AuditLogs").isVirtual()) {
                 HoconConfigurationLoader defaultLoader = HoconConfigurationLoader.builder()
                         .setURL(Sponge.getAssetManager().getAsset(this, "default_settings.conf").get().getUrl())
                         .build();
@@ -235,6 +304,9 @@ public class VillagerShops {
         } catch (IOException e) {
             new RuntimeException("Could not load settings.conf", e).printStackTrace();
         }
+        closeAuditLog();
+        if (ConfigSettings.recordAuditLogs())
+            createAuditLog();
     }
 
     private void loadShops() {
@@ -243,17 +315,26 @@ public class VillagerShops {
             npcsDirty.set(false);
             npcs.clear();
 
+            File configFile = new File("config/vshop/vshop.conf");
             //move legacy config
             File lc = new File("config/vhop.conf");
             if (lc.exists() && lc.isFile()) {
                 w("Found legacy config, moving config/vshop.conf to config/cshop/vshop.conf");
                 try {
-                    File nfc = new File("config/vshop/vshop.conf");
-                    nfc.getParentFile().mkdirs();
-                    lc.renameTo(nfc);
+                    configFile.getParentFile().mkdirs();
+                    lc.renameTo(configFile);
                 } catch (Exception e) {
                     logger.error("VillagerShops was unable to move your config to the new location - You'll have to do this manually or your shops won't load!");
                 }
+            }
+            //make backup
+            try {
+                Path configPath = configFile.toPath();
+                Path backupPath = configPath.getParent().resolve("vshop_backup.conf");
+                Files.deleteIfExists(backupPath);
+                Files.copy(configPath, backupPath);
+            } catch (IOException e) {
+                w("Could not backup vshop.conf");
             }
 
             ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
@@ -261,10 +342,18 @@ public class VillagerShops {
                 ConfigurationNode root = configManager.load(options);
                 npcs.clear();
                 ConfigurationNode shopNode = root.getNode("shops");
-                if (!shopNode.isVirtual())
-                    npcs.addAll(
-                        shopNode.getValue(NPCguardSerializer.tokenListNPCguard)
-                    );
+                if (!shopNode.isVirtual()) {
+                    List<? extends ConfigurationNode> shopList = shopNode.getChildrenList();
+                    for (int i = 0; i < shopList.size(); i++) {
+                        try {
+                            npcs.add(shopList.get(i).getValue(TypeToken.of(NPCguard.class)));
+                        } catch (Exception e) {
+                            System.err.println("Could not load shop "+(i+1)+":");
+                            e.printStackTrace(System.err);
+                            w("Trying to continue parsing the config...");
+                        }
+                    }
+                }
             } catch (Exception e1) {
                 e1.printStackTrace();
             }

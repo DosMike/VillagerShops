@@ -1,5 +1,6 @@
 package de.dosmike.sponge.vshop.menus;
 
+import de.dosmike.sponge.langswitch.LocalizedText;
 import de.dosmike.sponge.megamenus.MegaMenus;
 import de.dosmike.sponge.megamenus.api.IMenu;
 import de.dosmike.sponge.megamenus.api.MenuRenderer;
@@ -15,6 +16,7 @@ import de.dosmike.sponge.vshop.ConfigSettings;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.shops.InteractionHandler;
+import de.dosmike.sponge.vshop.shops.NPCguard;
 import de.dosmike.sponge.vshop.shops.StockItem;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.entity.living.player.Player;
@@ -28,6 +30,7 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class InvPrep {
 
@@ -195,6 +198,17 @@ public class InvPrep {
                         TreeSet<Integer> sorted = new TreeSet<>(Comparator.reverseOrder());
                         sorted.addAll(indices);
 
+                        VillagerShops.audit("%s", Utilities.toString(player) +
+                                " deleted " + sorted.size() +
+                                " items from shop " +
+                                VillagerShops.getNPCfromShopUUID(shopID)
+                                        .map(NPCguard::toString)
+                                        .orElse("[" + shopID + "]") +
+                                ": " + indices.stream()
+                                        .map(i -> getItem(i).toString())
+                                        .collect(Collectors.joining(", ", "[ ", " ]"))
+                        );
+
                         Iterator<Integer> ii = sorted.iterator();
                         ii.forEachRemaining(this::removeIndex);
 
@@ -229,8 +243,9 @@ public class InvPrep {
         int idealHeight = Math.max(2, Math.min((int)Math.ceil(size()/9.0)+1, 6)); // 2 - 6 rows
         GuiRenderer renderer = (GuiRenderer) getMenu().createGuiRenderer(idealHeight, true);
         renderer.getMenu().setTitle(Text.of(TextColors.DARK_AQUA,
-                VillagerShops.getTranslator().localText("shop.title")
+                ((LocalizedText)VillagerShops.getTranslator().localText("shop.title"))
                         .replace("%name%", Text.of(TextColors.RESET, shopName == null ? Text.EMPTY : shopName))
+                        .setContextColor(TextColors.DARK_AQUA)
                         .resolve(source).orElse(Text.of("[vShop] ", shopName == null ? Text.EMPTY : shopName))));
 
         //relink player state value to the spinner

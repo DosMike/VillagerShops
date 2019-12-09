@@ -2,6 +2,7 @@ package de.dosmike.sponge.vshop.shops;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.google.common.reflect.TypeToken;
+import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.menus.InvPrep;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
@@ -12,6 +13,7 @@ import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -48,7 +50,18 @@ public class NPCguardSerializer implements TypeSerializer<NPCguard> {
         NPCguard npc = new NPCguard(UUID.fromString(cfg.getNode("uuid").getString()));
         InvPrep ip = new InvPrep();
 
-        List<StockItem> items = cfg.getNode("items").getValue(tokenListStockItem);
+        List<? extends ConfigurationNode> itemList = cfg.getNode("items").getChildrenList();
+        List<StockItem> items = new ArrayList<>(itemList.size());
+        for (int i = 0; i < itemList.size(); i++) {
+            try {
+                items.add(itemList.get(i).getValue(TypeToken.of(StockItem.class)));
+            } catch (Exception e) {
+                System.err.println("Could not load item "+(i+1)+" in shop "+cfg.getNode("uuid").getString("<NO ID>")+":");
+                System.err.println("> ItemType seems to be "+itemList.get(i).getNode("itemstack").getNode("ItemType").getString("<NOT SET>"));
+                e.printStackTrace(System.err);
+                VillagerShops.w("Trying to continue parsing the config...");
+            }
+        }
         if (items == null) items = new LinkedList<>();
         ip.setAllItems(items);
         npc.setPreparator(ip);
