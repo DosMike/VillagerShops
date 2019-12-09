@@ -1,8 +1,10 @@
 package de.dosmike.sponge.vshop.shops;
 
+import de.dosmike.sponge.vshop.PermissionRegistra;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.systems.LedgerManager;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
@@ -38,7 +40,7 @@ public class InteractionHandler {
                 if (Utilities.getOpenShopFor(source)!=null) return true;
                 shop.updateStock();
                 Utilities._openShops_add(source, shop.getIdentifier());
-                boolean canEdit = /*shop.isShopOwner(source.getUniqueId()) ||*/ source.hasPermission("vshop.edit.admin");
+                boolean canEdit = /*shop.isShopOwner(source.getUniqueId()) ||*/ PermissionRegistra.ADMIN.hasPermission(source);
                 //bound renderer for possibly localized title
                 shop.getPreparator().createRenderer(source, shop.getDisplayName(), canEdit).open(source);
             }
@@ -81,8 +83,13 @@ public class InteractionHandler {
                     trans.toDatabase();
                     LedgerManager.backstuffChat(trans);
                 }
+                VillagerShops.audit("%s purchased %d %s for a total of %.2f %s",
+                        Utilities.toString(player), result.getTradedItems(), item.toString(), finalPrice, item.getCurrency().getSymbol().toPlain());
             } else {
                 player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
+                VillagerShops.audit("%s failed to purchase the item %s: %s",
+                        Utilities.toString(player), item.toString(),
+                        VillagerShops.getTranslator().local(result.getMessage()).orLiteral(Sponge.getServer().getConsole()));
             }
         } else {
             if (item.getSellPrice() == null) return 0;
@@ -102,8 +109,13 @@ public class InteractionHandler {
                     trans.toDatabase();
                     LedgerManager.backstuffChat(trans);
                 }
+                VillagerShops.audit("%s sold %d %s for a total of %.2f %s",
+                        Utilities.toString(player), result.getTradedItems(), item.toString(), finalPrice, item.getCurrency().getSymbol().toPlain());
             } else {
                 player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
+                VillagerShops.audit("%s failed to sell the item %s: %s",
+                        Utilities.toString(player), item.toString(),
+                        VillagerShops.getTranslator().local(result.getMessage()).orLiteral(Sponge.getServer().getConsole()));
             }
         }
         return result.getTradedItems();

@@ -78,7 +78,7 @@ public class EventListeners {
                     g.getStockContainer().get().getExtent().equals(tex) &&
                     g.getStockContainer().get().getBlockPosition().equals(tv3)) {
                 if ((!source.get().getUniqueId().equals(g.getShopOwner().orElse(null))) &&
-                        (!source.get().hasPermission("vshop.edit.admin"))) {
+                    (!PermissionRegistra.ADMIN.hasPermission(source.get()))) {
                     event.setCancelled(true);
                     return;
                 }

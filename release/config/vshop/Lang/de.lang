@@ -27,7 +27,7 @@ cmd.add.itemisair:Bite halte das Item, das du hinzufügen möchtest in deiner Ha
 cmd.add.success:Item %item% wurde an Position %pos% dem Shop hinzugefügt
 cmd.add.replaced:Das Item an Position %pos% wurde durch %item% ersetzt
 cmd.identify.adminshop:dem Server
-cmd.identify.response:Ein %type% namens %name% [%id%]\nDieser Shop gehört %owner%
+cmd.identify.response:Der %type% %name% [%id%] ist ein %entity%, Variante %skin%.\nDieser Shop gehört %owner%
 cmd.identify.shiftclick:Shift-Klicken um die ID in den chat zu kopieren
 cmd.link.cancelled:Linking abgebrochen
 cmd.link.adminshop:Du kannst einem Admin-Shop keine Kiste zuweisen 
@@ -44,6 +44,8 @@ cmd.saved:Shops gespeichert!
 cmd.reloaded:Reload komplett!
 cmd.ledger.invalid:Du kannst -t nicht mit einem Target verwenden 
 shop.title:[vShop] %name%
+shop.type.admin:Adminshop
+shop.type.player:Playershop
 shop.item.buy.one:Kaufen:§f %price%%currency%
 shop.item.buy.stack:Kaufen:§f %price%%currency% (á %itemprice%%currency%)
 shop.item.sell.one:Verkaufen:§f %price%%currency%
@@ -60,14 +62,14 @@ shop.shopowner.highbalance:Das Bankkonto des Shop-Besitzers ist voll
 shop.customer.lowbalance:Du hast nicht genug Geld
 shop.shopowner.lowbalance:Der Shop-Besitzer hat nicht mehr genug Geld
 shop.customer.missingitems:Du hast nicht genügend Items
-shop.shopowner.missingitems:Dieses Item ist im Shop niicht mehr vorrätig
+shop.shopowner.missingitems:Dieses Item ist im Shop nicht mehr vorrätig
 shop.customer.inventoryfull:Du kannst keines dieser Items mehr tragen
 shop.shopowner.inventoryfull:Der Shop kann keine weiteren Items lagern
 shop.customer.incomelimit:Du hast deine Einkommesgrenze durch Adminshops für den Tag erreicht.
 shop.customer.spendinglimit:Deine täglichen Ausgaben sind begrenzt. Versuche es morgen erneut.
 shop.chat.transaction.base:Dein Shop %shop% handelte %items%. Unterm Strich %money%.
-shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%price%%currency%§r %amount%x %item% (%index%)\n  %timestamp%
-shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%price%%currency%§r %amount%x %item% (%index%)\n  %timestamp%
+shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%price%%currency%§r %amount%x %item%\n  %timestamp%
+shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%price%%currency%§r %amount%x %item%\n  %timestamp%
 shop.quantity.name:Verkaufsmenge
 shop.quantity.items.single:Einzelne Items
 shop.quantity.items.quarter:Viertel Stacks

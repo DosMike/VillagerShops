@@ -2,6 +2,7 @@ package de.dosmike.sponge.vshop.shops;
 
 import com.flowpowered.math.vector.Vector3d;
 import de.dosmike.sponge.megamenus.api.IMenu;
+import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.menus.InvPrep;
 import org.spongepowered.api.block.tileentity.TileEntity;
@@ -11,6 +12,7 @@ import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.Living;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Chunk;
@@ -299,5 +301,16 @@ public class NPCguard {
                 }
             }
         }
+    }
+
+    /** Custom toString name [is] { more } */
+    @Override
+    public String toString() {
+        return String.format("%s [%s] { type: %s, entity: %s, skin: %s, location: %s°%.2f }",
+                displayName.toPlain(), ident.toString(),
+                playershopholder != null ? "playershop" : "adminshop",
+                npcType.getId(), variantName,
+                Utilities.toString(loc), rot.getY()
+        );
     }
 }

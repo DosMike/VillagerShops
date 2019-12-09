@@ -82,12 +82,12 @@ public class CommandRegistra {
                     }
                     Player player = (Player) src;
 
-                    if (!player.hasPermission("vshop.edit.admin") &&
-                            !player.hasPermission("vshop.edit.player")) {
+                    if (!PermissionRegistra.ADMIN.hasPermission(player) &&
+                        !PermissionRegistra.PLAYER.hasPermission(player)) {
                         throw new CommandException(Text.of(TextColors.RED,
                                 lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
                     }
-                    boolean adminshop = player.hasPermission("vshop.edit.admin");
+                    boolean adminshop = PermissionRegistra.ADMIN.hasPermission(player);
 
                     if (!adminshop) {
                         Optional<String> option = player.getOption("vshop.option.playershop.limit");
@@ -175,19 +175,20 @@ public class CommandRegistra {
                     src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                             lang.localText(playershop ? "cmd.create.playershop.success" : "cmd.create.success").replace("%name%", Text.of(TextColors.RESET, displayName)).resolve(player).orElse(Text.of("[success]"))));
 
+                    VillagerShops.audit("%s created a new shop %s", Utilities.toString(src), npc.toString());
                     return CommandResult.success();
                 }).build());
         children.put(Collections.singletonList("add"), CommandSpec.builder()
                 .arguments(GenericArguments.flags().valueFlag(
-                        GenericArguments.integer(Text.of("limit")), "l"
+                            GenericArguments.integer(Text.of("limit")), "l"
                         ).valueFlag(
-                        GenericArguments.integer(Text.of("slot")), "o"
+                            GenericArguments.integer(Text.of("slot")), "o"
                         ).valueFlag(
-                        GenericArguments.enumValue(Text.of("filter"), StockItem.FilterOptions.class), "-filter"
+                            GenericArguments.enumValue(Text.of("filter"), StockItem.FilterOptions.class), "-filter"
                         ).buildWith(GenericArguments.seq(
-                        GenericArguments.onlyOne(GenericArguments.string(Text.of("BuyPrice"))),
-                        GenericArguments.onlyOne(GenericArguments.string(Text.of("SellPrice"))),
-                        GenericArguments.optional(GenericArguments.string(Text.of("Currency")))
+                            GenericArguments.onlyOne(GenericArguments.string(Text.of("BuyPrice"))),
+                            GenericArguments.onlyOne(GenericArguments.string(Text.of("SellPrice"))),
+                            GenericArguments.optional(GenericArguments.string(Text.of("Currency")))
                         ))
                 ).executor((src, args) -> {
                     if (!(src instanceof Player)) {
@@ -204,8 +205,8 @@ public class CommandRegistra {
                         throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                 lang.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
                     }
-                    if (!player.hasPermission("vshop.edit.admin") &&
-                            !npc.get().isShopOwner(player.getUniqueId())) {
+                    if (!PermissionRegistra.ADMIN.hasPermission(player) &&
+                        !npc.get().isShopOwner(player.getUniqueId())) {
                         throw new CommandException(Text.of(TextColors.RED,
                                 lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
                     }
@@ -299,9 +300,11 @@ public class CommandRegistra {
                                 limit, nbtfilter);
                     }
                     VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
+                    String auditOverwrite="";
                     if (overwriteindex < 0) {
                         prep.addItem(newItem);
                     } else {
+                        auditOverwrite = prep.getItem(overwriteindex).toString();
                         prep.setItem(overwriteindex, newItem);
                     }
                     player.sendMessage(Text.of(
@@ -313,7 +316,13 @@ public class CommandRegistra {
                                     .resolve(player).orElse(Text.of(overwriteindex < 0 ? "[item added]" : "[item replaced]"))
                     ));
 
-
+                    if (overwriteindex < 0) {
+                        VillagerShops.audit("%s added the item %s to shop %s",
+                                Utilities.toString(src), newItem.toString(), npc.get().toString());
+                    } else {
+                        VillagerShops.audit("%s replaced the item %s in slot %d with the item %s in shop %s",
+                                Utilities.toString(src), auditOverwrite, overwriteindex, newItem.toString());
+                    }
                     return CommandResult.success();
                 }).build());
         children.put(Collections.singletonList("remove"), CommandSpec.builder()
@@ -321,8 +330,7 @@ public class CommandRegistra {
                         GenericArguments.integer(Text.of("Index"))
                 ).executor((src, args) -> {
                     if (!(src instanceof Player)) {
-                        src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
-                        return CommandResult.success();
+                        throw new CommandException(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
                     }
                     Player player = (Player) src;
 
@@ -331,39 +339,40 @@ public class CommandRegistra {
 
                     Optional<NPCguard> npc = VillagerShops.getNPCfromLocation(loc);
                     if (!npc.isPresent()) {
-                        player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+                        throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                 lang.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
                     } else {
-                        if (!player.hasPermission("vshop.edit.admin") &&
+                        if (!PermissionRegistra.ADMIN.hasPermission(player) &&
                                 !npc.get().isShopOwner(player.getUniqueId())) {
-                            player.sendMessage(Text.of(TextColors.RED,
+                            throw new CommandException(Text.of(TextColors.RED,
                                     lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
-                            return CommandResult.success();
                         }
                         Integer index = (Integer) args.getOne("Index").get();
                         if (index < 1 || index > npc.get().getPreparator().size()) {
-                            player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+                            throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                     lang.local("cmd.remove.invalidindex").resolve(player).orElse("[invalid index]")));
                         } else {
                             VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
+                            String auditRemoved=npc.get().getPreparator().getItem(index-1).toString();
                             npc.get().getPreparator().removeIndex(index - 1);
 
                             player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                                     lang.local("cmd.remove.success")
                                             .replace("%pos%", index)
                                             .resolve(player).orElse("[success]")));
+
+                            VillagerShops.audit("%s removed the item %s from shop %s",
+                                    Utilities.toString(src), auditRemoved, npc.get().toString());
+                            return CommandResult.success();
                         }
                     }
-
-                    return CommandResult.success();
                 }).build());
         children.put(Collections.singletonList("delete"), CommandSpec.builder()
                 .arguments(
                         GenericArguments.none()
                 ).executor((src, args) -> {
                     if (!(src instanceof Player)) {
-                        src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
-                        return CommandResult.success();
+                        throw new CommandException(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
                     }
                     Player player = (Player) src;
 
@@ -372,15 +381,17 @@ public class CommandRegistra {
 
                     Optional<NPCguard> npc = VillagerShops.getNPCfromLocation(loc);
                     if (!npc.isPresent()) {
-                        src.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+                        throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                 lang.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
                     } else {
-                        if (!player.hasPermission("vshop.edit.admin") &&
-                                !npc.get().isShopOwner(player.getUniqueId())) {
-                            player.sendMessage(Text.of(TextColors.RED,
+                        if (!PermissionRegistra.ADMIN.hasPermission(player) &&
+                            !npc.get().isShopOwner(player.getUniqueId())) {
+                            throw new CommandException(Text.of(TextColors.RED,
                                     lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
-                            return CommandResult.success();
                         }
+                        VillagerShops.audit("%s deleted the shop %s",
+                                Utilities.toString(src), npc.get().toString());
+
                         VillagerShops.stopTimers();
                         VillagerShops.closeShopInventories(npc.get().getIdentifier());
                         npc.get().getLe().remove();
@@ -388,32 +399,34 @@ public class CommandRegistra {
                         VillagerShops.startTimers();
                         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                                 lang.local("cmd.deleted").resolve(player).orElse("[deleted]")));
-                    }
 
-                    return CommandResult.success();
+                        return CommandResult.success();
+                    }
                 }).build());
         children.put(Collections.singletonList("save"), CommandSpec.builder()
-                .permission("vshop.edit.admin")
+                .permission(PermissionRegistra.ADMIN.getId())
                 .arguments(
                         GenericArguments.none()
                 ).executor((src, args) -> {
                     VillagerShops.getInstance().saveShops();
                     src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                             lang.local("cmd.saved").resolve(src).orElse("[saved]")));
+                    VillagerShops.audit("%s saved the shops", Utilities.toString(src));
                     return CommandResult.success();
                 }).build());
         children.put(Collections.singletonList("reload"), CommandSpec.builder()
-                .permission("vshop.edit.admin")
+                .permission(PermissionRegistra.ADMIN.getId())
                 .arguments(
                         GenericArguments.none()
                 ).executor((src, args) -> {
                     VillagerShops.getInstance().loadConfigs();
                     TranslationLoader.fetchTranslations();
                     src.sendMessage(Text.of("Reload complete"));
+                    VillagerShops.audit("%s reloaded the settings", Utilities.toString(src));
                     return CommandResult.success();
                 }).build());
         children.put(Arrays.asList("list", "get", "for"), CommandSpec.builder()
-                .permission("vshop.edit.admin")
+                .permission(PermissionRegistra.ADMIN.getId())
                 .arguments(
                         GenericArguments.optional(
                                 GenericArguments.user(Text.of("User"))
@@ -443,13 +456,16 @@ public class CommandRegistra {
                     }
 
                     private Text entry(User user, NPCguard shop) {
-                        Text line = Text.builder().append(shop.getDisplayName())
+                        Text name = shop.getDisplayName();
+                        Text line = Text.builder().append(name.toPlain().trim().isEmpty() ? Text.of("<NO NAME>") : name)
                                 .onHover(TextActions.showText(Text.of(
                                         TextColors.WHITE, "Type: ", TextColors.GRAY, shop.getNpcType().getId(), Text.NEW_LINE,
                                         TextColors.WHITE, "Skin: ", TextColors.GRAY, shop.getVariantName(), Text.NEW_LINE,
                                         TextColors.WHITE, TextStyles.ITALIC, "Click to teleport"
                                 )))
                                 .onClick(TextActions.executeCallback(src -> {
+                                    VillagerShops.audit("%s teleported to shop %s via /vshop list",
+                                            Utilities.toString(src), shop.toString() );
                                     if (src instanceof Player) {
                                         ((Player) src).setLocation(shop.getLoc());
                                     }
@@ -465,6 +481,8 @@ public class CommandRegistra {
                         if (shop.getStockContainer().isPresent()) {
                             line = Text.of(line, Text.builder(" [Open Stock]")
                                     .onClick(TextActions.executeCallback(src -> {
+                                        VillagerShops.audit("%s opened stock container for shop %s via /vshop list",
+                                                Utilities.toString(src), shop.toString() );
                                         if (src instanceof Player)
                                             shop.getStockInventory().ifPresent(((Player) src)::openInventory);
                                     })).onHover(TextActions.showText(Text.of("Click to invsee")))
@@ -494,6 +512,8 @@ public class CommandRegistra {
                                                     .color(TextColors.DARK_BLUE)
                                                     .style(TextStyles.UNDERLINE)
                                                     .onClick(TextActions.executeCallback((cmdsrc)->{
+                                                        VillagerShops.audit("% deleted shop %s via /vshop list",
+                                                                Utilities.toString(src), shop.toString() );
                                                         API.delete(shop);
                                                         cmdsrc.sendMessage(Text.of("Good bye, ", shop.getDisplayName()));
                                                     })).build()
@@ -534,13 +554,12 @@ public class CommandRegistra {
                     }
                 }).build());
         children.put(Arrays.asList("identify", "id"), CommandSpec.builder()
-                .permission("vshop.edit.identify")
+                .permission(PermissionRegistra.IDENTIFY.getId())
                 .arguments(
                         GenericArguments.none()
                 ).executor((src, args) -> {
                     if (!(src instanceof Player)) {
-                        src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
-                        return CommandResult.success();
+                        throw new CommandException(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
                     }
                     Player player = (Player) src;
 
@@ -549,41 +568,48 @@ public class CommandRegistra {
 
                     Optional<NPCguard> npc = VillagerShops.getNPCfromLocation(loc);
                     if (!npc.isPresent()) {
-                        src.sendMessage(Text.of(TextColors.RED, "[vShop] ",
+                        throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                 lang.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
                     } else {
                         Optional<UUID> owner = npc.get().getShopOwner();
                         Optional<Player> powner = owner.flatMap(uuid -> Sponge.getServer().getPlayer(uuid));
-                        String ownername = owner.isPresent()
+                        Text.Builder ownername = Text.builder(owner.isPresent()
                                 ? (powner.isPresent()
-                                ? powner.get().getName()
-                                : owner.get().toString())
-                                : lang.local("cmd.identify.adminshop").resolve(player).orElse("[Server]");
+                                    ? powner.get().getName()
+                                    : owner.get().toString())
+                                : lang.local("cmd.identify.adminshop").resolve(player).orElse("[Server]"));
+                        if (owner.isPresent()) {
+                            ownername.onHover(TextActions.showText(Text.of("UUID: " + owner.get().toString())));
+                            ownername.onShiftClick(TextActions.insertText(owner.get().toString()));
+                        }
 
                         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                                 lang.localText("cmd.identify.response")
-                                        .replace("\\n", "\n")
-                                        .replace("%type%", npc.get().getLe().getTranslation().get(Utilities.playerLocale(player)))
+                                        .replace("\\n", Text.NEW_LINE)
+                                        .replace("%type%", VillagerShops.getTranslator().localText(npc.get().getShopOwner().isPresent() ? "shop.type.player" : "shop.type.admin"))
+                                        .replace("%entity%", npc.get().getLe().getTranslation().get(Utilities.playerLocale(player)))
+                                        .replace("%skin%", npc.get().getVariantName())
                                         .replace("%name%", npc.get().getDisplayName())
                                         .replace("%id%",
                                                 Text.builder(npc.get().getIdentifier().toString())
                                                         .onShiftClick(TextActions.insertText(npc.get().getIdentifier().toString()))
                                                         .onHover(TextActions.showText(lang.localText("cmd.identify.shiftclick").resolve(src).orElse(Text.of("Shift-click"))))
                                                         .build())
-                                        .replace("%owner%", ownername)
+                                        .replace("%owner%", ownername.build())
                                         .resolve(player).orElse(Text.of("[much data, such wow]"))));
-                    }
 
-                    return CommandResult.success();
+                        VillagerShops.audit("%s identified shop %s",
+                                Utilities.toString(src), npc.get().toString() );
+                        return CommandResult.success();
+                    }
                 }).build());
         children.put(Collections.singletonList("link"), CommandSpec.builder()
-                .permission("vshop.edit.linkchest")
+                .permission(PermissionRegistra.LINKCHEST.getId())
                 .arguments(
                         GenericArguments.none()
                 ).executor((src, args) -> {
                     if (!(src instanceof Player)) {
-                        src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
-                        return CommandResult.success();
+                        throw new CommandException(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
                     }
                     Player player = (Player) src;
 
@@ -596,13 +622,12 @@ public class CommandRegistra {
                     return CommandResult.success();
                 }).build());
         children.put(Collections.singletonList("tphere"), CommandSpec.builder()
-                .permission("vshop.edit.move")
+                .permission(PermissionRegistra.MOVE.getId())
                 .arguments(
                         GenericArguments.uuid(Text.of("shopid"))
                 ).executor((src, args) -> {
                     if (!(src instanceof Player)) {
-                        src.sendMessage(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
-                        return CommandResult.success();
+                        throw new CommandException(lang.localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
                     }
                     Player player = (Player) src;
 
@@ -610,11 +635,10 @@ public class CommandRegistra {
                     if (!npc.isPresent()) {
                         src.sendMessage(lang.localText("cmd.common.noshopforid").resolve(src).orElse(Text.of("[Shop not found]")));
                     } else {
-                        if (!player.hasPermission("vshop.edit.admin") &&
-                                !npc.get().isShopOwner(player.getUniqueId())) {
-                            player.sendMessage(Text.of(TextColors.RED,
+                        if (!PermissionRegistra.ADMIN.hasPermission(player) &&
+                            !npc.get().isShopOwner(player.getUniqueId())) {
+                            throw new CommandException(Text.of(TextColors.RED,
                                     lang.local("permission.missing").resolve(player).orElse("[permission missing]")));
-                            return CommandResult.success();
                         }
                         Optional<Integer> distance = Optional.empty();
                         if (npc.get().getShopOwner().isPresent()) try {
@@ -637,6 +661,11 @@ public class CommandRegistra {
                                     .resolve(player)
                                     .orElse(Text.of("[too far away]")));
 
+                        VillagerShops.audit("%s relocated shop %s to %s°%.2f, %d blocks",
+                                Utilities.toString(src), guard.toString(),
+                                Utilities.toString(to), player.getHeadRotation().getY(),
+                                distance.orElse(-1)
+                        );
                         VillagerShops.closeShopInventories(guard.getIdentifier());
                         guard.move(new Location<World>(to.getExtent(), to.getBlockX() + 0.5, to.getY(), to.getBlockZ() + 0.5));
                         guard.setRot(new Vector3d(0.0, player.getHeadRotation().getY(), 0.0));
@@ -644,9 +673,9 @@ public class CommandRegistra {
                     return CommandResult.success();
                 }).build());
         children.put(Arrays.asList("ledger", "log"), CommandSpec.builder()
-                .permission("vshop.ledger.base")
+                .permission(PermissionRegistra.LEDGER_ME.getId())
                 .arguments(
-                        GenericArguments.flags().permissionFlag("vshop.ledger.others", "t")
+                        GenericArguments.flags().permissionFlag(PermissionRegistra.LEDGER_OTHERS.getId(), "t")
                                 .buildWith(GenericArguments.optional(
                                         GenericArguments.user(Text.of("Target"))
                                 ))
@@ -664,8 +693,12 @@ public class CommandRegistra {
                         else throw new CommandException(Text.of("No target console, shouldn't fail"));
                         src.sendMessage(Text.of("Searching Business Ledger, please wait.."));
                         LedgerManager.openLedgerFor(src, target);
+                        if (src instanceof Player && ((Player) src).getUniqueId().equals(target.getUniqueId())) {
+                            VillagerShops.audit("%s requested their business ledger", Utilities.toString(src));
+                        } else {
+                            VillagerShops.audit("%s requested the business ledger for %s", Utilities.toString(src), Utilities.toString(target));
+                        }
                     }
-
                     return CommandResult.success();
                 }).build());
 
@@ -775,9 +808,11 @@ public class CommandRegistra {
 
         VillagerShops.closeShopInventories(guard.get().getIdentifier()); //so players are forced to update
         InvPrep prep = guard.get().getPreparator();
+        String auditOverwrite="";
         if (position < 0) {
             prep.addItem(item);
         } else {
+            auditOverwrite = prep.getItem(position).toString();
             prep.setItem(position, item);
         }
         player.sendMessage(Text.of(
@@ -788,5 +823,11 @@ public class CommandRegistra {
                         .replace("%pos%", prep.size())
                         .resolve(player).orElse(Text.of(position < 0 ? "[item added]" : "[item replaced]"))
         ));
+
+        if (position < 0) {
+            VillagerShops.audit("%s added an item %s to shop %s", Utilities.toString(player), item.toString(), guard.get().toString());
+        } else {
+            VillagerShops.audit("%s replaced the item %s in slot %d with item %s in shop %s", Utilities.toString(player), auditOverwrite, position, item.toString(), guard.get().toString());
+        }
     }
 }

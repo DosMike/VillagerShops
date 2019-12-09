@@ -1,5 +1,6 @@
 package de.dosmike.sponge.vshop.menus;
 
+import de.dosmike.sponge.langswitch.LocalizedText;
 import de.dosmike.sponge.megamenus.api.elements.IIcon;
 import de.dosmike.sponge.megamenus.api.elements.concepts.IClickable;
 import de.dosmike.sponge.megamenus.api.listener.OnClickListener;
@@ -154,17 +155,19 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
             if (quantity > 1) {
                 double stackBuyPrice = quantity * stockItem.getBuyPrice();
                 lore.add(Text.of(TextColors.RED,
-                        VillagerShops.getTranslator().localText("shop.item.buy.stack")
+                        ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.buy.stack"))
                                 .replace("%price%", Utilities.nf(stackBuyPrice, Utilities.playerLocale(viewer)))
                                 .replace("%itemprice%", Utilities.nf(stockItem.getBuyPrice(), Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
+                                .setContextColor(TextColors.RED)
                                 .resolve(viewer).orElse(Text.of("shop.item.buy.stack"))
                         ));
             } else {
                 lore.add(Text.of(TextColors.RED,
-                        VillagerShops.getTranslator().localText("shop.item.buy.one")
+                        ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.buy.one"))
                                 .replace("%price%", Utilities.nf(stockItem.getBuyPrice(), Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
+                                .setContextColor(TextColors.RED)
                                 .resolve(viewer).orElse(Text.of("shop.item.buy.one"))
                         ));
             }
@@ -173,47 +176,54 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
             if (quantity > 1) {
                 double stackSellPrice = quantity * stockItem.getSellPrice();
                 lore.add(Text.of(TextColors.GREEN,
-                        VillagerShops.getTranslator().localText("shop.item.sell.stack")
+                        ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.sell.stack"))
                                 .replace("%price%", Utilities.nf(stackSellPrice, Utilities.playerLocale(viewer)))
                                 .replace("%itemprice%", Utilities.nf(stockItem.getSellPrice(), Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
+                                .setContextColor(TextColors.GREEN)
                                 .resolve(viewer).orElse(Text.of("shop.item.sell.stack"))
                         ));
             } else {
                 lore.add(Text.of(TextColors.GREEN,
-                        VillagerShops.getTranslator().localText("shop.item.sell.one")
+                        ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.sell.one"))
                                 .replace("%price%", Utilities.nf(stockItem.getSellPrice(), Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
+                                .setContextColor(TextColors.GREEN)
                                 .resolve(viewer).orElse(Text.of("shop.item.sell.one"))
                         ));
             }
         }
         if (stockItem.getMaxStock() > 0) {
             lore.add(Text.of(TextColors.GRAY,
-                    VillagerShops.getTranslator().localText("shop.item.stock")
+                    ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.stock"))
                             .replace("%amount%", stockItem.getStocked())
                             .replace("%max%", stockItem.getMaxStock())
+                            .setContextColor(TextColors.GRAY)
                             .resolve(viewer).orElse(Text.of("shop.item.stock"))
             ));
         }
         if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.TYPE_ONLY)) {
             lore.add(Text.of(TextColors.GRAY,
-                    VillagerShops.getTranslator().localText("shop.item.filter.type")
+                    ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.filter.type"))
+                            .setContextColor(TextColors.GRAY)
                             .resolve(viewer).orElse(Text.of("shop.item.filter.type"))
             ));
         } else if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.IGNORE_DAMAGE)) {
             lore.add(Text.of(TextColors.GRAY,
-                    VillagerShops.getTranslator().localText("shop.item.filter.damage")
+                    ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.filter.damage"))
+                            .setContextColor(TextColors.GRAY)
                             .resolve(viewer).orElse(Text.of("shop.item.filter.damage"))
             ));
         } else if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.IGNORE_NBT)) {
             lore.add(Text.of(TextColors.GRAY,
-                    VillagerShops.getTranslator().localText("shop.item.filter.nbt")
+                    ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.filter.nbt"))
+                            .setContextColor(TextColors.GRAY)
                             .resolve(viewer).orElse(Text.of("shop.item.filter.nbt"))
             ));
         } else if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.OREDICT)) {
             lore.add(Text.of(TextColors.GRAY,
-                    VillagerShops.getTranslator().localText("shop.item.filter.oredict")
+                    ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.filter.oredict"))
+                            .setContextColor(TextColors.GRAY)
                             .replace("%oredict%", stockItem.getOreDictEntry().get())
                             .resolve(viewer).orElse(Text.of("shop.item.filter.oredict"))
             ));

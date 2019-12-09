@@ -21,6 +21,7 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
 
 import javax.sql.DataSource;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -158,7 +159,7 @@ public class LedgerManager {
 
         public Text toText(CommandSource viewer) {
             Optional<ItemType> type = Sponge.getRegistry().getType(ItemType.class, itemID);
-            ItemStack display = null;
+            ItemStack display;
             String displayName = "???";
             if (type.isPresent()) {
                 display = ItemStack.of(type.get(), amount);
@@ -179,13 +180,14 @@ public class LedgerManager {
                     .replace("%customer%", userText(customer))
                     .replace("%vendor%", shopText(vendor))
                     .replace("%amount%", amount)
-                    .replace("%item%", Text.of(TextStyles.ITALIC, Text.builder(displayName)
+                    .replace("%item%", Text.builder(displayName)
                             .onHover(TextActions.showItem(display.createSnapshot()))
-                            .build(), "§r")) //reset won't properly work for me for some reason
+                            .style(TextStyles.ITALIC)
+                            .build())
                     .replace("%price%", gain ? payed : -payed)
                     .replace("%currency%", currency.getSymbol())
                     .replace("%timestamp%", format.format(formatCalendar.getTime()))
-                    .replace("\\n", "\n")
+                    .replace("\\n", Text.NEW_LINE)
                     .resolve(viewer).orElse(Text.of("[Transaction]"));
         }
 
@@ -328,7 +330,7 @@ public class LedgerManager {
             try {
                 raw = getLedgerFor(target).get();
                 List<Text> pages = new LinkedList<>();
-                int entriesPerPage = (viewer instanceof Player) ? 2 : 10;
+                int entriesPerPage = (viewer instanceof Player) ? 3 : 10;
                 int i = 0;
                 Text.Builder page = Text.builder();
                 for (Transaction t : raw) {
