@@ -408,7 +408,7 @@ public class CommandRegistra {
                 .arguments(
                         GenericArguments.none()
                 ).executor((src, args) -> {
-                    VillagerShops.getInstance().saveShops();
+                    VillagerShops.getInstance().saveConfigs();
                     src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                             lang.local("cmd.saved").resolve(src).orElse("[saved]")));
                     VillagerShops.audit("%s saved the shops", Utilities.toString(src));

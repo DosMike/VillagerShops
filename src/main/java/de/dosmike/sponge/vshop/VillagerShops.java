@@ -27,6 +27,7 @@ import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
@@ -57,7 +58,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Plugin(id = "vshop", name = "VillagerShops",
-        version = "2.3")
+        version = "2.4")
 public class VillagerShops {
 
     public static void main(String[] args) { System.err.println("This plugin can not be run as executable!");
@@ -232,6 +233,10 @@ public class VillagerShops {
     @ConfigDir(sharedRoot = false)
     private Path privateConfigDir;
 
+    @Inject
+    @ConfigDir(sharedRoot = true)
+    private Path publicConfigDir;
+
     @Listener
     public void onServerInit(GameInitializationEvent event) {
         instance = this;
@@ -247,6 +252,12 @@ public class VillagerShops {
     }
 
     @Listener
+    public void onLoadComplete(GameLoadCompleteEvent event) {
+        //Last GameState before worlds load, so configs have to be converted here (or earlier)
+        updateShopConfigs();
+    }
+
+    @Listener
     public void onServerStart(GameStartedServerEvent event) {
         l("Registering commands...");
         CommandRegistra.register();
@@ -258,7 +269,6 @@ public class VillagerShops {
             e.printStackTrace();
         }
 
-        loadShops();
         loadConfigs();
         startTimers();
 
@@ -269,17 +279,10 @@ public class VillagerShops {
         l("VillagerShops is now ready!");
     }
 
-    long lastSave = System.currentTimeMillis();
-
-//    @Listener
-//    public void onWorldsSave(SaveWorldEvent event) {
-//        saveShops();
-//    }
-
     @Listener
     public void onServerStopping(GameStoppingEvent event) {
         terminateNPCs();
-        saveShops();
+        saveConfigs();
         closeAuditLog();
     }
 
@@ -304,60 +307,11 @@ public class VillagerShops {
         } catch (IOException e) {
             new RuntimeException("Could not load settings.conf", e).printStackTrace();
         }
+
         closeAuditLog();
         if (ConfigSettings.recordAuditLogs())
             createAuditLog();
-    }
 
-    private void loadShops() {
-        //vshops.conf (more database than config)
-        synchronized (npcs) {
-            npcsDirty.set(false);
-            npcs.clear();
-
-            File configFile = new File("config/vshop/vshop.conf");
-            //move legacy config
-            File lc = new File("config/vhop.conf");
-            if (lc.exists() && lc.isFile()) {
-                w("Found legacy config, moving config/vshop.conf to config/cshop/vshop.conf");
-                try {
-                    configFile.getParentFile().mkdirs();
-                    lc.renameTo(configFile);
-                } catch (Exception e) {
-                    logger.error("VillagerShops was unable to move your config to the new location - You'll have to do this manually or your shops won't load!");
-                }
-            }
-            //make backup
-            try {
-                Path configPath = configFile.toPath();
-                Path backupPath = configPath.getParent().resolve("vshop_backup.conf");
-                Files.deleteIfExists(backupPath);
-                Files.copy(configPath, backupPath);
-            } catch (IOException e) {
-                w("Could not backup vshop.conf");
-            }
-
-            ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
-            try {
-                ConfigurationNode root = configManager.load(options);
-                npcs.clear();
-                ConfigurationNode shopNode = root.getNode("shops");
-                if (!shopNode.isVirtual()) {
-                    List<? extends ConfigurationNode> shopList = shopNode.getChildrenList();
-                    for (int i = 0; i < shopList.size(); i++) {
-                        try {
-                            npcs.add(shopList.get(i).getValue(TypeToken.of(NPCguard.class)));
-                        } catch (Exception e) {
-                            System.err.println("Could not load shop "+(i+1)+":");
-                            e.printStackTrace(System.err);
-                            w("Trying to continue parsing the config...");
-                        }
-                    }
-                }
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-        }
         try {
             ConfigurationLoader<CommentedConfigurationNode> limitManager = HoconConfigurationLoader.builder()
                     .setPath(privateConfigDir.resolve("incomeLimits.conf")).build();
@@ -386,25 +340,141 @@ public class VillagerShops {
         } catch (Exception e1) {/**/}
     }
 
-    @SuppressWarnings("serial")
-    void saveShops() {
+    private void updateShopConfigs() {
+        //vshops.conf (more database than config)
         synchronized (npcs) {
-            if (!npcsDirty.getAndSet(false)) {
-                return;
+            npcsDirty.set(false);
+            npcs.clear();
+
+            Path configFile = privateConfigDir.resolve("vshop.conf");
+            //move legacy config
+            Path lc = publicConfigDir.resolve("vhop.conf");
+            if (Files.exists(lc) && Files.isRegularFile(lc)) {
+                w("Found legacy config, moving config/vshop.conf to config/cshop/vshop.conf");
+                try {
+                    Files.createDirectories(privateConfigDir);
+                    Files.move(lc, configFile);
+                } catch (Exception e) {
+                    logger.error("VillagerShops was unable to move your config to the new location - You'll have to do this manually or your shops won't load!");
+                }
             }
-            l("Saving VillagerShops...");
-//            lastSave = System.currentTimeMillis();
+            if (Files.exists(configFile) && Files.isRegularFile(configFile)) {
+                //make backup
+                try {
+                    Path backupFile = privateConfigDir.resolve("vshop_backup.conf");
+                    Files.deleteIfExists(backupFile);
+                    Files.copy(configFile, backupFile);
+                } catch (IOException e) {
+                    w("Could not backup vshop.conf");
+                }
+
+                boolean noErrors = true;
+                ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
+                Map<String, List<ConfigurationNode>> perWorld = new HashMap<>();
+                try {
+                    ConfigurationNode root = configManager.load(options);
+                    npcs.clear();
+                    ConfigurationNode shopNode = root.getNode("shops");
+                    if (!shopNode.isVirtual()) {
+                        List<? extends ConfigurationNode> shopList = shopNode.getChildrenList();
+                        for (int i = 0; i < shopList.size(); i++) {
+                            //poke world uuid
+                            String uuid = shopList.get(i).getNode("location").getNode("WorldUuid").getString();
+                            //collect into list
+                            List<ConfigurationNode> wlist = perWorld.get(uuid);
+                            if (wlist == null) {
+                                wlist = new LinkedList<>();
+                                perWorld.put(uuid, wlist);
+                            }
+                            wlist.add(shopList.get(i).copy());
+                        }
+                    }
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                    noErrors = false;
+                }
+                //dump out per world configs
+                for (Entry<String, List<ConfigurationNode>> entry : perWorld.entrySet()) {
+                    try {
+                        HoconConfigurationLoader loader = HoconConfigurationLoader.builder()
+                                .setDefaultOptions(options)
+                                .setPath(privateConfigDir.resolve("world_" + entry.getKey() + ".conf")).build();
+                        ConfigurationNode wroot = loader.createEmptyNode(options);
+                        wroot.getNode("shops").setValue(entry.getValue());
+                        loader.save(wroot);
+                    } catch (IOException e) {
+                        w("Could not dump shop config for world %s", entry.getKey());
+                        noErrors = false;
+                    }
+                }
+                if (noErrors) {
+                    try {
+                        Files.delete(configFile); // is now converted into perWorld configs
+                    } catch (IOException e) {
+                        w("Could not delete original config - changes will not persist!");
+                    }
+                }
+            }
+        }
+    }
+
+    void loadShops(UUID world) {
+        //vshops.conf (more database than config)
+        synchronized (npcs) {
+            l("Loading shops from world_%s.conf", world.toString());
+//            npcsDirty.set(false);
+//            npcs.clear();
+
+            Path configFile = privateConfigDir.resolve("world_"+world.toString()+".conf");
+            //make backup
+            try {
+                Path backupFile = privateConfigDir.resolve("world_"+world.toString()+"_backup.conf");
+                Files.deleteIfExists(backupFile);
+                Files.copy(configFile, backupFile);
+            } catch (IOException e) {
+                w("Could not backup world_%s.conf!", world.toString());
+            }
 
             ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
             try {
-                ConfigurationNode root = configManager.createEmptyNode(options);
-                root.getNode("shops").setValue(NPCguardSerializer.tokenListNPCguard, npcs);
-                configManager.save(root);
+                HoconConfigurationLoader loader = HoconConfigurationLoader.builder()
+                        .setPath(configFile)
+                        .setDefaultOptions(options).build();
+                ConfigurationNode root = loader.load(options);
+//                npcs.clear();
+                ConfigurationNode shopNode = root.getNode("shops");
+                if (!shopNode.isVirtual()) {
+                    List<? extends ConfigurationNode> shopList = shopNode.getChildrenList();
+                    for (int i = 0; i < shopList.size(); i++) {
+                        try {
+                            npcs.add(shopList.get(i).getValue(TypeToken.of(NPCguard.class)));
+                        } catch (Exception e) {
+                            System.err.println("Could not load shop "+(i+1)+":");
+                            e.printStackTrace(System.err);
+                            w("Trying to continue parsing the config...");
+                        }
+                    }
+                }
             } catch (Exception e1) {
-                Sponge.getServer().getBroadcastChannel().send(Text.of(TextColors.RED, "[VShop] Error: ", e1.getMessage()));
                 e1.printStackTrace();
             }
         }
+    }
+
+    void unloadShops(UUID world) {
+        synchronized (npcs) {
+            Set<NPCguard> toUnload = new HashSet<>();
+            for (NPCguard npc : npcs) {
+                if (npc.getLoc().getExtent().getUniqueId().equals(world))
+                    toUnload.add(npc);
+            }
+            npcs.removeAll(toUnload);
+            l(" > Shops for world %s unloaded", world.toString());
+        }
+    }
+
+    void saveConfigs() {
+        saveShops();
         try {
             ConfigurationLoader<CommentedConfigurationNode> limitManager = HoconConfigurationLoader.builder()
                     .setPath(privateConfigDir.resolve("incomeLimits.conf")).build();
@@ -430,6 +500,38 @@ public class VillagerShops {
             Sponge.getServer().getBroadcastChannel().send(Text.of(TextColors.RED, "[VShop] Error: ", e1.getMessage()));
             e1.printStackTrace();
         }
+    }
+
+    void saveShops() {
+        synchronized (npcs) {
+            if (!npcsDirty.getAndSet(false)) {
+                return;
+            }
+            l("Saving VillagerShops...");
+            for (World w : Sponge.getServer().getWorlds()) {
+                saveShops(w.getUniqueId());
+            }
+        }
+    }
+    @SuppressWarnings("serial")
+    private void saveShops(UUID world) {
+        ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
+        try {
+            HoconConfigurationLoader loader = HoconConfigurationLoader.builder()
+                    .setDefaultOptions(options)
+                    .setPath(privateConfigDir.resolve("world_" + world.toString() + ".conf")).build();
+            ConfigurationNode root = loader.createEmptyNode(options);
+            List<NPCguard> worldNpcs = new LinkedList<>();
+            for (NPCguard npc : npcs)
+                if (npc.getLoc().getExtent().getUniqueId().equals(world))
+                    worldNpcs.add(npc);
+            root.getNode("shops").setValue(NPCguardSerializer.tokenListNPCguard, worldNpcs);
+            loader.save(root);
+        } catch (Exception e1) {
+            Sponge.getServer().getBroadcastChannel().send(Text.of(TextColors.RED, "[VShop] Error: ", e1.getMessage()));
+            e1.printStackTrace();
+        }
+        l(" > Shops for world %s saved", world.toString());
     }
 
     private static void terminateNPCs() {

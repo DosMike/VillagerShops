@@ -13,12 +13,16 @@ import org.spongepowered.api.entity.explosive.Explosive;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.entity.DamageEntityEvent;
 import org.spongepowered.api.event.entity.InteractEntityEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
+import org.spongepowered.api.event.world.LoadWorldEvent;
+import org.spongepowered.api.event.world.SaveWorldEvent;
+import org.spongepowered.api.event.world.UnloadWorldEvent;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.extent.Extent;
@@ -30,7 +34,7 @@ import java.util.UUID;
 
 public class EventListeners {
 
-    @Listener
+    @Listener(order= Order.EARLY) //as kind-of protection, run early
     public void onAttackEntity(DamageEntityEvent event) {
         if (event.isCancelled()) return;
         if (!(event.getTargetEntity() instanceof Living)) return;
@@ -130,6 +134,22 @@ public class EventListeners {
                 .map(NPCguard::getPreparator)
                 .map(InvPrep::getMenu)
                 .forEach(m->m.clearPlayerState(event.getTargetEntity().getUniqueId()));
+    }
+
+    @Listener
+    public void onWorldSave(SaveWorldEvent event) {
+        VillagerShops.instance.saveShops();
+    }
+    @Listener
+    public void onWorldUnload(UnloadWorldEvent event) {
+        if (!event.isCancelled()) {
+            VillagerShops.instance.saveShops();
+            VillagerShops.instance.unloadShops(event.getTargetWorld().getUniqueId());
+        }
+    }
+    @Listener
+    public void onWorldLoad(LoadWorldEvent event) {
+        VillagerShops.instance.loadShops(event.getTargetWorld().getUniqueId());
     }
 
 
