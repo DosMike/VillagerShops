@@ -34,7 +34,11 @@ public class NPCguardSerializer implements TypeSerializer<NPCguard> {
     public void serialize(TypeToken<?> arg0, NPCguard npc, ConfigurationNode rootNode) throws ObjectMappingException {
         rootNode.getNode("uuid").setValue(npc.getIdentifier().toString());
         rootNode.getNode("items").setValue(tokenListStockItem, npc.getPreparator().getAllItems());
-        rootNode.getNode("location").setValue(tokenLocationWorld, npc.getLoc());
+        ConfigurationNode location = rootNode.getNode("location");
+        location.getNode("WorldUuid").setValue(npc.getLoc().getExtent().getUniqueId().toString());
+        location.getNode("X").setValue(npc.getLoc().getX());
+        location.getNode("Y").setValue(npc.getLoc().getY());
+        location.getNode("Z").setValue(npc.getLoc().getZ());
         rootNode.getNode("rotation").setValue(npc.getRot().getY()); // we only need the yaw rotationb
         rootNode.getNode("entitytype").setValue(npc.getNpcType().getId());
         rootNode.getNode("variant").setValue(npc.getVariantName());
@@ -65,7 +69,14 @@ public class NPCguardSerializer implements TypeSerializer<NPCguard> {
         if (items == null) items = new LinkedList<>();
         ip.setAllItems(items);
         npc.setPreparator(ip);
-        npc.setLoc(cfg.getNode("location").getValue(tokenLocationWorld));
+        ConfigurationNode location = cfg.getNode("location");
+        try {
+            World w = Sponge.getServer().getWorld(UUID.fromString(location.getNode("WorldUuid").getString("??"))).get();
+            Vector3d v = new Vector3d(location.getNode("X").getDouble(), location.getNode("Y").getDouble(), location.getNode("Z").getDouble());
+            npc.setLoc(new Location<>(w,v));
+        } catch (Exception e) {
+            throw new ObjectMappingException("Could not load location for shop", e);
+        }
         npc.setRot(new Vector3d(0.0, cfg.getNode("rotation").getDouble(0.0), 0.0));
         npc.setNpcType(Sponge.getRegistry().getType(EntityType.class, cfg.getNode("entitytype").getString("minecraft:villager")).orElse(null));
         npc.setVariant(cfg.getNode("variant").getString("NONE"));

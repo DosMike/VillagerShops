@@ -33,7 +33,7 @@ final public class MTranslatableButton extends IElementImpl implements IClickabl
     private List<String> loreLineTransaltions = new LinkedList<>();
 
     @Override
-    public OnClickListener getOnClickListerner() {
+    public OnClickListener getOnClickListener() {
         return clickListener;
     }
 

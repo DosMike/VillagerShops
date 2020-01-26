@@ -127,7 +127,7 @@ final public class MSpinnerIndex extends IElementImpl implements IClickable<MSpi
     }
 
     @Override
-    public OnClickListener<MSpinnerIndex> getOnClickListerner() {
+    public OnClickListener<MSpinnerIndex> getOnClickListener() {
         return internalClickListener;
     }
 

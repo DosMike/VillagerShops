@@ -82,7 +82,7 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
     }
 
     @Override
-    public OnClickListener<MShop> getOnClickListerner() {
+    public OnClickListener<MShop> getOnClickListener() {
         return clickListener;
     }
 

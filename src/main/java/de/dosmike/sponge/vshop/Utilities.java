@@ -1,8 +1,6 @@
 package de.dosmike.sponge.vshop;
 
-import ninja.leaping.configurate.ConfigurationNode;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
@@ -11,16 +9,12 @@ import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.economy.Currency;
-import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import javax.swing.text.NumberFormatter;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
