@@ -3,19 +3,24 @@ package de.dosmike.sponge.vshop.shops;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.systems.GameDictHelper;
+import de.dosmike.sponge.vshop.systems.ItemFilter;
+import de.dosmike.sponge.vshop.systems.ItemNBTCleaner;
+import de.dosmike.sponge.vshop.systems.PluginItemServiceImpl;
 import org.spongepowered.api.GameDictionary;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.entity.EntityTypes;
+import org.spongepowered.api.entity.Item;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemType;
-import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.Slot;
+import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.inventory.*;
 import org.spongepowered.api.item.inventory.entity.Hotbar;
 import org.spongepowered.api.item.inventory.entity.MainPlayerInventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
+import org.spongepowered.api.item.inventory.transaction.InventoryTransactionResult;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.Account;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
@@ -49,6 +54,11 @@ public class StockItem {
          * Use the forge OreDict to check if items can sell
          */
         OREDICT,
+        /**
+         * Plugins can now register custom filters for things
+         * like VoteKeys
+         */
+        PLUGIN
         ;
         public static FilterOptions of(String v) {
             for (FilterOptions o : values()) {
@@ -59,7 +69,8 @@ public class StockItem {
         }
     };
     private FilterOptions nbtfilter = FilterOptions.NORMAL;
-    private String oreDictEntry = null;
+    private String filterNameExtra = null;
+    private ItemFilter pluginFilter = null;
 
     private Currency currency; //currency to use
     private Double sellprice = null, buyprice = null; //This IS the SINGLE ITEM price
@@ -93,7 +104,7 @@ public class StockItem {
         this.oreDictEntries = GameDictHelper.getAll(oreDictEntry);
         if (oreDictEntries.isEmpty()) throw new IllegalArgumentException("No Game Dictionary entry for "+oreDictEntry);
 
-        this.oreDictEntry = oreDictEntry;
+        this.filterNameExtra = oreDictEntry;
         item = oreDictEntries.get(0).getTemplate().createStack();
         if (sellfor != null && sellfor >= 0) this.sellprice = sellfor;
         if (buyfor != null && buyfor >= 0) this.buyprice = buyfor;
@@ -101,9 +112,55 @@ public class StockItem {
         this.maxStock = stockLimit;
         this.nbtfilter = FilterOptions.OREDICT;
     }
+    /**
+     * forces filterOption to PLUGIN
+     */
+    public StockItem(ItemStack itemstack, String pluginItemFilter, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
+        this.pluginFilter = PluginItemServiceImpl.getItemFilter(pluginItemFilter)
+                .orElseThrow(()->new IllegalArgumentException("No Plugin-Filter for "+pluginItemFilter));
+        this.filterNameExtra = pluginItemFilter;
 
-    public ItemStack getItem() {
-        return item.copy();
+        item = itemstack; // item in this case is a fallback
+        if (sellfor != null && sellfor >= 0) this.sellprice = sellfor;
+        if (buyfor != null && buyfor >= 0) this.buyprice = buyfor;
+        this.currency = currency;
+        this.maxStock = stockLimit;
+        this.nbtfilter = FilterOptions.OREDICT;
+    }
+
+    /** @return itemstack for display and value extraction. To actually create items for the user, use createItem() */
+    public ItemStack getItem(boolean pluginItemAdminFlag) {
+        if (pluginFilter != null) {
+            return pluginFilter.getDisplayItem(pluginItemAdminFlag).map(ItemStackSnapshot::createStack).orElseGet(()->item.copy());
+        } else {
+            return item.copy();
+        }
+    }
+    /**
+     * @param amount the exact amount of items this stack shall have
+     * @param pluginItemAdminFlag carry information on whether this item is listed in an admin shop
+     * @return a brand new item stack for the player with up to amount items
+     */
+    public ItemStack createItem(int amount, boolean pluginItemAdminFlag) {
+        if (pluginFilter == null) {
+            ItemStack amountCopy = item.copy();
+            amountCopy.setQuantity(amount);
+            return amountCopy;
+        } else {
+            ItemStack amountCopy = pluginFilter.supply(amount, pluginItemAdminFlag);
+            if (amountCopy == null) {
+                VillagerShops.audit("The item %s did not hand any items to the player! ", filterNameExtra);
+                VillagerShops.critical("The item %s did not hand any items to the player! ", filterNameExtra);
+                VillagerShops.critical("This is probably a bug - Report to the corresponding Plugin author immediately!");
+                return ItemStack.of(ItemTypes.AIR);
+            } else if (amountCopy.getQuantity() != amount) {
+                VillagerShops.audit("The item %s did not supply the correct amount and scammed the customer by %d items. (Trying to correct stack size)", filterNameExtra, Math.abs(amountCopy.getQuantity() - amount));
+                VillagerShops.critical("The item %s did not supply the correct amount and scammed the customer by %d items. (Trying to correct stack size)", filterNameExtra, Math.abs(amountCopy.getQuantity() - amount));
+                VillagerShops.critical("This is probably a bug - Report to the corresponding Plugin author immediately!");
+                amountCopy.setQuantity(amount);
+            }
+            return amountCopy;
+        }
     }
 
     public Double getBuyPrice() {
@@ -126,8 +183,11 @@ public class StockItem {
         return nbtfilter;
     }
 
-    public Optional<String> getOreDictEntry() {
-        return Optional.ofNullable(oreDictEntry);
+    public Optional<String> getFilterNameExtra() {
+        return Optional.ofNullable(filterNameExtra);
+    }
+    public Optional<ItemFilter> getPluginFilter() {
+        return Optional.ofNullable(pluginFilter);
     }
 
     /**
@@ -145,6 +205,7 @@ public class StockItem {
         maxStock = stockLimit;
     }
 
+    /** this is probably broken for non stock-limited items! */
     public int getStocked() {
         return maxStock > 0 ? stocked : item.getQuantity();
     }
@@ -154,14 +215,15 @@ public class StockItem {
     private Inventory filterInventory(Inventory inv) {
         long count = 0L;
         Inventory filtered;
+        final ItemStack TEMPLATE = ItemNBTCleaner.filter(item);
         if (nbtfilter == FilterOptions.IGNORE_NBT) {
-            filtered = inv.query(QueryOperationTypes.ITEM_TYPE.of(item.getType()));
+            filtered = inv.query(QueryOperationTypes.ITEM_TYPE.of(TEMPLATE.getType()));
         } else if (nbtfilter == FilterOptions.IGNORE_DAMAGE) {
-            DataContainer j = item.toContainer()
+            DataContainer j = TEMPLATE.toContainer()
                     .remove(dqDamageMeta)
                     .remove(dqStackSize);
             filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of((i)->
-                i.toContainer()
+                ItemNBTCleaner.filter(i.toContainer())
                         .remove(dqDamageMeta)
                         .remove(dqStackSize)
                         .equals(j)
@@ -170,17 +232,20 @@ public class StockItem {
             filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of(i ->
                 oreDictEntries.stream().anyMatch(e->e.matches(i))
             ));
+        } else if (nbtfilter == FilterOptions.PLUGIN) {
+            filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of(item->pluginFilter.isItem(ItemNBTCleaner.filter(item))));
         } else if (nbtfilter == FilterOptions.TYPE_ONLY) {
             ItemType type = item.getType();
-            int meta = (item.supports(Keys.ITEM_DURABILITY) ? 0 : item.toContainer().getInt(dqDamageMeta).orElse(0));
+            int meta = (TEMPLATE.supports(Keys.ITEM_DURABILITY) ? 0 : TEMPLATE.toContainer().getInt(dqDamageMeta).orElse(0));
             filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of(i -> {
                         if (!i.getType().equals(type)) return false;
-                        int imeta = (i.supports(Keys.ITEM_DURABILITY) ? 0 : item.toContainer().getInt(dqDamageMeta).orElse(0));
+                        int imeta = (i.supports(Keys.ITEM_DURABILITY) ? 0 : TEMPLATE.toContainer().getInt(dqDamageMeta).orElse(0));
                         return meta == imeta;
                     }
             ));
         } else {
-            filtered = inv.query(QueryOperationTypes.ITEM_STACK_IGNORE_QUANTITY.of(item));
+            filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of(item->ItemStackComparators.IGNORE_SIZE.compare(ItemNBTCleaner.filter(item), TEMPLATE)==0));
+//            filtered = inv.query(QueryOperationTypes.ITEM_STACK_IGNORE_QUANTITY.of(item));
         }
         return filtered;
     }
@@ -196,35 +261,43 @@ public class StockItem {
      * Tries to take a certain amount of items represented by this item from the inventory
      *
      * @param quantity the amount of items supposed to take, overriding the default in item
-     * @return the amount of items taken out of the inventory
+     * @return the ItemStacks taken from the inventory
      */
-    public int getFrom(Inventory inv, int quantity) {
+    public Set<ItemStack> getFrom(Inventory inv, int quantity) {
         int ammountLeft = quantity;
+        Set<ItemStack> stacks = new HashSet<>();
         Inventory result = filterInventory(inv);
         for (Inventory s : result.slots()) {
             ItemStack onSlot = s.poll(ammountLeft).orElse(null);
             if (onSlot == null) continue;
             if (onSlot.getQuantity() <= ammountLeft) {
+                stacks.add(onSlot);
+
                 ammountLeft -= onSlot.getQuantity();
             } else {
+                ItemStack taken = onSlot.copy();
+                taken.setQuantity(ammountLeft);
+                stacks.add(taken);
+
                 onSlot.setQuantity(onSlot.getQuantity() - ammountLeft);
                 ammountLeft = 0;
                 s.offer(onSlot);
             }
             if (ammountLeft == 0) break;
         }
-        return quantity - ammountLeft;
+//        return quantity - ammountLeft;
+        return stacks;
     }
 
-    /**
-     * Tries to take the represented item with the given quantity from the inventory.
-     * If the item has max stock, it will get the minimum of remaining stock and available items.
-     *
-     * @return the amount of items taken out of the inventory
-     */
-    public int getFrom(Inventory inv) {
-        return getFrom(inv, maxStock <= 0 ? item.getQuantity() : Math.min(item.getQuantity(), maxStock - stocked));
-    }
+//    /**
+//     * Tries to take the represented item with the given quantity from the inventory.
+//     * If the item has max stock, it will get the minimum of remaining stock and available items.
+//     *
+//     * @return the amount of items taken out of the inventory
+//     */
+//    public int getFrom(Inventory inv) {
+//        return getFrom(inv, maxStock <= 0 ? item.getQuantity() : Math.min(item.getQuantity(), maxStock - stocked));
+//    }
 
     public ShopResult buy(Player player, NPCguard shop, int maxAmount) {
         Optional<UniqueAccount> account = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
@@ -296,10 +369,15 @@ public class StockItem {
                 VillagerShops.getIncomeLimiter().registerSpending(player, price);
 
             //item transaction
-            ItemStack stack = getItem();
-            stack.setQuantity(amount);
-            playerInv.offer(stack);
-            getFrom(stock.get(), amount);
+            //is trying to actually move items a good idea?
+            getFrom(stock.get(),amount).forEach(stack->{
+                InventoryTransactionResult result = playerInv.offer(stack);
+                result.getRejectedItems().forEach(rejected->{ // drop the items into the world if they for some reason do not fit
+                    Item drop = (Item)player.getLocation().getExtent().createEntity(EntityTypes.ITEM, player.getPosition());
+                    drop.offer(Keys.REPRESENTED_ITEM, rejected);
+                    player.getLocation().getExtent().spawnEntity(drop);
+                });
+            });
 
             return ShopResult.OK(amount);
         } else {
@@ -348,9 +426,7 @@ public class StockItem {
                 VillagerShops.getIncomeLimiter().registerSpending(player, price);
 
             //item transaction
-            ItemStack stack = getItem();
-            stack.setQuantity(amount);
-            playerInv.offer(stack);
+            playerInv.offer(createItem(amount, shop.getShopOwner().isPresent()));
 
             return ShopResult.OK(amount);
         }
@@ -387,10 +463,12 @@ public class StockItem {
             else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
 
             //item transaction
-            ItemStack stack = getItem();
-            stack.setQuantity(amount);
-            stock.get().offer(stack);
-            getFrom(playerInv, amount);
+            // this creates new items, to ensure the offer only uses 1 item type
+            // allowing items to stack better
+            stock.get().offer(createItem(amount, shop.getShopOwner().isPresent()));
+            Set<ItemStack> removed = getFrom(playerInv, amount);
+            //notify the plugin, that these items are now gone
+            if (pluginFilter != null) removed.forEach(item -> pluginFilter.consume(item, shop.getShopOwner().isPresent()));
 
             return ShopResult.OK(amount);
         } else {
@@ -419,7 +497,9 @@ public class StockItem {
             else if (!res.getResult().equals(ResultType.SUCCESS)) return ShopResult.GENERIC_FAILURE;
 
             //item transaction
-            getFrom(playerInv, amount);
+            Set<ItemStack> removed = getFrom(playerInv, amount);
+            //notify the plugin, that these items are now gone
+            if (pluginFilter != null) removed.forEach(item -> pluginFilter.consume(item, shop.getShopOwner().isPresent()));
 
             return ShopResult.OK(amount);
         }
@@ -455,9 +535,9 @@ public class StockItem {
     /** Custom toString { info } */
     @Override
     public String toString() {
-        return String.format("{ %s: %s, filter: %s buyprice: %s, sellprice: %s, currency: %s, limit: %s }",
-                oreDictEntry!=null ? "oredict" : "item",
-                oreDictEntry!=null ? oreDictEntry : Utilities.toString(item),
+        return String.format("{ %s: %s, filter: %s, buyprice: %s, sellprice: %s, currency: %s, limit: %s }",
+                filterNameExtra !=null ? "filtername" : "item",
+                filterNameExtra !=null ? filterNameExtra : Utilities.toString(item),
                 nbtfilter.toString(),
                 buyprice!=null ? buyprice.toString() : "N/A",
                 sellprice!=null ? sellprice.toString() : "N/A",

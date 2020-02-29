@@ -9,9 +9,7 @@ import de.dosmike.sponge.vshop.shops.NPCguard;
 import de.dosmike.sponge.vshop.shops.NPCguardSerializer;
 import de.dosmike.sponge.vshop.shops.StockItem;
 import de.dosmike.sponge.vshop.shops.StockItemSerializer;
-import de.dosmike.sponge.vshop.systems.IncomeLimiterService;
-import de.dosmike.sponge.vshop.systems.LedgerManager;
-import de.dosmike.sponge.vshop.systems.TranslationLoader;
+import de.dosmike.sponge.vshop.systems.*;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -26,10 +24,7 @@ import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.game.state.GameInitializationEvent;
-import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
-import org.spongepowered.api.event.game.state.GameStartedServerEvent;
-import org.spongepowered.api.event.game.state.GameStoppingEvent;
+import org.spongepowered.api.event.game.state.*;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
@@ -57,8 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-@Plugin(id = "vshop", name = "VillagerShops",
-        version = "2.4")
+@Plugin(id = "vshop", name = "VillagerShops", version = "2.5")
 public class VillagerShops {
 
     public static void main(String[] args) { System.err.println("This plugin can not be run as executable!");
@@ -131,9 +125,11 @@ public class VillagerShops {
     public static void l(String format, Object... args) {
         instance.logger.info(String.format(format, args));
     }
-
     public static void w(String format, Object... args) {
         instance.logger.warn(String.format(format, args));
+    }
+    public static void critical(String format, Object... args) {
+        instance.logger.error(String.format(format, args));
     }
 
     public static Random rng = new Random(System.currentTimeMillis());
@@ -238,7 +234,7 @@ public class VillagerShops {
     private Path publicConfigDir;
 
     @Listener
-    public void onServerInit(GameInitializationEvent event) {
+    public void onServerPreInit(GamePreInitializationEvent event) {
         instance = this;
 
         incomeLimiter = new IncomeLimiterService();
@@ -248,7 +244,20 @@ public class VillagerShops {
         customSerializer.registerType(TypeToken.of(StockItem.class), new StockItemSerializer());
         customSerializer.registerType(TypeToken.of(NPCguard.class), new NPCguardSerializer());
 
+        // This service needs to become available before plugins try to use it,
+        // and those plugins need to use the service before shops load.
+        // -> Plugins will have to use the service in GameInit
+        Sponge.getServiceManager().setProvider(this, PluginItemService.class, new PluginItemServiceImpl());
+    }
+
+    @Listener
+    public void onServerInit(GameInitializationEvent event) {
         Sponge.getEventManager().registerListeners(this, new EventListeners());
+
+        l("Registering commands...");
+        CommandRegistra.register();
+        l("Loading configs...");
+        loadConfigs();
     }
 
     @Listener
@@ -259,17 +268,7 @@ public class VillagerShops {
 
     @Listener
     public void onServerStart(GameStartedServerEvent event) {
-        l("Registering commands...");
-        CommandRegistra.register();
-
-        try {
-            userStorage = Sponge.getServiceManager().provide(UserStorageService.class).get();
-        } catch (Exception e) {
-            w("Unable to fetch user service, sponge:humans won't be skinnable");
-            e.printStackTrace();
-        }
-
-        loadConfigs();
+        l("Starting timers...");
         startTimers();
 
         //these two calls depend on loadConfig()
@@ -295,7 +294,8 @@ public class VillagerShops {
             CommentedConfigurationNode root = loader.load(ConfigurationOptions.defaults());
             if (root.getNode("DefaultStackSize").isVirtual() ||
                 root.getNode("SmartClick").isVirtual() ||
-                root.getNode("AuditLogs").isVirtual()) {
+                root.getNode("AuditLogs").isVirtual() ||
+                root.getNode("NBTblacklist").isVirtual()) {
                 HoconConfigurationLoader defaultLoader = HoconConfigurationLoader.builder()
                         .setURL(Sponge.getAssetManager().getAsset(this, "default_settings.conf").get().getUrl())
                         .build();

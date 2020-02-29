@@ -6,10 +6,7 @@ import de.dosmike.sponge.vshop.menus.InvPrep;
 import de.dosmike.sponge.vshop.shops.FieldResolver;
 import de.dosmike.sponge.vshop.shops.NPCguard;
 import de.dosmike.sponge.vshop.shops.StockItem;
-import de.dosmike.sponge.vshop.systems.ChestLinkManager;
-import de.dosmike.sponge.vshop.systems.GameDictHelper;
-import de.dosmike.sponge.vshop.systems.LedgerManager;
-import de.dosmike.sponge.vshop.systems.TranslationLoader;
+import de.dosmike.sponge.vshop.systems.*;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -184,7 +181,16 @@ public class CommandRegistra {
                         ).valueFlag(
                             GenericArguments.integer(Text.of("slot")), "o"
                         ).valueFlag(
-                            GenericArguments.enumValue(Text.of("filter"), StockItem.FilterOptions.class), "-filter"
+                            //GenericArguments.enumValue(Text.of("filter"), StockItem.FilterOptions.class), "-filter"
+                            GenericArguments.choices(Text.of("filter"), ()->{
+                                List<String> choices = new LinkedList<>();
+                                for(StockItem.FilterOptions option : StockItem.FilterOptions.values())
+                                    if (option != StockItem.FilterOptions.PLUGIN)
+                                        choices.add(option.name());
+                                choices.addAll(PluginItemServiceImpl.getRegisteredIds());
+                                choices.sort(Comparator.naturalOrder());
+                                return choices;
+                            }, Function.identity(), false), "-filter"
                         ).buildWith(GenericArguments.seq(
                             GenericArguments.onlyOne(GenericArguments.string(Text.of("BuyPrice"))),
                             GenericArguments.onlyOne(GenericArguments.string(Text.of("SellPrice"))),
@@ -233,12 +239,21 @@ public class CommandRegistra {
                         }
                     }
                     StockItem.FilterOptions nbtfilter = StockItem.FilterOptions.NORMAL;
+                    String pluginFilter = null;
                     if (args.hasAny("filter")) {
-                        nbtfilter = args.<StockItem.FilterOptions>getOne("filter").orElse(StockItem.FilterOptions.NORMAL);
-                        if (nbtfilter.equals(StockItem.FilterOptions.OREDICT) && !GameDictHelper.hasGameDict()) {
-                            throw new CommandException(Text.of(TextColors.RED,
-                                            lang.local("cmd.add.filter.nooredict").resolve(player).orElse("[no oredict]"))
-                            );
+                        String filterName = args.<String>getOne("filter").get();
+                        if (filterName.indexOf(':')>=0) {
+                            nbtfilter = StockItem.FilterOptions.PLUGIN;
+                            if (!PluginItemServiceImpl.getItemFilter(filterName).isPresent())
+                                throw new CommandException(Text.of(TextColors.RED, "Unknown Plugin Item - This should not be selectable?"));
+                            pluginFilter = filterName;
+                        } else {
+                            nbtfilter = StockItem.FilterOptions.valueOf(filterName);
+                            if (nbtfilter.equals(StockItem.FilterOptions.OREDICT) && !GameDictHelper.hasGameDict()) {
+                                throw new CommandException(Text.of(TextColors.RED,
+                                        lang.local("cmd.add.filter.nooredict").resolve(player).orElse("[no oredict]"))
+                                );
+                            }
                         }
                     }
 
@@ -274,7 +289,11 @@ public class CommandRegistra {
                                 lang.local("cmd.add.itemisair").resolve(player).orElse("[Item is air]")));
                     }
                     StockItem newItem;
-                    if (nbtfilter.equals(StockItem.FilterOptions.OREDICT)) {
+                    if (nbtfilter.equals(StockItem.FilterOptions.PLUGIN)) {
+                        newItem = new StockItem(item.get(), pluginFilter, sellFor, buyFor,
+                                Utilities.CurrencyByName((String) args.getOne("Currency").orElse(null)),
+                                limit);
+                    } else if (nbtfilter.equals(StockItem.FilterOptions.OREDICT)) {
                         Collection<String> keys = GameDictHelper.getKeys(item.get());
                         VillagerShops.l("Found oredict entries: %s", String.join(", ", keys));
                         if (keys.size() > 1){
@@ -815,11 +834,12 @@ public class CommandRegistra {
             auditOverwrite = prep.getItem(position).toString();
             prep.setItem(position, item);
         }
+        ItemStack displayItem = item.getItem(guard.get().getShopOwner().isPresent());
         player.sendMessage(Text.of(
                 TextColors.GREEN, "[vShop] ",
                 lang.localText(position < 0 ? "cmd.add.success" : "cmd.add.replaced")
-                        .replace("%item%", Text.of(TextColors.RESET, item.getItem().get(Keys.DISPLAY_NAME)
-                                .orElse(Text.of(item.getItem().getType().getTranslation().get(Utilities.playerLocale(player)))), TextColors.GREEN))
+                        .replace("%item%", Text.of(TextColors.RESET, displayItem.get(Keys.DISPLAY_NAME)
+                                .orElse(Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(player)))), TextColors.GREEN))
                         .replace("%pos%", prep.size())
                         .resolve(player).orElse(Text.of(position < 0 ? "[item added]" : "[item replaced]"))
         ));

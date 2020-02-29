@@ -8,6 +8,7 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.text.Text;
@@ -65,21 +66,23 @@ public class InteractionHandler {
         ShopResult result;
         double finalPrice;
 
+        ItemStack displayItem = item.getItem(shop.getShopOwner().isPresent());
+
         if (doBuy) {
             if (item.getBuyPrice() == null) return 0;
             result = item.buy(player, shop, amount);
             if (result.getTradedItems() > 0) {
-                finalPrice = item.getBuyPrice() * (double) result.getTradedItems() / (double) item.getItem().getQuantity();
+                finalPrice = item.getBuyPrice() * (double) result.getTradedItems() / (double) displayItem.getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.buy.message")
                         .replace("%balance%", Utilities.nf(acc.get().getBalance(currency), Utilities.playerLocale(player)))
                         .replace("%currency%", currency.getSymbol())
                         .replace("%payed%", Utilities.nf(finalPrice, Utilities.playerLocale(player)))
                         .replace("%amount%", result.getTradedItems())
-                        .replace("%item%", item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getType().getTranslation().get(Utilities.playerLocale(player)))))
+                        .replace("%item%", displayItem.get(Keys.DISPLAY_NAME).orElse(Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(player)))))
                         .resolve(player).orElse(Text.of("[items bought]")
                         ));
                 if (shop.getShopOwner().isPresent()) {
-                    LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), finalPrice, item.getCurrency(), item.getItem().getType(), result.getTradedItems());
+                    LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), finalPrice, item.getCurrency(), displayItem.getType(), result.getTradedItems());
                     trans.toDatabase();
                     LedgerManager.backstuffChat(trans);
                 }
@@ -95,17 +98,17 @@ public class InteractionHandler {
             if (item.getSellPrice() == null) return 0;
             result = item.sell(player, shop, amount);
             if (result.getTradedItems() > 0) {
-                finalPrice = item.getSellPrice() * (double) result.getTradedItems() / (double) item.getItem().getQuantity();
+                finalPrice = item.getSellPrice() * (double) result.getTradedItems() / (double) displayItem.getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.sell.message")
                         .replace("%balance%", Utilities.nf(acc.get().getBalance(currency), Utilities.playerLocale(player)))
                         .replace("%currency%", currency.getSymbol())
                         .replace("%payed%", Utilities.nf(finalPrice, Utilities.playerLocale(player)))
                         .replace("%amount%", result.getTradedItems())
-                        .replace("%item%", item.getItem().get(Keys.DISPLAY_NAME).orElse(Text.of(item.getItem().getType().getTranslation().get(Utilities.playerLocale(player)))))
+                        .replace("%item%", displayItem.get(Keys.DISPLAY_NAME).orElse(Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(player)))))
                         .resolve(player).orElse(Text.of("[items sold]")
                         ));
                 if (shop.getShopOwner().isPresent()) {
-                    LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), -finalPrice, item.getCurrency(), item.getItem().getType(), result.getTradedItems());
+                    LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), -finalPrice, item.getCurrency(), displayItem.getType(), result.getTradedItems());
                     trans.toDatabase();
                     LedgerManager.backstuffChat(trans);
                 }
