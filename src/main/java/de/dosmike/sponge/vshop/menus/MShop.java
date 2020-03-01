@@ -71,9 +71,9 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
         int quantity;
         if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
             quantity = stockItem.getPluginFilter().map(quantityValues::getStackSize)
-                    .orElseGet(() -> quantityValues.getStackSize(stockItem.getItem(shop.getShopOwner().isPresent()).getType()));
+                    .orElseGet(() -> quantityValues.getStackSize(stockItem.getItem(!shop.getShopOwner().isPresent()).getType()));
         } else {
-            quantity = quantityValues.getStackSize(stockItem.getItem(shop.getShopOwner().isPresent()).getType());
+            quantity = quantityValues.getStackSize(stockItem.getItem(!shop.getShopOwner().isPresent()).getType());
         }
 
         int change = InteractionHandler.shopItemClicked(player, shop, stockItem, doBuy, quantity);
@@ -112,7 +112,7 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
                 if (shopID != null) {
                     NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
                     if (shop != null) {
-                        displayItem = stockItem.getItem(shop.getShopOwner().isPresent());
+                        displayItem = stockItem.getItem(!shop.getShopOwner().isPresent());
                     }
                 }
             }

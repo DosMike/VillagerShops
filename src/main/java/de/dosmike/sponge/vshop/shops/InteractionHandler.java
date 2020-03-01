@@ -66,7 +66,7 @@ public class InteractionHandler {
         ShopResult result;
         double finalPrice;
 
-        ItemStack displayItem = item.getItem(shop.getShopOwner().isPresent());
+        ItemStack displayItem = item.getItem(!shop.getShopOwner().isPresent());
 
         if (doBuy) {
             if (item.getBuyPrice() == null) return 0;

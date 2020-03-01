@@ -20,6 +20,7 @@ public class ShopResult {
     }
 
     public static final ShopResult GENERIC_FAILURE = new ShopResult(0, "shop.generic.transactionfailure");
+    public static final ShopResult INCOMPATIBLE_SHOPTYPE = new ShopResult(0, "shop.generic.incompatibletype");
     public static final ShopResult CUSTOMER_LOW_BALANCE = new ShopResult(0, "shop.customer.lowbalance");
     public static final ShopResult SHOPOWNER_LOW_BALANCE = new ShopResult(0, "shop.shopowner.lowbalance");
     public static final ShopResult CUSTOMER_HIGH_BALANCE = new ShopResult(0, "shop.customer.highbalance");

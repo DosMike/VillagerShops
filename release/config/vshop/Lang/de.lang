@@ -19,6 +19,10 @@ cmd.add.limit.adminshop:Du kannst den Vorrat in einem Admin-Shop nicht begrenzen
 cmd.add.overwrite.index:And der angegebenen Position befindet sich kein Item
 cmd.add.filter.nooredict:Der server usterstützt OreDict nicht
 cmd.add.filter.oredictchoice:Das Item hat mehrere OreDict Einträge. Bitte wähle einen:
+cmd.add.filter.missing:Es wurde kein Filter für %filter% gefunden.
+cmd.add.filter.adminonly:Dieses Item kann nur von Admin-Shops gehandelt werden.
+cmd.add.filter.playeronly:Dieses Item kann nur von Player-Shops gehandelt werden.
+cmd.add.filter.incomaptible:Diese Item passt nicht zum Filter.
 cmd.add.buyprice:Der KaufPreis war nicht '~' oder eine Zahl
 cmd.add.sellprice:Der VerkaufsPreis war nicht '~' oder eine Zahl
 cmd.add.noprice:Du musst mindestens einen Betrag für KaufsPreis oder VerkaufsPreis angeben!
@@ -57,6 +61,7 @@ shop.item.filter.oredict:Kauft alle OreDict %oredict%
 shop.buy.message:§6%balance%%currency%§r (§c-%payed%%currency%§r): §e%amount%§rx %item% gekauft
 shop.sell.message:§6%balance%%currency%§r (§a+%payed%%currency%§r): §e%amount%§rx %item% verkauft
 shop.generic.transactionfailure:Fehler bei der Transaktion! - Bitte dem Enwickler melden
+shop.generic.incompatibletype:Dieses Item kann nicht von diesem Shop-Typ gehandelt werden
 shop.customer.highbalance:Es ist klein platz mehr auf deinem Bankkonto
 shop.shopowner.highbalance:Das Bankkonto des Shop-Besitzers ist voll 
 shop.customer.lowbalance:Du hast nicht genug Geld

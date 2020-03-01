@@ -57,6 +57,7 @@ public class CommandRegistra {
         };
 
         children = new HashMap<>();
+        //region create
         children.put(Collections.singletonList("create"), CommandSpec.builder()
                 .arguments(
                         GenericArguments.flags().valueFlag(
@@ -175,6 +176,8 @@ public class CommandRegistra {
                     VillagerShops.audit("%s created a new shop %s", Utilities.toString(src), npc.toString());
                     return CommandResult.success();
                 }).build());
+        //endregion
+        //region add
         children.put(Collections.singletonList("add"), CommandSpec.builder()
                 .arguments(GenericArguments.flags().valueFlag(
                             GenericArguments.integer(Text.of("limit")), "l"
@@ -231,29 +234,12 @@ public class CommandRegistra {
                     Double buyFor, sellFor;
                     int limit = 0;
                     if (args.hasAny("limit")) {
+                        // check for player-shop, only those have stock
                         if (!npc.get().isShopOwner(player.getUniqueId())) {
                             throw new CommandException(Text.of(TextColors.RED,
                                     lang.local("cmd.add.limit.adminshop").resolve(player).orElse("[cant limit stockless]")));
                         } else {
                             limit = args.<Integer>getOne("limit").orElse(0);
-                        }
-                    }
-                    StockItem.FilterOptions nbtfilter = StockItem.FilterOptions.NORMAL;
-                    String pluginFilter = null;
-                    if (args.hasAny("filter")) {
-                        String filterName = args.<String>getOne("filter").get();
-                        if (filterName.indexOf(':')>=0) {
-                            nbtfilter = StockItem.FilterOptions.PLUGIN;
-                            if (!PluginItemServiceImpl.getItemFilter(filterName).isPresent())
-                                throw new CommandException(Text.of(TextColors.RED, "Unknown Plugin Item - This should not be selectable?"));
-                            pluginFilter = filterName;
-                        } else {
-                            nbtfilter = StockItem.FilterOptions.valueOf(filterName);
-                            if (nbtfilter.equals(StockItem.FilterOptions.OREDICT) && !GameDictHelper.hasGameDict()) {
-                                throw new CommandException(Text.of(TextColors.RED,
-                                        lang.local("cmd.add.filter.nooredict").resolve(player).orElse("[no oredict]"))
-                                );
-                            }
                         }
                     }
 
@@ -288,9 +274,50 @@ public class CommandRegistra {
                         throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                                 lang.local("cmd.add.itemisair").resolve(player).orElse("[Item is air]")));
                     }
+
+
+                    StockItem.FilterOptions nbtfilter = StockItem.FilterOptions.NORMAL;
+                    PluginItemFilter pluginItemFilter = PluginItemServiceImpl.getEnforcedFilter(item.get()).orElse(null);
+                    if (pluginItemFilter == null && args.hasAny("filter")) {
+                        String filterName = args.<String>getOne("filter").get();
+                        if (filterName.indexOf(':')>=0) {
+                            nbtfilter = StockItem.FilterOptions.PLUGIN;
+                            if (!PluginItemServiceImpl.getItemFilter(filterName).isPresent())
+                                throw new CommandException(Text.of(TextColors.RED, "Unknown Plugin Item - This should not be selectable?"));
+
+                            Optional<PluginItemFilter> pif = PluginItemServiceImpl.getItemFilter(filterName);
+                            if (!pif.isPresent())
+                                throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
+                                        lang.local("cmd.add.filter.missing")
+                                                .replace("%filter%", filterName)
+                                                .resolve(player).orElse("[No such filter]")));
+
+                            pluginItemFilter = pif.get();
+                        } else {
+                            nbtfilter = StockItem.FilterOptions.valueOf(filterName);
+                            if (nbtfilter.equals(StockItem.FilterOptions.OREDICT) && !GameDictHelper.hasGameDict()) {
+                                throw new CommandException(Text.of(TextColors.RED,
+                                        lang.local("cmd.add.filter.nooredict").resolve(player).orElse("[no oredict]"))
+                                );
+                            }
+                        }
+                    } else if (pluginItemFilter != null) {
+                        nbtfilter = StockItem.FilterOptions.PLUGIN;
+                    }
+
                     StockItem newItem;
                     if (nbtfilter.equals(StockItem.FilterOptions.PLUGIN)) {
-                        newItem = new StockItem(item.get(), pluginFilter, sellFor, buyFor,
+                        if (!pluginItemFilter.supportShopType(!npc.get().getShopOwner().isPresent()))
+                            throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
+                                    lang.local(npc.get().getShopOwner().isPresent() // is player-shop && denied
+                                            ? "cmd.add.filter.adminonly"
+                                            : "cmd.add.filter.playeronly"
+                                    ).resolve(player).orElse("[Shop not supported]")));
+                        if (!pluginItemFilter.isItem(item.get()))
+                            throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
+                                    lang.local("cmd.add.filter.incomaptible").resolve(player).orElse("[Item <-> Filter missmatch]")));
+
+                        newItem = new StockItem(item.get(), pluginItemFilter, sellFor, buyFor,
                                 Utilities.CurrencyByName((String) args.getOne("Currency").orElse(null)),
                                 limit);
                     } else if (nbtfilter.equals(StockItem.FilterOptions.OREDICT)) {
@@ -344,6 +371,8 @@ public class CommandRegistra {
                     }
                     return CommandResult.success();
                 }).build());
+        //endregion
+        //region remove
         children.put(Collections.singletonList("remove"), CommandSpec.builder()
                 .arguments(
                         GenericArguments.integer(Text.of("Index"))
@@ -386,6 +415,8 @@ public class CommandRegistra {
                         }
                     }
                 }).build());
+        //endregion
+        //region delete
         children.put(Collections.singletonList("delete"), CommandSpec.builder()
                 .arguments(
                         GenericArguments.none()
@@ -422,6 +453,8 @@ public class CommandRegistra {
                         return CommandResult.success();
                     }
                 }).build());
+        //endregion
+        //region save
         children.put(Collections.singletonList("save"), CommandSpec.builder()
                 .permission(PermissionRegistra.ADMIN.getId())
                 .arguments(
@@ -433,6 +466,8 @@ public class CommandRegistra {
                     VillagerShops.audit("%s saved the shops", Utilities.toString(src));
                     return CommandResult.success();
                 }).build());
+        //endregion
+        //region reload
         children.put(Collections.singletonList("reload"), CommandSpec.builder()
                 .permission(PermissionRegistra.ADMIN.getId())
                 .arguments(
@@ -444,6 +479,8 @@ public class CommandRegistra {
                     VillagerShops.audit("%s reloaded the settings", Utilities.toString(src));
                     return CommandResult.success();
                 }).build());
+        //endregion
+        //region list
         children.put(Arrays.asList("list", "get", "for"), CommandSpec.builder()
                 .permission(PermissionRegistra.ADMIN.getId())
                 .arguments(
@@ -572,6 +609,8 @@ public class CommandRegistra {
                         return CommandResult.success();
                     }
                 }).build());
+        //endregion
+        //region identify
         children.put(Arrays.asList("identify", "id"), CommandSpec.builder()
                 .permission(PermissionRegistra.IDENTIFY.getId())
                 .arguments(
@@ -622,6 +661,8 @@ public class CommandRegistra {
                         return CommandResult.success();
                     }
                 }).build());
+        //endregion
+        //region link
         children.put(Collections.singletonList("link"), CommandSpec.builder()
                 .permission(PermissionRegistra.LINKCHEST.getId())
                 .arguments(
@@ -640,6 +681,8 @@ public class CommandRegistra {
 
                     return CommandResult.success();
                 }).build());
+        //endregion
+        //region tphere
         children.put(Collections.singletonList("tphere"), CommandSpec.builder()
                 .permission(PermissionRegistra.MOVE.getId())
                 .arguments(
@@ -691,6 +734,8 @@ public class CommandRegistra {
                     }
                     return CommandResult.success();
                 }).build());
+        //endregion
+        //region ledger
         children.put(Arrays.asList("ledger", "log"), CommandSpec.builder()
                 .permission(PermissionRegistra.LEDGER_ME.getId())
                 .arguments(
@@ -720,7 +765,7 @@ public class CommandRegistra {
                     }
                     return CommandResult.success();
                 }).build());
-
+        //endregion
 
         Sponge.getCommandManager().register(VillagerShops.getInstance(), CommandSpec.builder()
                         .description(Text.of(lang.local("cmd.description.short").toString()))
@@ -834,7 +879,7 @@ public class CommandRegistra {
             auditOverwrite = prep.getItem(position).toString();
             prep.setItem(position, item);
         }
-        ItemStack displayItem = item.getItem(guard.get().getShopOwner().isPresent());
+        ItemStack displayItem = item.getItem(!guard.get().getShopOwner().isPresent());
         player.sendMessage(Text.of(
                 TextColors.GREEN, "[vShop] ",
                 lang.localText(position < 0 ? "cmd.add.success" : "cmd.add.replaced")

@@ -3,8 +3,8 @@ package de.dosmike.sponge.vshop.shops;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.systems.GameDictHelper;
-import de.dosmike.sponge.vshop.systems.ItemFilter;
 import de.dosmike.sponge.vshop.systems.ItemNBTCleaner;
+import de.dosmike.sponge.vshop.systems.PluginItemFilter;
 import de.dosmike.sponge.vshop.systems.PluginItemServiceImpl;
 import org.spongepowered.api.GameDictionary;
 import org.spongepowered.api.Sponge;
@@ -70,7 +70,7 @@ public class StockItem {
     };
     private FilterOptions nbtfilter = FilterOptions.NORMAL;
     private String filterNameExtra = null;
-    private ItemFilter pluginFilter = null;
+    private PluginItemFilter pluginFilter = null;
 
     private Currency currency; //currency to use
     private Double sellprice = null, buyprice = null; //This IS the SINGLE ITEM price
@@ -115,10 +115,10 @@ public class StockItem {
     /**
      * forces filterOption to PLUGIN
      */
-    public StockItem(ItemStack itemstack, String pluginItemFilter, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
-        this.pluginFilter = PluginItemServiceImpl.getItemFilter(pluginItemFilter)
-                .orElseThrow(()->new IllegalArgumentException("No Plugin-Filter for "+pluginItemFilter));
-        this.filterNameExtra = pluginItemFilter;
+    public StockItem(ItemStack itemstack, PluginItemFilter pluginItemFilter, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
+        this.pluginFilter = pluginItemFilter;
+
+        this.filterNameExtra = PluginItemServiceImpl.getFilterID(pluginItemFilter).get();
 
         item = itemstack; // item in this case is a fallback
         if (sellfor != null && sellfor >= 0) this.sellprice = sellfor;
@@ -186,7 +186,7 @@ public class StockItem {
     public Optional<String> getFilterNameExtra() {
         return Optional.ofNullable(filterNameExtra);
     }
-    public Optional<ItemFilter> getPluginFilter() {
+    public Optional<PluginItemFilter> getPluginFilter() {
         return Optional.ofNullable(pluginFilter);
     }
 
@@ -300,6 +300,9 @@ public class StockItem {
 //    }
 
     public ShopResult buy(Player player, NPCguard shop, int maxAmount) {
+        if (pluginFilter != null && !pluginFilter.supportShopType(!shop.getShopOwner().isPresent()))
+            return ShopResult.INCOMPATIBLE_SHOPTYPE;
+
         Optional<UniqueAccount> account = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
         if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
         Account acc = account.get();
@@ -426,13 +429,16 @@ public class StockItem {
                 VillagerShops.getIncomeLimiter().registerSpending(player, price);
 
             //item transaction
-            playerInv.offer(createItem(amount, shop.getShopOwner().isPresent()));
+            playerInv.offer(createItem(amount, !shop.getShopOwner().isPresent()));
 
             return ShopResult.OK(amount);
         }
     }
 
     public ShopResult sell(Player player, NPCguard shop, int maxAmount) {
+        if (pluginFilter != null && !pluginFilter.supportShopType(!shop.getShopOwner().isPresent()))
+            return ShopResult.INCOMPATIBLE_SHOPTYPE;
+
         Optional<UniqueAccount> account = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
         if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
         Account acc = account.get();
@@ -465,10 +471,10 @@ public class StockItem {
             //item transaction
             // this creates new items, to ensure the offer only uses 1 item type
             // allowing items to stack better
-            stock.get().offer(createItem(amount, shop.getShopOwner().isPresent()));
+            stock.get().offer(createItem(amount, !shop.getShopOwner().isPresent()));
             Set<ItemStack> removed = getFrom(playerInv, amount);
             //notify the plugin, that these items are now gone
-            if (pluginFilter != null) removed.forEach(item -> pluginFilter.consume(item, shop.getShopOwner().isPresent()));
+            if (pluginFilter != null) removed.forEach(item -> pluginFilter.consume(item, !shop.getShopOwner().isPresent()));
 
             return ShopResult.OK(amount);
         } else {
@@ -499,7 +505,7 @@ public class StockItem {
             //item transaction
             Set<ItemStack> removed = getFrom(playerInv, amount);
             //notify the plugin, that these items are now gone
-            if (pluginFilter != null) removed.forEach(item -> pluginFilter.consume(item, shop.getShopOwner().isPresent()));
+            if (pluginFilter != null) removed.forEach(item -> pluginFilter.consume(item, !shop.getShopOwner().isPresent()));
 
             return ShopResult.OK(amount);
         }
@@ -512,14 +518,16 @@ public class StockItem {
      * count for each slot, how many of the item it could accept
      */
     private int invSpace(Inventory i) {
+        int maxStack = item.getMaxStackQuantity();
+        if (pluginFilter != null) maxStack = pluginFilter.getMaxStackSize();
         int space = 0, c;
         Inventory result = filterInventory(i);
         for (Inventory s : result.slots()) {
             Slot slot = (Slot) s;
-            c = slot.getStackSize();
-            if (c > 0) space += (item.getMaxStackQuantity() - c);
+            c = slot.totalItems();
+            if (c > 0) space += (maxStack - c);
         }
-        space += (i.capacity() - i.size()) * item.getMaxStackQuantity();
+        space += (i.capacity() - i.size()) * maxStack;
         return space;
     }
 

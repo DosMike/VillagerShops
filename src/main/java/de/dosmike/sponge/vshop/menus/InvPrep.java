@@ -18,7 +18,7 @@ import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.shops.InteractionHandler;
 import de.dosmike.sponge.vshop.shops.NPCguard;
 import de.dosmike.sponge.vshop.shops.StockItem;
-import de.dosmike.sponge.vshop.systems.ItemFilter;
+import de.dosmike.sponge.vshop.systems.PluginItemFilter;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemType;
@@ -54,7 +54,7 @@ public class InvPrep {
         public int getStackSize(ItemType type) {
             return Math.max(1, (int)Math.ceil(type.getMaxStackQuantity()*multiplier));
         }
-        public int getStackSize(ItemFilter filter) {
+        public int getStackSize(PluginItemFilter filter) {
             return Math.max(1, (int)Math.ceil(filter.getMaxStackSize()*multiplier));
         }
     };

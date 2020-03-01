@@ -2,6 +2,7 @@ package de.dosmike.sponge.vshop.shops;
 
 import com.google.common.reflect.TypeToken;
 import de.dosmike.sponge.vshop.Utilities;
+import de.dosmike.sponge.vshop.systems.PluginItemServiceImpl;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
@@ -45,7 +46,8 @@ public class StockItemSerializer implements TypeSerializer<StockItem> {
             try {
                 return new StockItem(
                         ii.getNode("itemstack").getValue(TypeToken.of(ItemStack.class)),
-                        ii.getNode("pluginitem").getString(),
+                        PluginItemServiceImpl.getItemFilter(ii.getNode("pluginitem").getString())
+                            .orElseThrow(()->new ObjectMappingException("Plugin filter no longer provided")),
                         ii.getNode("sellprice").getDouble(-1),
                         ii.getNode("buyprice").getDouble(-1),
                         Utilities.CurrencyByName(ii.getNode("currency").getString(null)),
