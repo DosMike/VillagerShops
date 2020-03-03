@@ -66,9 +66,16 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
         NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
         if (shop == null) return;
 
-        int quantity = getParent().getPlayerState(player).getOfClass(MENU_SHOP_QUANTITY, InvPrep.QuantityValues.class)
-                        .orElse(ConfigSettings.getShopsDefaultStackSize())
-                        .getStackSize(stockItem.getItem().getType());
+        InvPrep.QuantityValues quantityValues = getParent().getPlayerState(player).getOfClass(MENU_SHOP_QUANTITY, InvPrep.QuantityValues.class)
+                        .orElse(ConfigSettings.getShopsDefaultStackSize());
+        int quantity;
+        if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
+            quantity = stockItem.getPluginFilter().map(quantityValues::getStackSize)
+                    .orElseGet(() -> quantityValues.getStackSize(stockItem.getItem(!shop.getShopOwner().isPresent()).getType()));
+        } else {
+            quantity = quantityValues.getStackSize(stockItem.getItem(!shop.getShopOwner().isPresent()).getType());
+        }
+
         int change = InteractionHandler.shopItemClicked(player, shop, stockItem, doBuy, quantity);
         if (change > 0 && stockItem.getMaxStock()>0) {
             shop.getStockInventory().ifPresent(stock->stockItem.updateStock(stock));
@@ -98,27 +105,54 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
         return copy;
     }
 
+    private ItemStack _getDisplayItem(Player viewer) {
+        ItemStack displayItem = null; {
+            if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
+                UUID shopID = Utilities.getOpenShopFor(viewer);
+                if (shopID != null) {
+                    NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+                    if (shop != null) {
+                        displayItem = stockItem.getItem(!shop.getShopOwner().isPresent());
+                    }
+                }
+            }
+            // fallback
+            if (displayItem == null)
+                displayItem = stockItem.getItem(true);
+        }
+        return displayItem;
+    }
+
     private IIcon icon;
     @Override
     public IIcon getIcon(Player viewer) {
         if (markedForRemoval)
             return removeMeIcon;
-        int quantity = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, InvPrep.QuantityValues.class)
-                .orElse(ConfigSettings.getShopsDefaultStackSize())
-                .getStackSize(stockItem.getItem().getType());
+
+        ItemStack displayItem = _getDisplayItem(viewer);
+
+        InvPrep.QuantityValues quantityValues = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, InvPrep.QuantityValues.class)
+                .orElse(ConfigSettings.getShopsDefaultStackSize());
+        int quantity;
+        if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
+            quantity = stockItem.getPluginFilter().map(quantityValues::getStackSize)
+                    .orElse(quantityValues.getStackSize(displayItem.getType()));
+        } else {
+            quantity = quantityValues.getStackSize(displayItem.getType());
+        }
+
         if (icon == null || icon.render().getQuantity() != quantity) {
             //rebuild icon only if necessary, otherwise the animation
             // of the iicon will reset (and resources)
-            if (stockItem.getOreDictEntry().isPresent()) {
+            if (stockItem.getFilterNameExtra().isPresent()) {
                 icon = IIcon.builder().addFrameItemStacks(
                         stockItem.getAllOreDictEntries().stream()
                                 .map(e -> ItemStack.builder().fromSnapshot(e.getTemplate()).quantity(quantity).build())
                                 .collect(Collectors.toList())
                 ).setFPS(1d).build();
             } else {
-                ItemStack display = stockItem.getItem().copy();
-                display.setQuantity(quantity);
-                icon = IIcon.of(display);
+                displayItem.setQuantity(quantity);
+                icon = IIcon.of(displayItem);
             }
         }
         return icon;
@@ -127,11 +161,14 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
     @Override
     public Text getName(Player viewer) {
         //marked for removal replaces the icon with barrier, this we need to supply a custom name to not display "Barrier"
-        return markedForRemoval
-                ? stockItem.getItem().get(Keys.DISPLAY_NAME).orElse(
-                        Text.of(stockItem.getItem().getType().getTranslation().get(Utilities.playerLocale(viewer)))
-                )
-                : null;
+        if (markedForRemoval) {
+            ItemStack displayItem = _getDisplayItem(viewer);
+            return displayItem.get(Keys.DISPLAY_NAME).orElse(
+                    Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(viewer)))
+            );
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -144,7 +181,7 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
                     )
             );
         }
-        ItemStack item = stockItem.getItem();
+        ItemStack item = _getDisplayItem(viewer);
         List<Text> lore = item.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
 
         Text currency = stockItem.getCurrency().getSymbol();
@@ -224,7 +261,7 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
             lore.add(Text.of(TextColors.GRAY,
                     ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.filter.oredict"))
                             .setContextColor(TextColors.GRAY)
-                            .replace("%oredict%", stockItem.getOreDictEntry().get())
+                            .replace("%oredict%", stockItem.getFilterNameExtra().get())
                             .resolve(viewer).orElse(Text.of("shop.item.filter.oredict"))
             ));
         }

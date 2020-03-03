@@ -1,7 +1,9 @@
 package de.dosmike.sponge.vshop;
 
 import de.dosmike.sponge.vshop.menus.InvPrep;
+import de.dosmike.sponge.vshop.systems.ItemNBTCleaner;
 import ninja.leaping.configurate.ConfigurationNode;
+import org.spongepowered.api.util.TypeTokens;
 
 /** intermediate class to store config values more accessible */
 public class ConfigSettings {
@@ -27,6 +29,13 @@ public class ConfigSettings {
         shopsDefaultStackSize = InvPrep.QuantityValues.fromString(node.getNode("DefaultStackSize").getString(""));
         smartClickEnabled = node.getNode("SmartClick").getBoolean(false);
         recordAuditLogs = node.getNode("AuditLogs").getBoolean(false);
+
+        ItemNBTCleaner.clear();
+        try {
+            node.getNode("NBTblacklist").getList(TypeTokens.STRING_TOKEN).forEach(ItemNBTCleaner::addQuery);
+        } catch (Exception e) {
+            VillagerShops.w("Could not read NBT blacklist: %s", e.getMessage());
+        }
     }
 
 }

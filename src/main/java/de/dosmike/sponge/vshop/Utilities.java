@@ -40,9 +40,9 @@ public class Utilities {
         openShops.put(player.getUniqueId(), shopID);
     }
 
-    public static org.spongepowered.api.service.economy.Currency CurrencyByName(String name) {
+    public static Currency CurrencyByName(String name) {
         if (name != null) {
-            for (org.spongepowered.api.service.economy.Currency c : VillagerShops.getEconomy().getCurrencies()) if (c.getId().equals(name)) return c;
+            for (Currency c : VillagerShops.getEconomy().getCurrencies()) if (c.getId().equals(name)) return c;
             for (Currency c : VillagerShops.getEconomy().getCurrencies()) if (c.getName().equalsIgnoreCase(name)) return c;
         }
         return VillagerShops.getEconomy().getDefaultCurrency();

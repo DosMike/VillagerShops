@@ -19,6 +19,10 @@ cmd.add.limit.adminshop:You can't add stock limits to an admin-shop
 cmd.add.overwrite.index:There is no item on the specified position
 cmd.add.filter.nooredict:This server does not support OreDict
 cmd.add.filter.oredictchoice:The item you're about to add has multiple OreDict entries. Please choose one:
+cmd.add.filter.missing:Could not find any filter for %filter%.
+cmd.add.filter.adminonly:Only admin-shops can trade this item.
+cmd.add.filter.playeronly:Only player-shops can trade this item.
+cmd.add.filter.incomaptible:This item does not match the filter.
 cmd.add.buyprice:The BuyPrice was not '~' or a decimal
 cmd.add.sellprice:The SellPrice was not '~ or a decimal
 cmd.add.noprice:You need to specify at lease one of BuyPrice and SellPrice
@@ -57,6 +61,7 @@ shop.item.filter.oredict:Buys any OreDict %oredict%
 shop.buy.message:§6%currency%%balance%§r (§c-%currency%%payed%§r): Buying §e%amount%§rx %item%
 shop.sell.message:§6%currency%%balance%§r (§a+%currency%%payed%§r): Selling §e%amount%§rx %item%
 shop.generic.transactionfailure:Error on transaction! - Please report to the developer
+shop.generic.incompatibletype:This item can't be traded by this shop type
 shop.customer.highbalance:Your account can't hold more money
 shop.shopowner.highbalance:The shop owners account reached its limit
 shop.customer.lowbalance:You do not have enough money
