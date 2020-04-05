@@ -2,7 +2,7 @@ package de.dosmike.sponge.vshop.systems;
 
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
-import de.dosmike.sponge.vshop.shops.NPCguard;
+import de.dosmike.sponge.vshop.shops.ShopEntity;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
@@ -53,7 +53,7 @@ public class LedgerManager {
     static class DataCollector implements Comparable<DataCollector> {
         int amount;
         Double money;
-        Currency currency;
+        final Currency currency;
 
         public DataCollector(Transaction first) {
             currency = first.currency;
@@ -85,7 +85,7 @@ public class LedgerManager {
     public static void dumpChat() {
         synchronized (spamless) {
             for (Entry<UUID, Set<Transaction>> e : spamless.entrySet()) {
-                Optional<NPCguard> vendor = VillagerShops.getNPCfromShopUUID(e.getKey());
+                Optional<ShopEntity> vendor = VillagerShops.getNPCfromShopUUID(e.getKey());
                 if (!vendor.isPresent()) continue; //deleted vendor
                 if (!vendor.get().getShopOwner().isPresent()) continue; //not playershop
                 Optional<User> owner = VillagerShops.getUserStorage().get(vendor.get().getShopOwner().get());
@@ -191,7 +191,7 @@ public class LedgerManager {
         }
 
         static Text shopText(UUID shop) {
-            Optional<NPCguard> vendor = VillagerShops.getNPCfromShopUUID(shop);
+            Optional<ShopEntity> vendor = VillagerShops.getNPCfromShopUUID(shop);
             if (!vendor.isPresent()) return Text.of(TextColors.GRAY, "???", TextColors.RESET);
             Text.Builder builder = Text.builder().append(vendor.get().getDisplayName());
             if (!vendor.get().getShopOwner().isPresent())
@@ -224,17 +224,17 @@ public class LedgerManager {
 
         static Text userText(UUID player) {
             Optional<User> user = VillagerShops.getUserStorage().get(player);
-            if (!user.isPresent()) return Text.of(Text.builder("Unknown").color(TextColors.GRAY)
-                    .onHover(TextActions.showText(Text.of(TextColors.WHITE, "UUID: ", TextColors.GRAY, player.toString())))
-                    .build(), TextColors.RESET);
-            else return Text.of(Text.builder(user.get().getName()).color(TextColors.BLUE)
+            return user.map(value -> Text.of(Text.builder(value.getName()).color(TextColors.BLUE)
                     .onHover(TextActions.showText(Text.of(
                             TextColors.WHITE, "UUID: ", TextColors.GRAY, player.toString(),
                             TextColors.WHITE, "Last Seen: ",
-                            (user.get().isOnline()
+                            (value.isOnline()
                                     ? Text.of(TextColors.GREEN, "Online")
-                                    : Text.of(TextColors.GRAY, user.get().get(Keys.LAST_DATE_PLAYED).orElse(Instant.now()).toString()))
-                    ))).build(), TextColors.RESET);
+                                    : Text.of(TextColors.GRAY, value.get(Keys.LAST_DATE_PLAYED).orElse(Instant.now()).toString()))
+                    ))).build(), TextColors.RESET)).orElseGet(() ->
+                    Text.of(Text.builder("Unknown").color(TextColors.GRAY)
+                            .onHover(TextActions.showText(Text.of(TextColors.WHITE, "UUID: ", TextColors.GRAY, player.toString())))
+                            .build(), TextColors.RESET));
         }
 
         public static Transaction fromDatabase(ResultSet args) throws SQLException {
@@ -281,7 +281,7 @@ public class LedgerManager {
     public static DataSource getDataSource() throws SQLException {
         if (sql == null) {
             sql = Sponge.getServiceManager().provide(SqlService.class).get();
-            try (Connection con = sql.getDataSource(DB_URL).getConnection();) {
+            try (Connection con = sql.getDataSource(DB_URL).getConnection()) {
                 con.setAutoCommit(true);
                 con.prepareStatement("CREATE TABLE IF NOT EXISTS `vshopledger` (\n" +
                         "`ID` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,\n" +
@@ -302,7 +302,7 @@ public class LedgerManager {
         return VillagerShops.getAsyncScheduler().submit(() -> {
             String sql1 = "SELECT `customer`, `vendor`, `item`, `amount`, `price`, `currency`, `date` FROM `vshopledger` WHERE `vendor`=? ORDER BY `ID` DESC LIMIT 250;";
             List<Transaction> transactions = new LinkedList<>();
-            for (NPCguard npc : VillagerShops.getNPCguards())
+            for (ShopEntity npc : VillagerShops.getNPCguards())
                 if (npc.isShopOwner(user.getUniqueId()))
                     try (Connection conn = getDataSource().getConnection();
                          PreparedStatement stmt = conn.prepareStatement(sql1)) {

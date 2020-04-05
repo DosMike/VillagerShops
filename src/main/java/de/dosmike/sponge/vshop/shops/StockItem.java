@@ -67,7 +67,7 @@ public class StockItem {
             }
             throw new NoSuchElementException("No such Filter: "+v);
         }
-    };
+    }
     private FilterOptions nbtfilter = FilterOptions.NORMAL;
     private String filterNameExtra = null;
     private PluginItemFilter pluginFilter = null;
@@ -76,7 +76,7 @@ public class StockItem {
     private Double sellprice = null, buyprice = null; //This IS the SINGLE ITEM price
 
     //caution: maxStock does not actually hold information about the size of the stock container!
-    private int maxStock = 0, stocked = 0;
+    private int maxStock, stocked = 0;
 
     /** This is a cache for valid itemStackSnapshots that match */
     private List<GameDictionary.Entry> oreDictEntries = new LinkedList<>();
@@ -299,7 +299,7 @@ public class StockItem {
 //        return getFrom(inv, maxStock <= 0 ? item.getQuantity() : Math.min(item.getQuantity(), maxStock - stocked));
 //    }
 
-    public ShopResult buy(Player player, NPCguard shop, int maxAmount) {
+    public ShopResult buy(Player player, ShopEntity shop, int maxAmount) {
         if (pluginFilter != null && !pluginFilter.supportShopType(!shop.getShopOwner().isPresent()))
             return ShopResult.INCOMPATIBLE_SHOPTYPE;
 
@@ -308,7 +308,9 @@ public class StockItem {
         Account acc = account.get();
         boolean spendingsLimited = VillagerShops.getIncomeLimiter().isSpendingsLimited(player);
 
-        Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
+        Inventory playerInv = player.getInventory()
+                .query(QueryOperationTypes.INVENTORY_TYPE.of(MainPlayerInventory.class))
+                .union(player.getInventory().query(QueryOperationTypes.INVENTORY_TYPE.of(Hotbar.class)));
         int amount = Math.min(invSpace(playerInv), maxAmount); //buy at max the specified amount
         if (amount <= 0) return ShopResult.CUSTOMER_INVENTORY_FULL;
 
@@ -435,7 +437,7 @@ public class StockItem {
         }
     }
 
-    public ShopResult sell(Player player, NPCguard shop, int maxAmount) {
+    public ShopResult sell(Player player, ShopEntity shop, int maxAmount) {
         if (pluginFilter != null && !pluginFilter.supportShopType(!shop.getShopOwner().isPresent()))
             return ShopResult.INCOMPATIBLE_SHOPTYPE;
 
@@ -443,7 +445,9 @@ public class StockItem {
         if (!account.isPresent()) return ShopResult.GENERIC_FAILURE;
         Account acc = account.get();
 
-        Inventory playerInv = player.getInventory().query(MainPlayerInventory.class).union(player.getInventory().query(Hotbar.class));
+        Inventory playerInv = player.getInventory()
+                .query(QueryOperationTypes.INVENTORY_TYPE.of(MainPlayerInventory.class))
+                .union(player.getInventory().query(QueryOperationTypes.INVENTORY_TYPE.of(Hotbar.class)));
         int amount = Math.min(invSupply(playerInv), maxAmount); //buy at max the specified amount
         if (amount <= 0) return ShopResult.CUSTOMER_MISSING_ITEMS;
 
@@ -535,9 +539,7 @@ public class StockItem {
      * figure out how much of item the inventory can supply
      */
     private int invSupply(Inventory i) {
-        int available = 0;
-        available = filterInventory(i).totalItems();
-        return available;
+        return filterInventory(i).totalItems();
     }
 
     /** Custom toString { info } */

@@ -32,7 +32,7 @@ public class IncomeLimiterService {
 
     public BigDecimal earningFor(Player player) {
         dayCheck();
-        return earnings.containsKey(player.getUniqueId()) ? earnings.get(player.getUniqueId()) : BigDecimal.ZERO;
+        return earnings.getOrDefault(player.getUniqueId(), BigDecimal.ZERO);
     }
 
     /**
@@ -43,7 +43,7 @@ public class IncomeLimiterService {
         if (!oil.isPresent()) {
             return false;
         }
-        BigDecimal limit = null;
+        BigDecimal limit;
         try {
             limit = new BigDecimal(oil.get());
         } catch (Exception e) {
@@ -61,7 +61,7 @@ public class IncomeLimiterService {
         if (!oil.isPresent()) {
             return false;
         }
-        BigDecimal limit = null;
+        BigDecimal limit;
         try {
             limit = new BigDecimal(oil.get());
         } catch (Exception e) {
@@ -75,7 +75,7 @@ public class IncomeLimiterService {
         dayCheck();
         Optional<String> oil = player.getOption("vshop.option.dailyincome.limit");
         if (!oil.isPresent()) return Optional.empty();
-        BigDecimal limit = null;
+        BigDecimal limit;
         try {
             limit = new BigDecimal(oil.get());
         } catch (Exception e) {
@@ -94,7 +94,7 @@ public class IncomeLimiterService {
     public Optional<BigDecimal> getRemainingSpendings(Player player) {
         Optional<String> oil = player.getOption("vshop.option.dailyspendings.limit");
         if (!oil.isPresent()) return Optional.empty();
-        BigDecimal limit = null;
+        BigDecimal limit;
         try {
             limit = new BigDecimal(oil.get());
         } catch (Exception e) {
@@ -118,7 +118,7 @@ public class IncomeLimiterService {
         Optional<BigDecimal> ore = getRemainingIncome(player);
         if (!ore.isPresent()) return BigDecimal.ZERO;
         BigDecimal space = ore.get().min(amount);
-        BigDecimal newbalance = earnings.containsKey(player.getUniqueId()) ? earnings.get(player.getUniqueId()) : BigDecimal.ZERO;
+        BigDecimal newbalance = earnings.getOrDefault(player.getUniqueId(), BigDecimal.ZERO);
         newbalance = newbalance.add(space);
         earnings.put(player.getUniqueId(), newbalance);
         return space;
@@ -132,7 +132,7 @@ public class IncomeLimiterService {
         Optional<BigDecimal> ore = getRemainingIncome(player);
         if (!ore.isPresent()) return BigDecimal.ZERO;
         BigDecimal space = ore.get().min(amount);
-        BigDecimal newbalance = spendings.containsKey(player.getUniqueId()) ? spendings.get(player.getUniqueId()) : BigDecimal.ZERO;
+        BigDecimal newbalance = spendings.getOrDefault(player.getUniqueId(), BigDecimal.ZERO);
         newbalance = newbalance.add(space);
         spendings.put(player.getUniqueId(), newbalance);
         return space;

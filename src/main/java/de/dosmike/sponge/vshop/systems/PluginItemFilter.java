@@ -18,6 +18,7 @@ public interface PluginItemFilter {
     /** Can be used to enforce the use of this PluginItemFilter for items.
      * @return true if this filter should automatically set in place, if an added item matched isItem()
      */
+    @SuppressWarnings("SameReturnValue")
     default boolean enforce() { return false; }
 
     /** If you want to block this item from being resold by players or admin shops you can use this
@@ -25,6 +26,7 @@ public interface PluginItemFilter {
      * @param pluginItemAdminFlag will be true if this item is currently listed in an admin shop, false if it's listed in a player shop
      * @return true if the item can be added to this shop
      */
+    @SuppressWarnings({"BooleanMethodIsAlwaysInverted", "SameReturnValue"})
     default boolean supportShopType(boolean pluginItemAdminFlag) { return true; }
 
     /** VillagerShops will try to give this {@link ItemStack} to the player.

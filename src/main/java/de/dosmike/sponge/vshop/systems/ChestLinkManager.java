@@ -1,11 +1,12 @@
 package de.dosmike.sponge.vshop.systems;
 
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
-import de.dosmike.sponge.vshop.CommandRegistra;
 import de.dosmike.sponge.vshop.PermissionRegistra;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
-import de.dosmike.sponge.vshop.shops.NPCguard;
+import de.dosmike.sponge.vshop.commands.Command;
+import de.dosmike.sponge.vshop.shops.ShopEntity;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
@@ -17,9 +18,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class ChestLinkManager {
-    private static Map<UUID, UUID> activeLinker = new HashMap<>();
+    private static final Map<UUID, UUID> activeLinker = new HashMap<>();
 
-    public static void toggleLinker(Player player, Optional<NPCguard> shop) {
+    public static void toggleLinker(Player player,  @Nullable ShopEntity shop) {
         PluginTranslation l = VillagerShops.getTranslator();
 
         if (activeLinker.containsKey(player.getUniqueId())) {
@@ -27,21 +28,21 @@ public class ChestLinkManager {
             player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                     l.local("cmd.link.cancelled").resolve(player).orElse("[linking cancelled]")));
             VillagerShops.audit("%s cancelled chest-linking", Utilities.toString(player));
-        } else if (!shop.isPresent()) {
+        } else if (shop==null) {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     l.local("cmd.common.notarget").resolve(player).orElse("[no target]")));
-        } else if (!shop.get().getShopOwner().isPresent()) {
+        } else if (!shop.getShopOwner().isPresent()) {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     l.local("cmd.link.adminshop").resolve(player).orElse("[admin shop]")));
-        } else if (!shop.get().isShopOwner(player.getUniqueId()) && !PermissionRegistra.ADMIN.hasPermission(player)) {
+        } else if (shop.isShopOwner(player.getUniqueId()) && !PermissionRegistra.ADMIN.hasPermission(player)) {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     l.local("cmd.link.notyourshop").resolve(player).orElse("[not your shop]")));
         } else {
-            activeLinker.put(player.getUniqueId(), shop.get().getIdentifier());
+            activeLinker.put(player.getUniqueId(), shop.getIdentifier());
             player.sendMessage(Text.of(TextColors.YELLOW, "[vShop] ",
                     l.local("cmd.link.hitachest").resolve(player).orElse("[hit a chest]")));
             VillagerShops.audit("%s selected shop %s for chest-linking",
-                    Utilities.toString(player), shop.get().toString());
+                    Utilities.toString(player), shop.toString());
         }
     }
 
@@ -58,7 +59,7 @@ public class ChestLinkManager {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     l.local("cmd.link.nochest").resolve(player).orElse("[not a chest]")));
         } else {
-            Optional<NPCguard> npc = VillagerShops.getNPCfromShopUUID(activeLinker.get(player.getUniqueId()));
+            Optional<ShopEntity> npc = VillagerShops.getNPCfromShopUUID(activeLinker.get(player.getUniqueId()));
             if (!npc.isPresent()) {
                 player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                         l.local("cmd.link.missingshop").resolve(player).orElse("[where's the shop?]")));
@@ -66,7 +67,7 @@ public class ChestLinkManager {
 
                 Optional<Integer> distance = Optional.empty();
                 if (npc.get().getShopOwner().isPresent()) try {
-                    distance = CommandRegistra.getMaximumStockDistance(player);
+                    distance = Command.getMaximumStockDistance(player);
                 } catch (NumberFormatException nfe) {
                     player.sendMessage(Text.of(TextColors.RED, l.local("option.invalidvalue")
                             .replace("%option%", "vshop.option.chestlink.distance")
@@ -77,8 +78,8 @@ public class ChestLinkManager {
                     return true;
                 }
                 if (distance.isPresent() && (
-                        !carrier.getLocation().getExtent().equals(npc.get().getLoc().getExtent()) ||
-                                carrier.getLocation().getPosition().distance(npc.get().getLoc().getPosition()) > distance.get())) {
+                        !carrier.getLocation().getExtent().equals(npc.get().getLocation().getExtent()) ||
+                                carrier.getLocation().getPosition().distance(npc.get().getLocation().getPosition()) > distance.get())) {
                     player.sendMessage(Text.of(TextColors.RED, l.local("cmd.link.distance")
                             .replace("%distance%", distance.get())
                             .resolve(player)

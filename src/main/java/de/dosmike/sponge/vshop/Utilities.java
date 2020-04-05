@@ -24,12 +24,12 @@ public class Utilities {
      * to prevent bugs from spamming actions, we'll use this to lock any actions
      * until 1 tick after the inventory handler finished
      */
-    public static Set<UUID> actionUnstack = new HashSet<UUID>();
+    public static final Set<UUID> actionUnstack = new HashSet<>();
 
     /**
      * remembers what player is viewing what shop as Player <-> Shop mapping
      */
-    static Map<UUID, UUID> openShops = new HashMap<UUID, UUID>();
+    static final Map<UUID, UUID> openShops = new HashMap<>();
     public static @Nullable UUID getOpenShopFor(Player player) {
         return openShops.get(player.getUniqueId());
     }
@@ -52,9 +52,6 @@ public class Utilities {
      * format a bigDecimal to a precision of 3, because everything else makes no sense in currency context
      */
     public static String nf(BigDecimal value, Locale locale) {
-//        return value.add(BigDecimal.ZERO)
-//                .setScale(2, RoundingMode.HALF_UP)
-//                .toPlainString();
         return bigDecimalFormat(value, locale);
     }
     public static String nf(Double value, Locale locale) {
@@ -62,26 +59,6 @@ public class Utilities {
     }
 
     private static String bigDecimalFormat(BigDecimal number, Locale formatLocale) {
-//        DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(formatLocale);
-//        String[] ab = number.setScale(scale, RoundingMode.HALF_UP)
-//                .toPlainString().split("\\.,");
-//        StringBuilder sb = new StringBuilder();
-//        //append group 1
-//        int n = ab[0].length()%3; //group 1 size
-//        sb.append(ab[0], 0, n);
-//        sb.append(symbols.getGroupingSeparator());
-//        //append other groups
-//        for (;n<ab[0].length();n+=3) {
-//            sb.append(ab[0], n, n+3);
-//            sb.append(symbols.getGroupingSeparator());
-//        }
-//        //append decimal
-//        if (ab.length>1 && !ab[1].isEmpty()) {
-//            sb.append(symbols.getDecimalSeparator());
-//            sb.append(ab[1]);
-//        }
-//        return sb.toString();
-        //sponge is explicitly using big decimals, but double precision is probably enough?
         return doubleFormat(number.doubleValue(), formatLocale);
     }
     private static String doubleFormat(Double number, Locale formatLocale) {

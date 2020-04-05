@@ -3,18 +3,16 @@ package de.dosmike.sponge.vshop.shops;
 import de.dosmike.sponge.vshop.PermissionRegistra;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
+import de.dosmike.sponge.vshop.menus.MShopSlot;
 import de.dosmike.sponge.vshop.systems.LedgerManager;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
-import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -24,16 +22,15 @@ public class InteractionHandler {
     /**
      * return true to cancel the event in the parent
      */
-    public static boolean clickEntity(Player source, Entity target) {
+    public static boolean clickEntity(Player source, UUID targetUniqueId) {
         //try to get shop:
-        Location<World> tl = target.getLocation();
-        Optional<NPCguard> npc = VillagerShops.getNPCfromLocation(tl);
+        Optional<ShopEntity> npc = VillagerShops.getNPCfromEntityUUID(targetUniqueId);
 
         if (npc.isPresent()) {
-            NPCguard shop = npc.get();
+            ShopEntity shop = npc.get();
             if (shop.playershopcontainer != null && !shop.playershopcontainer.getTileEntity().isPresent()) {
                 VillagerShops.w("Found a shop that lost his container, cancelled interaction!");
-                VillagerShops.w("Location: %s", shop.getLoc().toString());
+                VillagerShops.w("Location: %s", shop.getLocation().toString());
                 if (shop.getShopOwner().isPresent())
                     VillagerShops.w("Owner: %s", shop.getShopOwner().get().toString());
                 VillagerShops.w("Container was supposed to be at %s", shop.playershopcontainer);
@@ -52,10 +49,11 @@ public class InteractionHandler {
 
     /**
      * tries to buy or sell the item and returns the amount of actual items bought/sold<br>
+     * somewhat of a bridge from {@link MShopSlot}s click listener -> {@link StockItem} functions
      * @param shop is required by the calling method, and thus is passed to prevent double lookup
      * @param amount is no longer related to the stack size added, but a menu state value
      */
-    public static int shopItemClicked(Player player, NPCguard shop, StockItem item, boolean doBuy, int amount) {
+    public static int shopItemClicked(Player player, ShopEntity shop, StockItem item, boolean doBuy, int amount) {
         Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
         if (!acc.isPresent()) return 0;
         Optional<UUID> shopOwner = shop.getShopOwner();

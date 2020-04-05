@@ -99,7 +99,7 @@ public class TranslationLoader {
                         try {
                             out = new FileOutputStream(f);
                             in = dl.getInputStream();
-                            byte[] buffer = new byte[512]; int r = 0;
+                            byte[] buffer = new byte[512]; int r;
                             while ((r = in.read(buffer))>=0) {
                                 out.write(buffer,0,r);
                             }

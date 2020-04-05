@@ -22,14 +22,14 @@ public class GameDictHelper {
 
     private static final Pattern entryPattern = Pattern.compile("[a-z]+(?:[A-Z][a-z]+)+");
     private static final Pattern wordPattern = Pattern.compile("((?:^|[A-Z])[a-z]+)");
-    private static SetSetMapping<String, GameDictionary.Entry> cache = new SetSetMapping<>();
+    private static final SetSetMapping<String, GameDictionary.Entry> cache = new SetSetMapping<>();
 
-    static GameDictionary dict = Sponge.getDictionary().orElse(null);
+    static final GameDictionary dict = Sponge.getDictionary().orElse(null);
     public static boolean hasGameDict() {
         return dict != null;
     }
     static {
-        if (hasGameDict()) {
+        if (dict != null) {
             for (Map.Entry<String, Collection<GameDictionary.Entry>> e : dict.getAll().asMap().entrySet()) {
                 //make words
                 Set<String> words = new HashSet<>();

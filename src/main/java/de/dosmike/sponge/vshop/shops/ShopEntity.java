@@ -4,7 +4,7 @@ import com.flowpowered.math.vector.Vector3d;
 import de.dosmike.sponge.megamenus.api.IMenu;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
-import de.dosmike.sponge.vshop.menus.InvPrep;
+import de.dosmike.sponge.vshop.menus.ShopMenuManager;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
@@ -18,27 +18,25 @@ import org.spongepowered.api.world.Chunk;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
-public class NPCguard {
+public class ShopEntity {
     private Location<World> loc;
     private Vector3d rot;
-    private UUID lastKnown;
-    private InvPrep preparator;
-    private Entity le = null;
+    private ShopMenuManager preparator;
+    private UUID lastEntity = null;
     private EntityType npcType = EntityTypes.VILLAGER;
     private String variantName;
     private FieldResolver.KeyAttacher variant;
     private Text displayName;
-    private UUID ident; //for configs;
+    private final UUID ident; //for configs;
     UUID playershopholder = null;
     Location<World> playershopcontainer = null;
 
     private int lookAroundTicks = 0;
 
-    public NPCguard(UUID identifier) {
+    public ShopEntity(UUID identifier) {
         ident = identifier;
     }
 
@@ -46,7 +44,7 @@ public class NPCguard {
         return ident;
     }
 
-    public Location<World> getLoc() {
+    public Location<World> getLocation() {
         return loc;
     }
 
@@ -62,25 +60,24 @@ public class NPCguard {
             if (!chunk.loadChunk(false))
                 throw new RuntimeException("Unable to load chunk for shop to remove old entity");
         }
-        if (le != null && !le.isRemoved())
-            le.remove();
+        getEntity().ifPresent(le->le.setLocation(newLoc));
         loc = newLoc;
     }
 
-    public void setLoc(Location<World> loc) {
+    public void setLocation(Location<World> loc) {
         this.loc = new Location<>(loc.getExtent(), loc.getBlockX() + 0.5, loc.getY(), loc.getBlockZ() + 0.5);
         VillagerShops.getInstance().markNpcsDirty();
     }
 
-    public Vector3d getRot() {
+    public Vector3d getRotation() {
         return rot;
     }
 
-    public void setRot(Vector3d rot) {
+    public void setRotation(Vector3d rot) {
         this.rot = rot;
     }
 
-    public InvPrep getPreparator() {
+    public ShopMenuManager getPreparator() {
         return preparator;
     }
 
@@ -95,7 +92,7 @@ public class NPCguard {
         getStockInventory().ifPresent(inv -> preparator.updateStock(inv));
     }
 
-    public void setPreparator(InvPrep preparator) {
+    public void setPreparator(ShopMenuManager preparator) {
         this.preparator = preparator;
         preparator.updateMenu(true);
         VillagerShops.getInstance().markNpcsDirty();
@@ -161,7 +158,7 @@ public class NPCguard {
         VillagerShops.getInstance().markNpcsDirty();
     }
 
-    public Object getVariant() {
+    public FieldResolver.KeyAttacher getVariant() {
         return variant;
     }
 
@@ -169,8 +166,12 @@ public class NPCguard {
         return variantName;
     }
 
-    public Entity getLe() {
-        return le;
+    /** @return the actual entity if loaded */
+    public Optional<Entity> getEntity() {
+        return loc.getExtent().getEntity(lastEntity);
+    }
+    public Optional<UUID> getEntityUniqueID() {
+        return Optional.ofNullable(lastEntity);
     }
 
     /**
@@ -184,7 +185,7 @@ public class NPCguard {
             playershopcontainer = null;
             return;
         }
-        Location<World> scan = getLoc().sub(0, 0.5, 0);
+        Location<World> scan = getLocation().sub(0, 0.5, 0);
         Optional<TileEntity> te = scan.getTileEntity();
         if (!te.isPresent() || !(te.get() instanceof TileEntityCarrier) || ((TileEntityCarrier) te.get()).getInventory().capacity() < 27) {
             scan = scan.sub(0, 1, 0);
@@ -235,71 +236,56 @@ public class NPCguard {
     }
 
     public void tick() {
-        World w = loc.getExtent();
-        Optional<Chunk> chunk = w.getChunkAtBlock(loc.getBlockPosition());
-        if (le == null) {
-            if (chunk.isPresent() && chunk.get().isLoaded()) {
-                //first try to link the entity again:
-                Collection<Entity> ents = chunk.get().getEntities();
-                for (Entity ent : ents) {
-                    Text entityDisplayName = ent.get(Keys.DISPLAY_NAME).orElse(null); //should not be null if name is supported as we default it to VillagerShops
-                    //a bit more complex to allow null values for both entity name and set name (although set name should never be null)
-                    boolean nameEquals = (!ent.supports(Keys.DISPLAY_NAME) || (entityDisplayName == null)) || //if the entity does not support display names we'll ignore the name rule
-                            ((displayName == null || displayName.isEmpty()) && (entityDisplayName.isEmpty())) ||
-                            (displayName != null && displayName.equals(entityDisplayName));
-                    if ((ent.isLoaded() && ent.getType().equals(npcType) && (ent.getUniqueId().equals(lastKnown) ||
-                        (ent.getLocation().getExtent().equals(loc.getExtent()) && ent.getLocation().getPosition().distanceSquared(loc.getPosition()) < 1))) && //can't check for bigger distances, as it will yank npcs from other shops with the same name
-                        (!VillagerShops.isNPCused(ent) && nameEquals)) {    //check if npc already belongs to a different shop
-                        le = ent;
-                        le.setLocationAndRotation(loc, rot);
-
-                        break;
-                    }
-                }
-                if (le == null) { //unable to restore
-                    Entity shop = w.createEntity(npcType, loc.getPosition());
-                    shop.offer(Keys.AI_ENABLED, false);
-                    shop.offer(Keys.IS_SILENT, true);
-
-                    //setting variant. super consistent ;D
-                    if (variant != null)
-                        try {
-                            variant.attach(shop);
-                        } catch (Exception e) {
-                            VillagerShops.l("Variant no longer supported! Did the EntityType change?");
-                        }
-
-                    shop.offer(Keys.DISPLAY_NAME, displayName);
-
-                    if (w.spawnEntity(shop)) {
-                        lastKnown = shop.getUniqueId();
-                    } else {
-                        VillagerShops.w("Unable to spawn shop %s - Check spawn protection and chunk limits at %s %d %d %d!",
-                                shop.getUniqueId().toString(),
-                                shop.getLocation().getExtent().getName(),
-                                shop.getLocation().getBlockX(),
-                                shop.getLocation().getBlockY(),
-                                shop.getLocation().getBlockZ());
-                    }
+        getEntity().ifPresent(le->{
+            if (le instanceof Living) {
+                if ((++lookAroundTicks > 15 && VillagerShops.rng.nextInt(10) == 0) || lookAroundTicks > 100) {
+                    Living mo = (Living) le;
+                    lookAroundTicks = 0;
+                    le.setLocationAndRotation(loc, rot);
+                    mo.setHeadRotation(new Vector3d(VillagerShops.rng.nextFloat() * 30 - 14, rot.getY() + VillagerShops.rng.nextFloat() * 60 - 30, 0.0));
                 }
             }
-        } else {
-            if (!le.isLoaded() || !chunk.isPresent() || !chunk.get().isLoaded()) {
-                le = null;    //allowing minecraft to free the resources
-            } else if (le.isRemoved() || le.get(Keys.HEALTH).orElse(1.0) <= 0) {
-                le = null;
-            } else {
-                le.setLocationAndRotation(loc, rot);
-                if (le instanceof Living) {
-                    if ((++lookAroundTicks > 15 && VillagerShops.rng.nextInt(10) == 0) || lookAroundTicks > 100) {
-                        Living mo = (Living) le;
-                        lookAroundTicks = 0;
-
-                        mo.setHeadRotation(new Vector3d(VillagerShops.rng.nextFloat() * 30 - 14, rot.getY() + VillagerShops.rng.nextFloat() * 60 - 30, 0.0));
-                    }
-                }
-            }
+        });
+    }
+    public void findOrCreate() {
+        Optional<Chunk> chunk = loc.getExtent().getChunk(loc.getChunkPosition());
+        if (chunk.isPresent() && chunk.get().isLoaded()) {
+            //first try to link the entity again:
+            Entity shop = chunk.get().getNearbyEntities(loc.getPosition(), 0.4).stream()
+                    //prevent picking up the player
+                    .filter(ent->!ent.getType().equals(EntityTypes.PLAYER))
+                    //either this IS this entity -> pass OR that entity was not yet assigned to a shop -> scoop up
+                    .filter(ent->ent.getUniqueId().equals(lastEntity) || !VillagerShops.isNPCused(ent))
+                    .findFirst().orElseGet(this::spawn); // or create new one
+            shop.setLocationAndRotation(loc, rot);
+            lastEntity = shop.getUniqueId();
         }
+    }
+    public Entity spawn() {
+        Entity shop = loc.getExtent().createEntity(npcType, loc.getPosition());
+        shop.offer(Keys.AI_ENABLED, false);
+        shop.offer(Keys.IS_SILENT, true);
+        shop.offer(Keys.DISPLAY_NAME, displayName);
+
+        //setting variant. super consistent ;D
+        if (variant != null)
+            try {
+                variant.attach(shop);
+            } catch (Exception e) {
+                VillagerShops.l("Variant no longer supported! Did the EntityType change?");
+            }
+
+        if (loc.getExtent().spawnEntity(shop)) {
+            lastEntity = shop.getUniqueId();
+        } else {
+            VillagerShops.w("Unable to spawn shop %s - Check spawn protection and chunk limits at %s %d %d %d!",
+                    shop.getUniqueId().toString(),
+                    shop.getLocation().getExtent().getName(),
+                    shop.getLocation().getBlockX(),
+                    shop.getLocation().getBlockY(),
+                    shop.getLocation().getBlockZ());
+        }
+        return shop;
     }
 
     /** Custom toString name [is] { more } */

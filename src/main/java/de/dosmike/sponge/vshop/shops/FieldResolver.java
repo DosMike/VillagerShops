@@ -1,5 +1,6 @@
 package de.dosmike.sponge.vshop.shops;
 
+import com.google.common.reflect.TypeToken;
 import de.dosmike.sponge.vshop.VillagerShops;
 import org.apache.commons.lang3.StringUtils;
 import org.spongepowered.api.CatalogType;
@@ -8,6 +9,7 @@ import org.spongepowered.api.data.key.Key;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.Career;
 import org.spongepowered.api.data.type.Profession;
+import org.spongepowered.api.data.value.BaseValue;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
@@ -20,36 +22,46 @@ import java.util.stream.Collectors;
 public class FieldResolver {
 
     private static final String VARIANT_CONCATINATOR = "+";
-    private static final Pattern VARIANT_SPLITERATOR = Pattern.compile("[+]");
+    private static final Pattern VARIANT_SPLITERATOR = Pattern.compile("\\+");
 
-    private static Map<EntityType, FieldResolver> autoResolverMapping = new HashMap<>();
+    private static final Map<EntityType, FieldResolver> autoResolverMapping = new HashMap<>();
     public static Optional<KeyAttacher> autoValidate(EntityType entity, String magicString) {
         if (autoResolverMapping.containsKey(entity))
             return Optional.ofNullable(autoResolverMapping.get(entity).validate(magicString));
         else
             return Optional.empty();
     }
-    protected static Map<EntityType, Set<String>> autoTabCompleteMapping = new HashMap<>();
+    protected static final Map<EntityType, Set<String>> autoTabCompleteMapping = new HashMap<>();
     public static Map<EntityType, Set<String>> getAutoTabCompleteMapping() {
         return autoTabCompleteMapping;
     }
 
+    static class KeyValuePair<V, K extends BaseValue<V>> {
+        private final Key<K> key;
+        private final V value;
+        KeyValuePair(Key<K> key, V value) { this.key = key; this.value = value; }
+        void offer(Entity entity) {
+            entity.offer(key, value).ifNotSuccessful(() -> new RuntimeException("Key not supported"));
+        }
+        @Override
+        public String toString() {
+            return value instanceof CatalogType ? ((CatalogType) value).getId() : value.toString();
+        }
+    }
     /**
      * Stores Keys and Values to be attached to a Entity at some later point
      */
     public static class KeyAttacher {
-        Map<Key, Object> values = new HashMap<>();
+        final List<KeyValuePair<?,?>> values = new LinkedList<>();
 
-        private KeyAttacher(Map<Key, Object> values) {
-            this.values.putAll(values);
+        private KeyAttacher() {}
+
+        <V, K extends BaseValue<V>> void add(Key<K> key, V value) {
+            values.add(new KeyValuePair<>(key, value));
         }
 
         public void attach(Entity entity) {
-            for (Map.Entry<Key, Object> entry : values.entrySet()) {
-                if (entry.getValue()!=null)
-                    entity.offer(entry.getKey(), entry.getValue())
-                            .ifNotSuccessful(() -> new RuntimeException("Key not supported"));
-            }
+            values.forEach(entry->entry.offer(entity));
         }
 
         /**
@@ -58,13 +70,7 @@ public class FieldResolver {
         public String toString() {
             if (values.isEmpty()) return "NONE";
             try {
-                return StringUtils.join(values.values().stream().map(o -> {
-                    if (o instanceof CatalogType) {
-                        return ((CatalogType) o).getId();
-                    } else if (o != null)
-                        return o.toString();
-                    return "NONE";
-                }).collect(Collectors.toList()), VARIANT_CONCATINATOR);
+                return values.stream().map(KeyValuePair::toString).collect(Collectors.joining(VARIANT_CONCATINATOR));
             } catch (NullPointerException invalidSkin) {
                 /* might need further investigation */
                 return "NONE";
@@ -72,19 +78,18 @@ public class FieldResolver {
         }
     }
 
-    protected Class<CatalogType>[] catalogs;
-    protected Key[] keys;
+    @SuppressWarnings({"unchecked","UnstableApiUsage"})
+    private Optional<Class<? extends CatalogType>> getCatalogType(Key<? extends BaseValue<?>> key) {
+        TypeToken<?> elementToken = key.getElementToken();
+        Class<?> elementClass = elementToken.getRawType();
+        if (CatalogType.class.isAssignableFrom(elementClass))
+            return Optional.of((Class<? extends CatalogType>)elementClass);
+        else return Optional.empty();
+    }
+    protected final ArrayList<Key<? extends BaseValue<?>>> keys;
 
-    private FieldResolver(EntityType type, Key... keys) {
-        catalogs = new Class[keys.length];
-        for (int i = 0; i < keys.length; i++) {
-            Class<?> clz = keys[i].getElementToken().getRawType();
-            if (CatalogType.class.isAssignableFrom(clz))
-                catalogs[i] = (Class<CatalogType>) clz;
-            else
-                catalogs[i] = null;
-        }
-        this.keys = keys;
+    private FieldResolver(EntityType type, List<Key<? extends BaseValue<?>>> keyList) {
+        this.keys = new ArrayList<>(keyList);
         autoResolverMapping.put(type, this);
         autoTabCompleteMapping.put(type, registerAutoComplete());
     }
@@ -94,40 +99,34 @@ public class FieldResolver {
      */
     public KeyAttacher validate(String magicVariant) {
         String[] raw = VARIANT_SPLITERATOR.split(magicVariant);
-        CatalogType[] values = new CatalogType[keys.length];
-        Arrays.fill(values, null);
+        KeyAttacher attacher = new KeyAttacher();
         for (String s : raw) {
-            for (int i = 0; i < catalogs.length; i++)
-                if (catalogs[i] != null) {
-                    values[i] = Sponge.getRegistry().getType(catalogs[i], s).orElse(values[i]);
-                }
+            //noinspection RedundantCast
+            keys.forEach(k->getCatalogType(k)
+                    .flatMap(c->Sponge.getRegistry().getType(c,s))
+                    .ifPresent(v-> attacher.add((Key<? extends BaseValue<CatalogType>>)k, v)));
         }
-        Map<Key, Object> result = new HashMap<>();
-        for (int i = 0; i < catalogs.length; i++)
-            if (values[i] != null) result.put(keys[i], values[i]);
-        return new KeyAttacher(result);
+        return attacher;
     }
 
     public String getVariant(Entity targetEntity) {
-        List<String> ls = new LinkedList<>();
-        for (Key key : keys)
-            targetEntity.get(key).ifPresent(variant -> {
-                if (variant instanceof CatalogType)
-                    ls.add(((CatalogType) variant).getId());
-                else
-                    ls.add(variant.toString());
-            });
-        return StringUtils.join(ls, VARIANT_CONCATINATOR);
+        return keys.stream()
+                .map(key->{
+                    Object keyValue = targetEntity.getValue((Key<? extends BaseValue<Object>>)key).orElse(null);
+                    if (keyValue instanceof CatalogType) return ((CatalogType) keyValue).getId();
+                    else return keyValue == null ? "" : keyValue.toString();
+                }).collect(Collectors.joining(VARIANT_CONCATINATOR));
     }
     public Set<String> registerAutoComplete() {
         List<List<String>> perKey = new LinkedList<>();
-        for (Class<CatalogType> c : catalogs) {
-            if (c != null)
+        for (Key<? extends BaseValue<?>> key : keys) {
+            getCatalogType(key).ifPresent(c->
                 perKey.add(Sponge.getRegistry().getAllOf(c).stream().map(type->
                     type.getId().toLowerCase().startsWith("minecraft:")
                         ? type.getId().substring(type.getId().indexOf(':')+1)
                         : type.getId()
-                ).collect(Collectors.toList()));
+                ).collect(Collectors.toList()))
+            );
         }
         List<Set<String>> suggestions = new LinkedList<>();
         GeneratePermutations(perKey, suggestions, 0, null);
@@ -143,11 +142,14 @@ public class FieldResolver {
                     boolean equals = current.size() == other.size();
                     if (equals) {
                         for (String s : current)
-                            if (!other.contains(s))
+                            if (!other.contains(s)) {
                                 equals = false;
+                                break;
+                            }
                     }
                     if (equals) {
                         oneEquals = true;
+                        break;
                     }
                 }
                 if (!oneEquals) {
@@ -167,15 +169,15 @@ public class FieldResolver {
     }
 
     public static final FieldResolver HORSE_VARIANT = new FieldResolver(
-            EntityTypes.HORSE, Keys.HORSE_STYLE, Keys.HORSE_COLOR
+            EntityTypes.HORSE, Arrays.asList(Keys.HORSE_STYLE, Keys.HORSE_COLOR)
     );
 
     public static final FieldResolver OCELOT_VARIANT = new FieldResolver(
-            EntityTypes.OCELOT, Keys.OCELOT_TYPE
+            EntityTypes.OCELOT, Collections.singletonList(Keys.OCELOT_TYPE)
     );
 
     public static final FieldResolver VILLAGER_VARIANT = new FieldResolver(
-            EntityTypes.VILLAGER, Keys.CAREER
+            EntityTypes.VILLAGER, Collections.singletonList(Keys.CAREER)
     ) {
         @Override
         public KeyAttacher validate(String magicVariant) {
@@ -183,32 +185,34 @@ public class FieldResolver {
             Career career = null;
             Profession profession = null;
             for (String s : raw) {
-                career = Sponge.getRegistry().getType(Career.class, s).orElse(career);
-                profession = Sponge.getRegistry().getType(Profession.class, s).orElse(profession);
+                Optional<Career> careerOptional = Sponge.getRegistry().getType(Career.class, s);
+                if (careerOptional.isPresent()) career = careerOptional.get();
+                Optional<Profession> professionOptional = Sponge.getRegistry().getType(Profession.class, s);
+                if (professionOptional.isPresent()) profession = professionOptional.get();
             }
             if (career == null && profession != null)
                 career = profession.getCareers().stream().findAny().orElse(null);
 
-            Map<Key, Object> result = new HashMap<>();
-            result.put(Keys.CAREER, career);
-            return new KeyAttacher(result);
+            KeyAttacher attacher = new KeyAttacher();
+            attacher.add(Keys.CAREER, career);
+            return attacher;
         }
     };
 
     public static final FieldResolver LLAMA_VARIANT = new FieldResolver(
-            EntityTypes.LLAMA, Keys.LLAMA_VARIANT
+            EntityTypes.LLAMA, Collections.singletonList(Keys.LLAMA_VARIANT)
     );
 
     public static final FieldResolver RABBIT_VARIANT = new FieldResolver(
-            EntityTypes.RABBIT, Keys.RABBIT_TYPE
+            EntityTypes.RABBIT, Collections.singletonList(Keys.RABBIT_TYPE)
     );
 
     public static final FieldResolver PARROT_VARIANT = new FieldResolver(
-            EntityTypes.PARROT, Keys.PARROT_VARIANT
+            EntityTypes.PARROT, Collections.singletonList(Keys.PARROT_VARIANT)
     );
 
     public static final FieldResolver PLAYER_SKIN = new FieldResolver(
-            EntityTypes.HUMAN, Keys.SKIN_UNIQUE_ID
+            EntityTypes.HUMAN, Collections.singletonList(Keys.SKIN_UNIQUE_ID)
     ) {
         final Pattern patUUID = Pattern.compile("(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})|(?:[0-9a-f]{32})", Pattern.CASE_INSENSITIVE);
 
@@ -230,9 +234,9 @@ public class FieldResolver {
                     /* ignore invalid values */
                 }
             }
-            Map<Key, Object> result = new HashMap<>();
-            result.put(Keys.SKIN_UNIQUE_ID, uuid);
-            return new KeyAttacher(result);
+            KeyAttacher attacher = new KeyAttacher();
+            attacher.add(Keys.SKIN_UNIQUE_ID, uuid);
+            return attacher;
         }
 
         /** can't auto this on server startup */

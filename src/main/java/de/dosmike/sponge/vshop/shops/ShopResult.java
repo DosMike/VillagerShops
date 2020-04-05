@@ -1,15 +1,13 @@
 package de.dosmike.sponge.vshop.shops;
 
 public class ShopResult {
-    int count;
-    String msg;
+    final int count;
+    final String msg;
 
     ShopResult(int items, String message) {
         count = items;
         msg = message;
     }
-
-    ;
 
     public int getTradedItems() {
         return count;

@@ -10,7 +10,7 @@ import java.util.*;
 
 public class ItemNBTCleaner {
 
-    private static Set<String[]> queries = new HashSet<>();
+    private static final Set<String[]> queries = new HashSet<>();
 
     /** for reloading */
     public static void clear() {
@@ -62,9 +62,7 @@ public class ItemNBTCleaner {
                     }
                 } else {
                     Optional<DataView> child = in.getView(next);
-                    if (child.isPresent()) {
-                        transform(child.get(), query, queryOffset+1);
-                    }
+                    child.ifPresent(dataView -> transform(dataView, query, queryOffset + 1));
                 }
             }
         } else { //this is the last element

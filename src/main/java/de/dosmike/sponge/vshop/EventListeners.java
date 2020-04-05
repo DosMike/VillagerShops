@@ -1,15 +1,13 @@
 package de.dosmike.sponge.vshop;
 
 import com.flowpowered.math.vector.Vector3i;
-import de.dosmike.sponge.vshop.menus.InvPrep;
+import de.dosmike.sponge.vshop.menus.ShopMenuManager;
 import de.dosmike.sponge.vshop.shops.InteractionHandler;
-import de.dosmike.sponge.vshop.shops.NPCguard;
+import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.systems.ChestLinkManager;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.entity.explosive.Explosive;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
@@ -23,6 +21,7 @@ import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.event.world.LoadWorldEvent;
 import org.spongepowered.api.event.world.SaveWorldEvent;
 import org.spongepowered.api.event.world.UnloadWorldEvent;
+import org.spongepowered.api.event.world.chunk.LoadChunkEvent;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.extent.Extent;
@@ -30,8 +29,8 @@ import org.spongepowered.api.world.extent.Extent;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
+@SuppressWarnings("unused")
 public class EventListeners {
 
     @Listener(order= Order.EARLY) //as kind-of protection, run early
@@ -49,8 +48,10 @@ public class EventListeners {
         Optional<Player> cause = event.getCause().first(Player.class);
         Entity target = event.getTargetEntity();
         if (cause.isPresent())
-            if (InteractionHandler.clickEntity(cause.get(), target/*, InteractionHandler.Button.right*/))
+            if (InteractionHandler.clickEntity(cause.get(), target.getUniqueId())) {
+                VillagerShops.getNPCfromEntityUUID(target.getUniqueId()).ifPresent(npc->target.setLocation(npc.getLocation()));
                 event.setCancelled(true);
+            }
     }
 
     @Listener
@@ -77,7 +78,7 @@ public class EventListeners {
         if (!event.getTargetBlock().getLocation().isPresent()) return;
         Extent tex = event.getTargetBlock().getLocation().get().getExtent();
         Vector3i tv3 = event.getTargetBlock().getPosition();
-        for (NPCguard g : VillagerShops.getNPCguards())
+        for (ShopEntity g : VillagerShops.getNPCguards())
             if (g.getStockContainer().isPresent() &&
                     g.getStockContainer().get().getExtent().equals(tex) &&
                     g.getStockContainer().get().getBlockPosition().equals(tv3)) {
@@ -91,15 +92,8 @@ public class EventListeners {
 
     @Listener
     public void onExplosion(ExplosionEvent.Detonate event) {
-        Optional<Player> source = event.getCause().first(Player.class);
-        if (!source.isPresent() && event.getExplosion().getSourceExplosive().isPresent()) {
-            Explosive e = event.getExplosion().getSourceExplosive().get();
-            Optional<UUID> creator = e.getCreator();
-            if (creator.isPresent()) source = Sponge.getServer().getPlayer(creator.get());
-        }
-
         List<Location<World>> denied = new LinkedList<>();
-        for (NPCguard g : VillagerShops.getNPCguards()) {
+        for (ShopEntity g : VillagerShops.getNPCguards()) {
             if (g.getStockContainer().isPresent() &&
                     event.getAffectedLocations().contains(g.getStockContainer().get())) {
                 denied.add(g.getStockContainer().get());
@@ -115,7 +109,7 @@ public class EventListeners {
             if (!w.isPresent()) return;
             Extent tex = w.get().getExtent();
             Vector3i tv3 = w.get().getBlockPosition();
-            for (NPCguard g : VillagerShops.getNPCguards()) {
+            for (ShopEntity g : VillagerShops.getNPCguards()) {
                 if (g.getStockContainer().isPresent() &&
                         g.getStockContainer().get().getExtent().equals(tex) &&
                         g.getStockContainer().get().getBlockPosition().equals(tv3)) {
@@ -131,8 +125,8 @@ public class EventListeners {
 
         /* remove the playerstates to prevent memory bloat */
         VillagerShops.getNPCguards().stream()
-                .map(NPCguard::getPreparator)
-                .map(InvPrep::getMenu)
+                .map(ShopEntity::getPreparator)
+                .map(ShopMenuManager::getMenu)
                 .forEach(m->m.clearPlayerState(event.getTargetEntity().getUniqueId()));
     }
 
@@ -152,6 +146,12 @@ public class EventListeners {
         VillagerShops.instance.loadShops(event.getTargetWorld().getUniqueId());
     }
 
+    @Listener
+    public void onChunkLoad(LoadChunkEvent event) {
+        VillagerShops.getNPCguards().stream()
+                .filter(npc-> event.getTargetChunk().getPosition().equals(npc.getLocation().getChunkPosition()))
+                .forEach(ShopEntity::findOrCreate);
+    }
 
 //    @Listener //someone that knows how to do that please :D
 //    public void onAiTargetEntity(AITaskEvent event) {
