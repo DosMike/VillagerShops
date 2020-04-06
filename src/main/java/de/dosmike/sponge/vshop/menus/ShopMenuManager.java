@@ -65,21 +65,21 @@ public class ShopMenuManager {
 
     List<StockItem> items = new LinkedList<>();
 
-    public void addItem(StockItem si) {
-        items.add(si);
-        VillagerShops.getInstance().markNpcsDirty();
+    public void addItem(StockItem stockitem) {
+        items.add(stockitem);
+        VillagerShops.getInstance().markShopsDirty();
         updateMenu(true);
     }
 
-    public void removeIndex(int i) {
-        items.remove(i);
-        VillagerShops.getInstance().markNpcsDirty();
+    public void removeIndex(int index) {
+        items.remove(index);
+        VillagerShops.getInstance().markShopsDirty();
         updateMenu(true);
     }
 
-    public void setItem(int index, StockItem element) {
-        items.set(index, element);
-        VillagerShops.getInstance().markNpcsDirty();
+    public void setItem(int index, StockItem stockitem) {
+        items.set(index, stockitem);
+        VillagerShops.getInstance().markShopsDirty();
         updateMenu(true);
     }
 
@@ -102,8 +102,8 @@ public class ShopMenuManager {
         return menu;
     }
 
-    public void updateMenu(boolean full) {
-        if (full) {
+    public void updateMenu(boolean fullRedraw) {
+        if (fullRedraw) {
             for (int i = menu.pages(); i>0; i--) menu.clearPage(i);
             int p=1, y=0, x=0;
             boolean itemsOnLastPage = false;
@@ -207,7 +207,7 @@ public class ShopMenuManager {
                         VillagerShops.audit("%s", Utilities.toString(player) +
                                 " deleted " + sorted.size() +
                                 " items from shop " +
-                                VillagerShops.getNPCfromShopUUID(shopID)
+                                VillagerShops.getShopFromShopId(shopID)
                                         .map(ShopEntity::toString)
                                         .orElse("[" + shopID + "]") +
                                 ": " + indices.stream()
@@ -219,7 +219,7 @@ public class ShopMenuManager {
                         ii.forEachRemaining(this::removeIndex);
 
                         Task.builder().name("Reopen Shop").delayTicks(2).execute(()->
-                                VillagerShops.getNPCfromShopUUID(shopID)
+                                VillagerShops.getShopFromShopId(shopID)
                                         .flatMap(ShopEntity::getEntityUniqueID)
                                         .ifPresent(npc -> InteractionHandler.clickEntity(player, npc))
                         ).submit(VillagerShops.getInstance());

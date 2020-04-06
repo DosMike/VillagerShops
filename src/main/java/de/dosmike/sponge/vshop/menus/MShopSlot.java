@@ -64,7 +64,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
         } else return;
         UUID shopID = Utilities.getOpenShopFor(player);
         if (shopID == null) return;
-        ShopEntity shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+        ShopEntity shop = VillagerShops.getShopFromShopId(shopID).orElse(null);
         if (shop == null) return;
 
         ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(player).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
@@ -112,7 +112,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
             if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
                 UUID shopID = Utilities.getOpenShopFor(viewer);
                 if (shopID != null) {
-                    ShopEntity shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+                    ShopEntity shop = VillagerShops.getShopFromShopId(shopID).orElse(null);
                     if (shop != null) {
                         displayItem = stockItem.getItem(!shop.getShopOwner().isPresent());
                     }

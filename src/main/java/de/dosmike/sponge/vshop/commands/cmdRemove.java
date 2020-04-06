@@ -36,7 +36,7 @@ public class cmdRemove extends Command {
         Player player = (Player) src;
 
         Optional<Entity> ent = getEntityLookingAt(player, 5.0);
-        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getNPCfromEntityUUID);
+        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
         if (!npc.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
@@ -47,13 +47,13 @@ public class cmdRemove extends Command {
                         localString("permission.missing").resolve(player).orElse("[permission missing]")));
             }
             Integer index = (Integer) args.getOne("Index").get();
-            if (index < 1 || index > npc.get().getPreparator().size()) {
+            if (index < 1 || index > npc.get().getMenu().size()) {
                 throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                         localString("cmd.remove.invalidindex").resolve(player).orElse("[invalid index]")));
             } else {
                 VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
-                String auditRemoved=npc.get().getPreparator().getItem(index-1).toString();
-                npc.get().getPreparator().removeIndex(index - 1);
+                String auditRemoved=npc.get().getMenu().getItem(index-1).toString();
+                npc.get().getMenu().removeIndex(index - 1);
 
                 player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                         localString("cmd.remove.success")

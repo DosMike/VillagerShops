@@ -32,7 +32,7 @@ public class ShopEntitySerializer implements TypeSerializer<ShopEntity> {
     @Override
     public void serialize(@NotNull TypeToken<?> arg0, ShopEntity npc, ConfigurationNode rootNode) throws ObjectMappingException {
         rootNode.getNode("uuid").setValue(npc.getIdentifier().toString());
-        rootNode.getNode("items").setValue(tokenListStockItem, npc.getPreparator().getAllItems());
+        rootNode.getNode("items").setValue(tokenListStockItem, npc.getMenu().getAllItems());
         ConfigurationNode location = rootNode.getNode("location");
         location.getNode("WorldUuid").setValue(npc.getLocation().getExtent().getUniqueId().toString());
         location.getNode("X").setValue(npc.getLocation().getX());
@@ -66,7 +66,7 @@ public class ShopEntitySerializer implements TypeSerializer<ShopEntity> {
             }
         }
         ip.setAllItems(items);
-        npc.setPreparator(ip);
+        npc.setMenu(ip);
         ConfigurationNode location = cfg.getNode("location");
         try {
             World w = Sponge.getServer().getWorld(UUID.fromString(location.getNode("WorldUuid").getString("??")))

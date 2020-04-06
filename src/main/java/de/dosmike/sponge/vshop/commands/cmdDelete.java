@@ -37,7 +37,7 @@ public class cmdDelete extends Command {
 
         Optional<Entity> ent = getEntityLookingAt(player, 5.0);
 
-        Optional<ShopEntity> npc = VillagerShops.getNPCfromEntityUUID(ent.map(Entity::getUniqueId).orElse(null));
+        Optional<ShopEntity> npc = VillagerShops.getShopFromEntityId(ent.map(Entity::getUniqueId).orElse(null));
         if (!npc.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
@@ -52,7 +52,7 @@ public class cmdDelete extends Command {
 
             VillagerShops.closeShopInventories(npc.get().getIdentifier());
             ent.get().remove();
-            VillagerShops.removeNPCguard(npc.get());
+            VillagerShops.removeShop(npc.get());
             src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                     localString("cmd.deleted").resolve(player).orElse("[deleted]")));
 

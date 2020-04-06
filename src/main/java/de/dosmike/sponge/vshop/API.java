@@ -22,16 +22,16 @@ import java.util.UUID;
 public class API {
 
     public static ShopEntity create(EntityType type, String variant, Text displayName, Location<World> location, Double rotation) {
-        if (VillagerShops.getNPCfromLocation(location).isPresent()) return null;
+        if (VillagerShops.getShopFromLocation(location).isPresent()) return null;
         ShopEntity npc = new ShopEntity(UUID.randomUUID());
         ShopMenuManager prep = new ShopMenuManager();
         npc.setNpcType(type);
         npc.setVariant(variant);
         npc.setDisplayName(displayName);
-        npc.setPreparator(prep);
+        npc.setMenu(prep);
         npc.setLocation(location);
         npc.setRotation(new Vector3d(0, rotation, 0));
-        VillagerShops.addNPCguard(npc);
+        VillagerShops.addShop(npc);
         VillagerShops.audit("The shop %s [%s] was created via API { entity: %s, skin: %s, location: %s }",
                 displayName.toPlain(), npc.getIdentifier().toString(),
                 type.getId(), npc.getVariantName(),
@@ -41,14 +41,14 @@ public class API {
     }
 
     public static Collection<ShopEntity> list() {
-        return VillagerShops.getNPCguards();
+        return VillagerShops.getShops();
     }
 
     public static void delete(ShopEntity shop) {
         VillagerShops.stopTimers();
         VillagerShops.closeShopInventories(shop.getIdentifier());
         disintegrate(shop);//shop.getLe().remove();
-        VillagerShops.removeNPCguard(shop);
+        VillagerShops.removeShop(shop);
         VillagerShops.startTimers();
         VillagerShops.audit("The shop %s [%s] was deleted via API { entity: %s, skin: %s, location: %s }",
                 shop.getDisplayName().toPlain(), shop.getIdentifier().toString(),

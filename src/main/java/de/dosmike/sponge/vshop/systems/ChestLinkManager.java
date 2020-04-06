@@ -59,7 +59,7 @@ public class ChestLinkManager {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     l.local("cmd.link.nochest").resolve(player).orElse("[not a chest]")));
         } else {
-            Optional<ShopEntity> npc = VillagerShops.getNPCfromShopUUID(activeLinker.get(player.getUniqueId()));
+            Optional<ShopEntity> npc = VillagerShops.getShopFromShopId(activeLinker.get(player.getUniqueId()));
             if (!npc.isPresent()) {
                 player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                         l.local("cmd.link.missingshop").resolve(player).orElse("[where's the shop?]")));

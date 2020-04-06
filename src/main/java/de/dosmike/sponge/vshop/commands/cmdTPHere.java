@@ -39,7 +39,7 @@ public class cmdTPHere extends Command {
         }
         Player player = (Player) src;
 
-        Optional<ShopEntity> npc = VillagerShops.getNPCfromShopUUID(args.<UUID>getOne("shopid").get());
+        Optional<ShopEntity> npc = VillagerShops.getShopFromShopId(args.<UUID>getOne("shopid").get());
         if (!npc.isPresent()) {
             src.sendMessage(localText("cmd.common.noshopforid").resolve(src).orElse(Text.of("[Shop not found]")));
         } else {

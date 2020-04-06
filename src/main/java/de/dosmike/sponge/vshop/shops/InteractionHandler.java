@@ -24,7 +24,7 @@ public class InteractionHandler {
      */
     public static boolean clickEntity(Player source, UUID targetUniqueId) {
         //try to get shop:
-        Optional<ShopEntity> npc = VillagerShops.getNPCfromEntityUUID(targetUniqueId);
+        Optional<ShopEntity> npc = VillagerShops.getShopFromEntityId(targetUniqueId);
 
         if (npc.isPresent()) {
             ShopEntity shop = npc.get();
@@ -34,13 +34,13 @@ public class InteractionHandler {
                 if (shop.getShopOwner().isPresent())
                     VillagerShops.w("Owner: %s", shop.getShopOwner().get().toString());
                 VillagerShops.w("Container was supposed to be at %s", shop.playershopcontainer);
-            } else if (shop.getPreparator().size() > 0) {
+            } else if (shop.getMenu().size() > 0) {
                 if (Utilities.getOpenShopFor(source)!=null) return true;
                 shop.updateStock();
                 Utilities._openShops_add(source, shop.getIdentifier());
                 boolean canEdit = /*shop.isShopOwner(source.getUniqueId()) ||*/ PermissionRegistra.ADMIN.hasPermission(source);
                 //bound renderer for possibly localized title
-                shop.getPreparator().createRenderer(source, shop.getDisplayName(), canEdit).open(source);
+                shop.getMenu().createRenderer(source, shop.getDisplayName(), canEdit).open(source);
             }
             return true;
         }

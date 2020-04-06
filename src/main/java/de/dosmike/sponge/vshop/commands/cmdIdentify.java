@@ -40,7 +40,7 @@ public class cmdIdentify extends Command {
         Player player = (Player) src;
 
         Optional<Entity> ent = getEntityLookingAt(player, 5.0);
-        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getNPCfromEntityUUID);
+        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
         if (!npc.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.common.notarget").resolve(player).orElse("[no target]")));

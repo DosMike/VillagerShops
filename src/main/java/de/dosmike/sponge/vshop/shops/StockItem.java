@@ -60,12 +60,12 @@ public class StockItem {
          */
         PLUGIN
         ;
-        public static FilterOptions of(String v) {
+        public static FilterOptions of(String name) {
             for (FilterOptions o : values()) {
-                if (v.equalsIgnoreCase(o.name()))
+                if (name.equalsIgnoreCase(o.name()))
                     return o;
             }
-            throw new NoSuchElementException("No such Filter: "+v);
+            throw new NoSuchElementException("No such Filter: "+name);
         }
     }
     private FilterOptions nbtfilter = FilterOptions.NORMAL;
@@ -285,19 +285,8 @@ public class StockItem {
             }
             if (ammountLeft == 0) break;
         }
-//        return quantity - ammountLeft;
         return stacks;
     }
-
-//    /**
-//     * Tries to take the represented item with the given quantity from the inventory.
-//     * If the item has max stock, it will get the minimum of remaining stock and available items.
-//     *
-//     * @return the amount of items taken out of the inventory
-//     */
-//    public int getFrom(Inventory inv) {
-//        return getFrom(inv, maxStock <= 0 ? item.getQuantity() : Math.min(item.getQuantity(), maxStock - stocked));
-//    }
 
     public ShopResult buy(Player player, ShopEntity shop, int maxAmount) {
         if (pluginFilter != null && !pluginFilter.supportShopType(!shop.getShopOwner().isPresent()))
@@ -521,25 +510,25 @@ public class StockItem {
      * it is only now, that I realize a inventory.tryOffer(ItemStack) or inventory.capacityFor(ItemStack) would be nice
      * count for each slot, how many of the item it could accept
      */
-    private int invSpace(Inventory i) {
+    private int invSpace(Inventory inventory) {
         int maxStack = item.getMaxStackQuantity();
         if (pluginFilter != null) maxStack = pluginFilter.getMaxStackSize();
         int space = 0, c;
-        Inventory result = filterInventory(i);
+        Inventory result = filterInventory(inventory);
         for (Inventory s : result.slots()) {
             Slot slot = (Slot) s;
             c = slot.totalItems();
             if (c > 0) space += (maxStack - c);
         }
-        space += (i.capacity() - i.size()) * maxStack;
+        space += (inventory.capacity() - inventory.size()) * maxStack;
         return space;
     }
 
     /**
      * figure out how much of item the inventory can supply
      */
-    private int invSupply(Inventory i) {
-        return filterInventory(i).totalItems();
+    private int invSupply(Inventory inventory) {
+        return filterInventory(inventory).totalItems();
     }
 
     /** Custom toString { info } */

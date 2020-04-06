@@ -43,7 +43,7 @@ public class cmdList extends Command {
         if (args.hasAny("User")) {
             User target = (User) args.getOne("User").get();
             UUID searchID = target.getUniqueId();
-            filtered = VillagerShops.getNPCguards().stream().filter(npc -> npc.isShopOwner(searchID)).collect(Collectors.toList());
+            filtered = VillagerShops.getShops().stream().filter(npc -> npc.isShopOwner(searchID)).collect(Collectors.toList());
 
             PaginationList.builder()
                     .title(Text.of("Shops owned by " + target.getName()))
@@ -53,7 +53,7 @@ public class cmdList extends Command {
         } else {
             PaginationList.builder()
                     .title(Text.of("Villager Shops"))
-                    .contents(pump(VillagerShops.getNPCguards()))
+                    .contents(pump(VillagerShops.getShops()))
                     .build()
                     .sendTo(src);
         }

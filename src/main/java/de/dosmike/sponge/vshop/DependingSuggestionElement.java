@@ -7,7 +7,6 @@ import org.spongepowered.api.command.args.ArgumentParseException;
 import org.spongepowered.api.command.args.CommandArgs;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.CommandElement;
-import org.spongepowered.api.text.Text;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;

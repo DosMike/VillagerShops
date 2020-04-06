@@ -85,7 +85,7 @@ public class LedgerManager {
     public static void dumpChat() {
         synchronized (spamless) {
             for (Entry<UUID, Set<Transaction>> e : spamless.entrySet()) {
-                Optional<ShopEntity> vendor = VillagerShops.getNPCfromShopUUID(e.getKey());
+                Optional<ShopEntity> vendor = VillagerShops.getShopFromShopId(e.getKey());
                 if (!vendor.isPresent()) continue; //deleted vendor
                 if (!vendor.get().getShopOwner().isPresent()) continue; //not playershop
                 Optional<User> owner = VillagerShops.getUserStorage().get(vendor.get().getShopOwner().get());
@@ -190,8 +190,8 @@ public class LedgerManager {
                     .resolve(viewer).orElse(Text.of("[Transaction]"));
         }
 
-        static Text shopText(UUID shop) {
-            Optional<ShopEntity> vendor = VillagerShops.getNPCfromShopUUID(shop);
+        static Text shopText(UUID shopId) {
+            Optional<ShopEntity> vendor = VillagerShops.getShopFromShopId(shopId);
             if (!vendor.isPresent()) return Text.of(TextColors.GRAY, "???", TextColors.RESET);
             Text.Builder builder = Text.builder().append(vendor.get().getDisplayName());
             if (!vendor.get().getShopOwner().isPresent())
@@ -222,18 +222,18 @@ public class LedgerManager {
             return Text.of(builder.build(), TextColors.RESET);
         }
 
-        static Text userText(UUID player) {
-            Optional<User> user = VillagerShops.getUserStorage().get(player);
+        static Text userText(UUID playerId) {
+            Optional<User> user = VillagerShops.getUserStorage().get(playerId);
             return user.map(value -> Text.of(Text.builder(value.getName()).color(TextColors.BLUE)
                     .onHover(TextActions.showText(Text.of(
-                            TextColors.WHITE, "UUID: ", TextColors.GRAY, player.toString(),
+                            TextColors.WHITE, "UUID: ", TextColors.GRAY, playerId.toString(),
                             TextColors.WHITE, "Last Seen: ",
                             (value.isOnline()
                                     ? Text.of(TextColors.GREEN, "Online")
                                     : Text.of(TextColors.GRAY, value.get(Keys.LAST_DATE_PLAYED).orElse(Instant.now()).toString()))
                     ))).build(), TextColors.RESET)).orElseGet(() ->
                     Text.of(Text.builder("Unknown").color(TextColors.GRAY)
-                            .onHover(TextActions.showText(Text.of(TextColors.WHITE, "UUID: ", TextColors.GRAY, player.toString())))
+                            .onHover(TextActions.showText(Text.of(TextColors.WHITE, "UUID: ", TextColors.GRAY, playerId.toString())))
                             .build(), TextColors.RESET));
         }
 
@@ -302,7 +302,7 @@ public class LedgerManager {
         return VillagerShops.getAsyncScheduler().submit(() -> {
             String sql1 = "SELECT `customer`, `vendor`, `item`, `amount`, `price`, `currency`, `date` FROM `vshopledger` WHERE `vendor`=? ORDER BY `ID` DESC LIMIT 250;";
             List<Transaction> transactions = new LinkedList<>();
-            for (ShopEntity npc : VillagerShops.getNPCguards())
+            for (ShopEntity npc : VillagerShops.getShops())
                 if (npc.isShopOwner(user.getUniqueId()))
                     try (Connection conn = getDataSource().getConnection();
                          PreparedStatement stmt = conn.prepareStatement(sql1)) {

@@ -1,7 +1,6 @@
 package de.dosmike.sponge.vshop.shops;
 
 import com.flowpowered.math.vector.Vector3d;
-import de.dosmike.sponge.megamenus.api.IMenu;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.menus.ShopMenuManager;
@@ -24,7 +23,7 @@ import java.util.UUID;
 public class ShopEntity {
     private Location<World> loc;
     private Vector3d rot;
-    private ShopMenuManager preparator;
+    private ShopMenuManager menu;
     private UUID lastEntity = null;
     private EntityType npcType = EntityTypes.VILLAGER;
     private String variantName;
@@ -51,7 +50,7 @@ public class ShopEntity {
     /**
      * function to move existing shop for convenience as API
      */
-    public void move(Location<World> newLoc) {
+    public void move(Location<World> newLocation) {
         Optional<Chunk> c = loc.getExtent().getChunkAtBlock(loc.getBiomePosition());
         if (!c.isPresent())
             throw new RuntimeException("Chunk for shop not available!");
@@ -60,42 +59,38 @@ public class ShopEntity {
             if (!chunk.loadChunk(false))
                 throw new RuntimeException("Unable to load chunk for shop to remove old entity");
         }
-        getEntity().ifPresent(le->le.setLocation(newLoc));
-        loc = newLoc;
+        getEntity().ifPresent(le->le.setLocation(newLocation));
+        loc = newLocation;
     }
 
-    public void setLocation(Location<World> loc) {
-        this.loc = new Location<>(loc.getExtent(), loc.getBlockX() + 0.5, loc.getY(), loc.getBlockZ() + 0.5);
-        VillagerShops.getInstance().markNpcsDirty();
+    public void setLocation(Location<World> location) {
+        this.loc = new Location<>(location.getExtent(), location.getBlockX() + 0.5, location.getY(), location.getBlockZ() + 0.5);
+        VillagerShops.getInstance().markShopsDirty();
     }
 
     public Vector3d getRotation() {
         return rot;
     }
 
-    public void setRotation(Vector3d rot) {
-        this.rot = rot;
+    public void setRotation(Vector3d rotation) {
+        this.rot = rotation;
     }
 
-    public ShopMenuManager getPreparator() {
-        return preparator;
-    }
-
-    public IMenu getMenu() {
-        return preparator.getMenu();
+    public ShopMenuManager getMenu() {
+        return menu;
     }
 
     /**
      * recounts items in the shop container for playershops
      */
     public void updateStock() {
-        getStockInventory().ifPresent(inv -> preparator.updateStock(inv));
+        getStockInventory().ifPresent(inv -> menu.updateStock(inv));
     }
 
-    public void setPreparator(ShopMenuManager preparator) {
-        this.preparator = preparator;
-        preparator.updateMenu(true);
-        VillagerShops.getInstance().markNpcsDirty();
+    public void setMenu(ShopMenuManager menu) {
+        this.menu = menu;
+        menu.updateMenu(true);
+        VillagerShops.getInstance().markShopsDirty();
     }
 
     public EntityType getNpcType() {
@@ -105,12 +100,12 @@ public class ShopEntity {
     public void setNpcType(EntityType npcType) {
         if (npcType.equals(EntityTypes.PLAYER)) npcType = EntityTypes.HUMAN;
         this.npcType = npcType;
-        VillagerShops.getInstance().markNpcsDirty();
+        VillagerShops.getInstance().markShopsDirty();
     }
 
     public void setDisplayName(Text name) {
         displayName = name;
-        VillagerShops.getInstance().markNpcsDirty();
+        VillagerShops.getInstance().markShopsDirty();
     }
 
     public Text getDisplayName() {
@@ -119,28 +114,31 @@ public class ShopEntity {
 
     /**
      * MAY NOT BE CALLED BEFORE setNpcType()
+     * @param magicVariant is a magic string that represents a variant, skin, career or similar id
+     *                  and is automatically resolved into a CatalogType for the entity type of
+     *                  this shop. If no matching "skin" can be found, no variant will be picked
      */
-    public void setVariant(String fieldName) {
+    public void setVariant(String magicVariant) {
         try {
             if (npcType.equals(EntityTypes.PLAYER)) { //entity type player will shit at you, and then laugh at you for you don't know you're supposed to use sponge:human
                 npcType = EntityTypes.HUMAN;
             }
-            if (fieldName.equalsIgnoreCase("none")) {
+            if (magicVariant.equalsIgnoreCase("none")) {
                 variant = null;
             } else if (npcType.equals(EntityTypes.HUMAN)) {
-                variant = FieldResolver.PLAYER_SKIN.validate(fieldName);
+                variant = FieldResolver.PLAYER_SKIN.validate(magicVariant);
             } else if (npcType.equals(EntityTypes.HORSE)) {
-                variant = FieldResolver.HORSE_VARIANT.validate(fieldName);
+                variant = FieldResolver.HORSE_VARIANT.validate(magicVariant);
             } else if (npcType.equals(EntityTypes.OCELOT)) {
-                variant = FieldResolver.OCELOT_VARIANT.validate(fieldName);
+                variant = FieldResolver.OCELOT_VARIANT.validate(magicVariant);
             } else if (npcType.equals(EntityTypes.VILLAGER)) {
-                variant = FieldResolver.VILLAGER_VARIANT.validate(fieldName);
+                variant = FieldResolver.VILLAGER_VARIANT.validate(magicVariant);
             } else if (npcType.equals(EntityTypes.LLAMA)) {
-                variant = FieldResolver.LLAMA_VARIANT.validate(fieldName);
+                variant = FieldResolver.LLAMA_VARIANT.validate(magicVariant);
             } else if (npcType.equals(EntityTypes.RABBIT)) {
-                variant = FieldResolver.RABBIT_VARIANT.validate(fieldName);
+                variant = FieldResolver.RABBIT_VARIANT.validate(magicVariant);
             } else if (npcType.equals(EntityTypes.PARROT)) {
-                variant = FieldResolver.PARROT_VARIANT.validate(fieldName);
+                variant = FieldResolver.PARROT_VARIANT.validate(magicVariant);
             } else {
                 variantName = "NONE";
                 variant = null;
@@ -153,9 +151,9 @@ public class ShopEntity {
         if (variant != null) {
             variantName = variant.toString();
         } else
-            variantName = fieldName; //maybe valid later?
+            variantName = magicVariant; //maybe valid later?
 
-        VillagerShops.getInstance().markNpcsDirty();
+        VillagerShops.getInstance().markShopsDirty();
     }
 
     public FieldResolver.KeyAttacher getVariant() {
@@ -179,8 +177,8 @@ public class ShopEntity {
      * If there's no chest below the shop this will throw a IllegalStateException.<br>
      * If the argument is null the playershop association is lifted
      */
-    public void setPlayerShop(UUID owner) throws IllegalStateException {
-        if (owner == null) {
+    public void setPlayerShop(UUID ownerId) throws IllegalStateException {
+        if (ownerId == null) {
             playershopholder = null;
             playershopcontainer = null;
             return;
@@ -194,13 +192,13 @@ public class ShopEntity {
                 throw new IllegalStateException("Shop is not placed above a chest");
         }
 
-        playershopholder = owner;
+        playershopholder = ownerId;
         playershopcontainer = scan;
-        VillagerShops.getInstance().markNpcsDirty();
+        VillagerShops.getInstance().markShopsDirty();
     }
 
-    public boolean isShopOwner(UUID player) {
-        return playershopholder != null && playershopholder.equals(player);
+    public boolean isShopOwner(UUID playerId) {
+        return playershopholder != null && playershopholder.equals(playerId);
     }
 
     public Optional<Inventory> getStockInventory() {
@@ -220,8 +218,8 @@ public class ShopEntity {
         return playershopholder == null ? Optional.empty() : Optional.of(playershopcontainer);
     }
     /** used for internals */
-    public void setStockContainerRaw(Location<World> location) {
-        playershopcontainer = location;
+    public void setStockContainerRaw(Location<World> containerLocation) {
+        playershopcontainer = containerLocation;
     }
 
     /**
@@ -231,8 +229,8 @@ public class ShopEntity {
         return playershopholder == null ? Optional.empty() : Optional.of(playershopholder);
     }
     /** used for internals */
-    public void setShopOwnerRaw(UUID uuid) {
-        playershopholder = uuid;
+    public void setShopOwnerRaw(UUID shopOwnerRawId) {
+        playershopholder = shopOwnerRawId;
     }
 
     public void tick() {
@@ -255,7 +253,7 @@ public class ShopEntity {
                     //prevent picking up the player
                     .filter(ent->!ent.getType().equals(EntityTypes.PLAYER))
                     //either this IS this entity -> pass OR that entity was not yet assigned to a shop -> scoop up
-                    .filter(ent->ent.getUniqueId().equals(lastEntity) || !VillagerShops.isNPCused(ent))
+                    .filter(ent->ent.getUniqueId().equals(lastEntity) || !VillagerShops.isEntityShop(ent))
                     .findFirst().orElseGet(this::spawn); // or create new one
             shop.setLocationAndRotation(loc, rot);
             lastEntity = shop.getUniqueId();

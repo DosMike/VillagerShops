@@ -39,7 +39,7 @@ public class EventListeners {
         if (!(event.getTargetEntity() instanceof Living)) return;
         Living target = (Living) event.getTargetEntity();
 
-        if (VillagerShops.isNPCused(target))
+        if (VillagerShops.isEntityShop(target))
             event.setCancelled(true);
     }
 
@@ -49,7 +49,7 @@ public class EventListeners {
         Entity target = event.getTargetEntity();
         if (cause.isPresent())
             if (InteractionHandler.clickEntity(cause.get(), target.getUniqueId())) {
-                VillagerShops.getNPCfromEntityUUID(target.getUniqueId()).ifPresent(npc->target.setLocation(npc.getLocation()));
+                VillagerShops.getShopFromEntityId(target.getUniqueId()).ifPresent(npc->target.setLocation(npc.getLocation()));
                 event.setCancelled(true);
             }
     }
@@ -78,7 +78,7 @@ public class EventListeners {
         if (!event.getTargetBlock().getLocation().isPresent()) return;
         Extent tex = event.getTargetBlock().getLocation().get().getExtent();
         Vector3i tv3 = event.getTargetBlock().getPosition();
-        for (ShopEntity g : VillagerShops.getNPCguards())
+        for (ShopEntity g : VillagerShops.getShops())
             if (g.getStockContainer().isPresent() &&
                     g.getStockContainer().get().getExtent().equals(tex) &&
                     g.getStockContainer().get().getBlockPosition().equals(tv3)) {
@@ -93,7 +93,7 @@ public class EventListeners {
     @Listener
     public void onExplosion(ExplosionEvent.Detonate event) {
         List<Location<World>> denied = new LinkedList<>();
-        for (ShopEntity g : VillagerShops.getNPCguards()) {
+        for (ShopEntity g : VillagerShops.getShops()) {
             if (g.getStockContainer().isPresent() &&
                     event.getAffectedLocations().contains(g.getStockContainer().get())) {
                 denied.add(g.getStockContainer().get());
@@ -109,7 +109,7 @@ public class EventListeners {
             if (!w.isPresent()) return;
             Extent tex = w.get().getExtent();
             Vector3i tv3 = w.get().getBlockPosition();
-            for (ShopEntity g : VillagerShops.getNPCguards()) {
+            for (ShopEntity g : VillagerShops.getShops()) {
                 if (g.getStockContainer().isPresent() &&
                         g.getStockContainer().get().getExtent().equals(tex) &&
                         g.getStockContainer().get().getBlockPosition().equals(tv3)) {
@@ -124,8 +124,8 @@ public class EventListeners {
         ChestLinkManager.cancel(event.getTargetEntity());
 
         /* remove the playerstates to prevent memory bloat */
-        VillagerShops.getNPCguards().stream()
-                .map(ShopEntity::getPreparator)
+        VillagerShops.getShops().stream()
+                .map(ShopEntity::getMenu)
                 .map(ShopMenuManager::getMenu)
                 .forEach(m->m.clearPlayerState(event.getTargetEntity().getUniqueId()));
     }
@@ -138,17 +138,17 @@ public class EventListeners {
     public void onWorldUnload(UnloadWorldEvent event) {
         if (!event.isCancelled()) {
             VillagerShops.instance.saveShops();
-            VillagerShops.instance.unloadShops(event.getTargetWorld().getUniqueId());
+            VillagerShops.instance.unloadWorldShops(event.getTargetWorld().getUniqueId());
         }
     }
     @Listener
     public void onWorldLoad(LoadWorldEvent event) {
-        VillagerShops.instance.loadShops(event.getTargetWorld().getUniqueId());
+        VillagerShops.instance.loadWorldShops(event.getTargetWorld().getUniqueId());
     }
 
     @Listener
     public void onChunkLoad(LoadChunkEvent event) {
-        VillagerShops.getNPCguards().stream()
+        VillagerShops.getShops().stream()
                 .filter(npc-> event.getTargetChunk().getPosition().equals(npc.getLocation().getChunkPosition()))
                 .forEach(ShopEntity::findOrCreate);
     }

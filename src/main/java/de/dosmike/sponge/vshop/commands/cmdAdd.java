@@ -66,7 +66,7 @@ public class cmdAdd extends Command {
         Player player = (Player) src;
 
         Optional<Entity> ent = getEntityLookingAt(player, 5.0);
-        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getNPCfromEntityUUID);
+        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
         if (!npc.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
@@ -77,7 +77,7 @@ public class cmdAdd extends Command {
                     localString("permission.missing").resolve(player).orElse("[permission missing]")));
         }
 
-        ShopMenuManager prep = npc.get().getPreparator();
+        ShopMenuManager prep = npc.get().getMenu();
 
         int overwriteindex = -1; //-1 to append
         if (args.hasAny("slot")) {
@@ -257,11 +257,11 @@ public class cmdAdd extends Command {
     }
 
     private static void _addItemToShop(CommandSource player, UUID shopid, StockItem item, int position) {
-        Optional<ShopEntity> guard = VillagerShops.getNPCfromShopUUID(shopid);
+        Optional<ShopEntity> guard = VillagerShops.getShopFromShopId(shopid);
         if (!guard.isPresent()) return; //shop is gone
 
         VillagerShops.closeShopInventories(guard.get().getIdentifier()); //so players are forced to update
-        ShopMenuManager prep = guard.get().getPreparator();
+        ShopMenuManager prep = guard.get().getMenu();
         String auditOverwrite="";
         if (position < 0) {
             prep.addItem(item);

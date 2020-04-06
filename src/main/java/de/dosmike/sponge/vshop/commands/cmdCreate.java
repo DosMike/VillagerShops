@@ -85,7 +85,7 @@ public class cmdCreate extends Command {
             if (limit >= 0) {
                 int cnt = 0;
                 UUID pid = player.getUniqueId();
-                for (ShopEntity npc : VillagerShops.getNPCguards())
+                for (ShopEntity npc : VillagerShops.getShops())
                     if (npc.isShopOwner(pid)) cnt++;
 
                 if (cnt >= limit) {
@@ -144,7 +144,7 @@ public class cmdCreate extends Command {
         }
 
         npc.setDisplayName(displayName);
-        npc.setPreparator(prep);
+        npc.setMenu(prep);
         npc.setLocation(createAt);
         npc.setRotation(new Vector3d(0, rotateYaw, 0));
         boolean playershop = false;
@@ -157,7 +157,7 @@ public class cmdCreate extends Command {
                         localString("cmd.create.playershop.missingcontainer").resolve(player).orElse("[no chest below]")));
             }
         }
-        VillagerShops.addNPCguard(npc);
+        VillagerShops.addShop(npc);
 
         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                 localText(playershop ? "cmd.create.playershop.success" : "cmd.create.success").replace("%name%", Text.of(TextColors.RESET, displayName)).resolve(player).orElse(Text.of("[success]"))));
