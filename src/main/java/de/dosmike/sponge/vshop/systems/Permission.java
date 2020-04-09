@@ -15,6 +15,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+/**
+ * This looks like a doubling of sponge permissions. I can't exactly remember why this is here, but heywhateveriguess.
+ * I think I wanted to use these Objects to test permissions, so I don't have to type out the permission nodes every
+ * time. That'd at least make it less prone to typos.
+ */
 public class Permission {
     private String id;
     private Text description;

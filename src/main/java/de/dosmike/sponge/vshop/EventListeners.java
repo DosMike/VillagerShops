@@ -76,13 +76,13 @@ public class EventListeners {
         Optional<Player> source = event.getCause().first(Player.class);
         if (!source.isPresent()) return;
         if (!event.getTargetBlock().getLocation().isPresent()) return;
-        Extent tex = event.getTargetBlock().getLocation().get().getExtent();
-        Vector3i tv3 = event.getTargetBlock().getPosition();
-        for (ShopEntity g : VillagerShops.getShops())
-            if (g.getStockContainer().isPresent() &&
-                    g.getStockContainer().get().getExtent().equals(tex) &&
-                    g.getStockContainer().get().getBlockPosition().equals(tv3)) {
-                if ((!source.get().getUniqueId().equals(g.getShopOwner().orElse(null))) &&
+        Extent world = event.getTargetBlock().getLocation().get().getExtent();
+        Vector3i position = event.getTargetBlock().getPosition();
+        for (ShopEntity shopEntity : VillagerShops.getShops())
+            if (shopEntity.getStockContainer().isPresent() &&
+                    shopEntity.getStockContainer().get().getExtent().equals(world) &&
+                    shopEntity.getStockContainer().get().getBlockPosition().equals(position)) {
+                if ((!source.get().getUniqueId().equals(shopEntity.getShopOwner().orElse(null))) &&
                     (!PermissionRegistra.ADMIN.hasPermission(source.get()))) {
                     event.setCancelled(true);
                     return;
@@ -93,10 +93,10 @@ public class EventListeners {
     @Listener
     public void onExplosion(ExplosionEvent.Detonate event) {
         List<Location<World>> denied = new LinkedList<>();
-        for (ShopEntity g : VillagerShops.getShops()) {
-            if (g.getStockContainer().isPresent() &&
-                    event.getAffectedLocations().contains(g.getStockContainer().get())) {
-                denied.add(g.getStockContainer().get());
+        for (ShopEntity shopEntity : VillagerShops.getShops()) {
+            if (shopEntity.getStockContainer().isPresent() &&
+                    event.getAffectedLocations().contains(shopEntity.getStockContainer().get())) {
+                denied.add(shopEntity.getStockContainer().get());
             }
         }
         event.getAffectedLocations().removeAll(denied);
@@ -104,16 +104,16 @@ public class EventListeners {
 
     @Listener
     public void onBlockBreak(ChangeBlockEvent.Break event) {
-        event.getTransactions().forEach(trans -> {
-            Optional<Location<World>> w = trans.getOriginal().getLocation();
-            if (!w.isPresent()) return;
-            Extent tex = w.get().getExtent();
-            Vector3i tv3 = w.get().getBlockPosition();
-            for (ShopEntity g : VillagerShops.getShops()) {
-                if (g.getStockContainer().isPresent() &&
-                        g.getStockContainer().get().getExtent().equals(tex) &&
-                        g.getStockContainer().get().getBlockPosition().equals(tv3)) {
-                    trans.setValid(false);
+        event.getTransactions().forEach(transaction -> {
+            Optional<Location<World>> location = transaction.getOriginal().getLocation();
+            if (!location.isPresent()) return;
+            Extent world = location.get().getExtent();
+            Vector3i position = location.get().getBlockPosition();
+            for (ShopEntity shopEntity : VillagerShops.getShops()) {
+                if (shopEntity.getStockContainer().isPresent() &&
+                        shopEntity.getStockContainer().get().getExtent().equals(world) &&
+                        shopEntity.getStockContainer().get().getBlockPosition().equals(position)) {
+                    transaction.setValid(false);
                 }
             }
         });

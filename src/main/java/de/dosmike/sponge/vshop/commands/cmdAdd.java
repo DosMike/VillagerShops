@@ -65,24 +65,24 @@ public class cmdAdd extends Command {
         }
         Player player = (Player) src;
 
-        Optional<Entity> ent = getEntityLookingAt(player, 5.0);
-        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
-        if (!npc.isPresent()) {
+        Optional<Entity> lookingAt = getEntityLookingAt(player, 5.0);
+        Optional<ShopEntity> shopEntity = lookingAt.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
+        if (!shopEntity.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
         }
         if (!PermissionRegistra.ADMIN.hasPermission(player) &&
-                !npc.get().isShopOwner(player.getUniqueId())) {
+                !shopEntity.get().isShopOwner(player.getUniqueId())) {
             throw new CommandException(Text.of(TextColors.RED,
                     localString("permission.missing").resolve(player).orElse("[permission missing]")));
         }
 
-        ShopMenuManager prep = npc.get().getMenu();
+        ShopMenuManager menu = shopEntity.get().getMenu();
 
         int overwriteindex = -1; //-1 to append
         if (args.hasAny("slot")) {
             int testslot = args.<Integer>getOne("slot").get();
-            if (testslot > prep.size() || testslot < 1) {
+            if (testslot > menu.size() || testslot < 1) {
                 throw new CommandException(Text.of(TextColors.RED,
                         localString("cmd.add.overwrite.index").resolve(player).orElse("[invalid overwrite index]")));
             }
@@ -92,7 +92,7 @@ public class cmdAdd extends Command {
         int limit = 0;
         if (args.hasAny("limit")) {
             // check for player-shop, only those have stock
-            if (!npc.get().isShopOwner(player.getUniqueId())) {
+            if (!shopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
                         localString("cmd.add.limit.adminshop").resolve(player).orElse("[cant limit stockless]")));
             } else {
@@ -164,9 +164,9 @@ public class cmdAdd extends Command {
 
         StockItem newItem;
         if (nbtfilter.equals(StockItem.FilterOptions.PLUGIN)) {
-            if (!pluginItemFilter.supportShopType(!npc.get().getShopOwner().isPresent()))
+            if (!pluginItemFilter.supportShopType(!shopEntity.get().getShopOwner().isPresent()))
                 throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                        localString(npc.get().getShopOwner().isPresent() // is player-shop && denied
+                        localString(shopEntity.get().getShopOwner().isPresent() // is player-shop && denied
                                 ? "cmd.add.filter.adminonly"
                                 : "cmd.add.filter.playeronly"
                         ).resolve(player).orElse("[Shop not supported]")));
@@ -181,7 +181,7 @@ public class cmdAdd extends Command {
             Collection<String> keys = GameDictHelper.getKeys(item.get());
             VillagerShops.l("Found oredict entries: %s", String.join(", ", keys));
             if (keys.size() > 1){
-                _displayAddItemOreDictSelector(player, npc.get().getIdentifier(), keys, sellFor, buyFor,
+                _displayAddItemOreDictSelector(player, shopEntity.get().getIdentifier(), keys, sellFor, buyFor,
                         Utilities.CurrencyByName((String) args.getOne("Currency").orElse(null)),
                         limit, overwriteindex);
 
@@ -202,26 +202,26 @@ public class cmdAdd extends Command {
                     Utilities.CurrencyByName((String) args.getOne("Currency").orElse(null)),
                     limit, nbtfilter);
         }
-        VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
+        VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
         String auditOverwrite="";
         if (overwriteindex < 0) {
-            prep.addItem(newItem);
+            menu.addItem(newItem);
         } else {
-            auditOverwrite = prep.getItem(overwriteindex).toString();
-            prep.setItem(overwriteindex, newItem);
+            auditOverwrite = menu.getItem(overwriteindex).toString();
+            menu.setItem(overwriteindex, newItem);
         }
         player.sendMessage(Text.of(
                 TextColors.GREEN, "[vShop] ",
                 localText(overwriteindex < 0 ? "cmd.add.success" : "cmd.add.replaced")
                         .replace("%item%", Text.of(TextColors.RESET, item.get().get(Keys.DISPLAY_NAME)
                                 .orElse(Text.of(item.get().getType().getTranslation().get(Utilities.playerLocale(player)))), TextColors.GREEN))
-                        .replace("%pos%", prep.size())
+                        .replace("%pos%", menu.size())
                         .resolve(player).orElse(Text.of(overwriteindex < 0 ? "[item added]" : "[item replaced]"))
         ));
 
         if (overwriteindex < 0) {
             VillagerShops.audit("%s added the item %s to shop %s",
-                    Utilities.toString(src), newItem.toString(), npc.get().toString());
+                    Utilities.toString(src), newItem.toString(), shopEntity.get().toString());
         } else {
             VillagerShops.audit("%s replaced the item %s in slot %d with the item %s in shop %s",
                     Utilities.toString(src), auditOverwrite, overwriteindex, newItem.toString());
@@ -229,7 +229,7 @@ public class cmdAdd extends Command {
         return CommandResult.success();
     }
 
-    private static void _displayAddItemOreDictSelector(Player player, UUID shopid, Collection<String> keys, Double buy, Double sell, Currency currency, int limit, int position) {
+    private static void _displayAddItemOreDictSelector(Player player, UUID shopId, Collection<String> keys, Double buy, Double sell, Currency currency, int limit, int position) {
         List<Text> pages = new LinkedList<>();
         Text.Builder builder = Text.builder(
                 VillagerShops.getTranslator().local("cmd.add.filter.oredictchoice").resolve(player).orElse("cmd.add.filter.oredictchoice")
@@ -239,7 +239,7 @@ public class cmdAdd extends Command {
             if (i > 1) builder.append(Text.NEW_LINE);
             builder.append(Text.builder("["+s+"]").onClick(TextActions.executeCallback((src)->{
                 StockItem item = new StockItem(s, buy, sell, currency, limit);
-                _addItemToShop(src, shopid, item, position);
+                _addItemToShop(src, shopId, item, position);
             })).build());
             if (++i>=14) {
                 pages.add(builder.build());
@@ -257,32 +257,32 @@ public class cmdAdd extends Command {
     }
 
     private static void _addItemToShop(CommandSource player, UUID shopid, StockItem item, int position) {
-        Optional<ShopEntity> guard = VillagerShops.getShopFromShopId(shopid);
-        if (!guard.isPresent()) return; //shop is gone
+        Optional<ShopEntity> shopEntity = VillagerShops.getShopFromShopId(shopid);
+        if (!shopEntity.isPresent()) return; //shop is gone
 
-        VillagerShops.closeShopInventories(guard.get().getIdentifier()); //so players are forced to update
-        ShopMenuManager prep = guard.get().getMenu();
+        VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
+        ShopMenuManager menu = shopEntity.get().getMenu();
         String auditOverwrite="";
         if (position < 0) {
-            prep.addItem(item);
+            menu.addItem(item);
         } else {
-            auditOverwrite = prep.getItem(position).toString();
-            prep.setItem(position, item);
+            auditOverwrite = menu.getItem(position).toString();
+            menu.setItem(position, item);
         }
-        ItemStack displayItem = item.getItem(!guard.get().getShopOwner().isPresent());
+        ItemStack displayItem = item.getItem(!shopEntity.get().getShopOwner().isPresent());
         player.sendMessage(Text.of(
                 TextColors.GREEN, "[vShop] ",
                 localText(position < 0 ? "cmd.add.success" : "cmd.add.replaced")
                         .replace("%item%", Text.of(TextColors.RESET, displayItem.get(Keys.DISPLAY_NAME)
                                 .orElse(Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(player)))), TextColors.GREEN))
-                        .replace("%pos%", prep.size())
+                        .replace("%pos%", menu.size())
                         .resolve(player).orElse(Text.of(position < 0 ? "[item added]" : "[item replaced]"))
         ));
 
         if (position < 0) {
-            VillagerShops.audit("%s added an item %s to shop %s", Utilities.toString(player), item.toString(), guard.get().toString());
+            VillagerShops.audit("%s added an item %s to shop %s", Utilities.toString(player), item.toString(), shopEntity.get().toString());
         } else {
-            VillagerShops.audit("%s replaced the item %s in slot %d with item %s in shop %s", Utilities.toString(player), auditOverwrite, position, item.toString(), guard.get().toString());
+            VillagerShops.audit("%s replaced the item %s in slot %d with item %s in shop %s", Utilities.toString(player), auditOverwrite, position, item.toString(), shopEntity.get().toString());
         }
     }
 

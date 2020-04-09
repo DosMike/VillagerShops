@@ -66,10 +66,10 @@ public class cmdList extends Command {
         int i = 0;
 
         for (ShopEntity shop : shops) {
-            Optional<UUID> oid = shop.getShopOwner();
-            Optional<User> owner = oid.flatMap(uuid -> VillagerShops.getUserStorage().get(uuid));
+            Optional<UUID> ownerId = shop.getShopOwner();
+            Optional<User> ownerPlayer = ownerId.flatMap(uuid -> VillagerShops.getUserStorage().get(uuid));
             if (i > 0) page.append(Text.NEW_LINE);
-            page.append(entry(owner.orElse(null), shop));
+            page.append(entry(ownerPlayer.orElse(null), shop));
             i++;
             if (i >= 16) {
                 pages.add(page.build());

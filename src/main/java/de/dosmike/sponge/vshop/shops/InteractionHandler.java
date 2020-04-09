@@ -23,28 +23,23 @@ public class InteractionHandler {
      * return true to cancel the event in the parent
      */
     public static boolean clickEntity(Player source, UUID targetUniqueId) {
-        //try to get shop:
-        Optional<ShopEntity> npc = VillagerShops.getShopFromEntityId(targetUniqueId);
-
-        if (npc.isPresent()) {
-            ShopEntity shop = npc.get();
-            if (shop.playershopcontainer != null && !shop.playershopcontainer.getTileEntity().isPresent()) {
+        return VillagerShops.getShopFromEntityId(targetUniqueId).map(shopEntity -> {
+            if (shopEntity.playershopContainer != null && !shopEntity.playershopContainer.getTileEntity().isPresent()) {
                 VillagerShops.w("Found a shop that lost his container, cancelled interaction!");
-                VillagerShops.w("Location: %s", shop.getLocation().toString());
-                if (shop.getShopOwner().isPresent())
-                    VillagerShops.w("Owner: %s", shop.getShopOwner().get().toString());
-                VillagerShops.w("Container was supposed to be at %s", shop.playershopcontainer);
-            } else if (shop.getMenu().size() > 0) {
+                VillagerShops.w("Location: %s", shopEntity.getLocation().toString());
+                if (shopEntity.getShopOwner().isPresent())
+                    VillagerShops.w("Owner: %s", shopEntity.getShopOwner().get().toString());
+                VillagerShops.w("Container was supposed to be at %s", shopEntity.playershopContainer);
+            } else if (shopEntity.getMenu().size() > 0) {
                 if (Utilities.getOpenShopFor(source)!=null) return true;
-                shop.updateStock();
-                Utilities._openShops_add(source, shop.getIdentifier());
+                shopEntity.updateStock();
+                Utilities._openShops_add(source, shopEntity.getIdentifier());
                 boolean canEdit = /*shop.isShopOwner(source.getUniqueId()) ||*/ PermissionRegistra.ADMIN.hasPermission(source);
                 //bound renderer for possibly localized title
-                shop.getMenu().createRenderer(source, shop.getDisplayName(), canEdit).open(source);
+                shopEntity.getMenu().createRenderer(source, shopEntity.getDisplayName(), canEdit).open(source);
             }
             return true;
-        }
-        return false;
+        }).orElse(false);
     }
 
     /**
@@ -54,11 +49,11 @@ public class InteractionHandler {
      * @param amount is no longer related to the stack size added, but a menu state value
      */
     public static int shopItemClicked(Player player, ShopEntity shop, StockItem item, boolean doBuy, int amount) {
-        Optional<UniqueAccount> acc = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
-        if (!acc.isPresent()) return 0;
-        Optional<UUID> shopOwner = shop.getShopOwner();
-        Optional<UniqueAccount> acc2 = shopOwner.flatMap(uuid -> VillagerShops.getEconomy().getOrCreateAccount(uuid));
-        if (shopOwner.isPresent() && !acc2.isPresent()) return 0;
+        Optional<UniqueAccount> customerAccount = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
+        if (!customerAccount.isPresent()) return 0;
+        Optional<UUID> shopOwnerId = shop.getShopOwner();
+        Optional<UniqueAccount> ownerAccount = shopOwnerId.flatMap(uuid -> VillagerShops.getEconomy().getOrCreateAccount(uuid));
+        if (shopOwnerId.isPresent() && !ownerAccount.isPresent()) return 0;
 
         Currency currency = item.getCurrency();
         ShopResult result;
@@ -72,7 +67,7 @@ public class InteractionHandler {
             if (result.getTradedItems() > 0) {
                 finalPrice = item.getBuyPrice() * (double) result.getTradedItems() / (double) displayItem.getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.buy.message")
-                        .replace("%balance%", Utilities.nf(acc.get().getBalance(currency), Utilities.playerLocale(player)))
+                        .replace("%balance%", Utilities.nf(customerAccount.get().getBalance(currency), Utilities.playerLocale(player)))
                         .replace("%currency%", currency.getSymbol())
                         .replace("%payed%", Utilities.nf(finalPrice, Utilities.playerLocale(player)))
                         .replace("%amount%", result.getTradedItems())
@@ -98,7 +93,7 @@ public class InteractionHandler {
             if (result.getTradedItems() > 0) {
                 finalPrice = item.getSellPrice() * (double) result.getTradedItems() / (double) displayItem.getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.sell.message")
-                        .replace("%balance%", Utilities.nf(acc.get().getBalance(currency), Utilities.playerLocale(player)))
+                        .replace("%balance%", Utilities.nf(customerAccount.get().getBalance(currency), Utilities.playerLocale(player)))
                         .replace("%currency%", currency.getSymbol())
                         .replace("%payed%", Utilities.nf(finalPrice, Utilities.playerLocale(player)))
                         .replace("%amount%", result.getTradedItems())

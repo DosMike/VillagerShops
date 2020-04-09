@@ -35,9 +35,9 @@ public class cmdLink extends Command {
         }
         Player player = (Player) src;
 
-        Optional<Entity> ent = getEntityLookingAt(player, 5.0);
-        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
-        ChestLinkManager.toggleLinker(player, npc.orElse(null));
+        Optional<Entity> lookingAt = getEntityLookingAt(player, 5.0);
+        Optional<ShopEntity> shopEntity = lookingAt.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
+        ChestLinkManager.toggleLinker(player, shopEntity.orElse(null));
 
         return CommandResult.success();
     }

@@ -39,41 +39,41 @@ public class cmdIdentify extends Command {
         }
         Player player = (Player) src;
 
-        Optional<Entity> ent = getEntityLookingAt(player, 5.0);
-        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
-        if (!npc.isPresent()) {
+        Optional<Entity> lookingAt = getEntityLookingAt(player, 5.0);
+        Optional<ShopEntity> shopEntity = lookingAt.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
+        if (!shopEntity.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
         } else {
-            Optional<UUID> owner = npc.get().getShopOwner();
-            Optional<Player> powner = owner.flatMap(uuid -> Sponge.getServer().getPlayer(uuid));
-            Text.Builder ownername = Text.builder(owner.isPresent()
-                    ? (powner.isPresent()
-                    ? powner.get().getName()
-                    : owner.get().toString())
+            Optional<UUID> ownerId = shopEntity.get().getShopOwner();
+            Optional<Player> ownerPlayer = ownerId.flatMap(uuid -> Sponge.getServer().getPlayer(uuid));
+            Text.Builder ownername = Text.builder(ownerId.isPresent()
+                    ? (ownerPlayer.isPresent()
+                    ? ownerPlayer.get().getName()
+                    : ownerId.get().toString())
                     : localString("cmd.identify.adminshop").resolve(player).orElse("[Server]"));
-            if (owner.isPresent()) {
-                ownername.onHover(TextActions.showText(Text.of("UUID: " + owner.get().toString())));
-                ownername.onShiftClick(TextActions.insertText(owner.get().toString()));
+            if (ownerId.isPresent()) {
+                ownername.onHover(TextActions.showText(Text.of("UUID: " + ownerId.get().toString())));
+                ownername.onShiftClick(TextActions.insertText(ownerId.get().toString()));
             }
 
             src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                     localText("cmd.identify.response")
                             .replace("\\n", Text.NEW_LINE)
-                            .replace("%type%", VillagerShops.getTranslator().localText(npc.get().getShopOwner().isPresent() ? "shop.type.player" : "shop.type.admin"))
-                            .replace("%entity%", npc.get().getNpcType().getTranslation().get(Utilities.playerLocale(player)))
-                            .replace("%skin%", npc.get().getVariantName())
-                            .replace("%name%", npc.get().getDisplayName())
+                            .replace("%type%", VillagerShops.getTranslator().localText(shopEntity.get().getShopOwner().isPresent() ? "shop.type.player" : "shop.type.admin"))
+                            .replace("%entity%", shopEntity.get().getNpcType().getTranslation().get(Utilities.playerLocale(player)))
+                            .replace("%skin%", shopEntity.get().getVariantName())
+                            .replace("%name%", shopEntity.get().getDisplayName())
                             .replace("%id%",
-                                    Text.builder(npc.get().getIdentifier().toString())
-                                            .onShiftClick(TextActions.insertText(npc.get().getIdentifier().toString()))
+                                    Text.builder(shopEntity.get().getIdentifier().toString())
+                                            .onShiftClick(TextActions.insertText(shopEntity.get().getIdentifier().toString()))
                                             .onHover(TextActions.showText(localText("cmd.identify.shiftclick").resolve(src).orElse(Text.of("Shift-click"))))
                                             .build())
                             .replace("%owner%", ownername.build())
                             .resolve(player).orElse(Text.of("[much data, such wow]"))));
 
             VillagerShops.audit("%s identified shop %s",
-                    Utilities.toString(src), npc.get().toString() );
+                    Utilities.toString(src), shopEntity.get().toString() );
             return CommandResult.success();
         }
     }

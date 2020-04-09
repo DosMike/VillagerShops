@@ -35,25 +35,25 @@ public class cmdRemove extends Command {
         }
         Player player = (Player) src;
 
-        Optional<Entity> ent = getEntityLookingAt(player, 5.0);
-        Optional<ShopEntity> npc = ent.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
-        if (!npc.isPresent()) {
+        Optional<Entity> lookingAt = getEntityLookingAt(player, 5.0);
+        Optional<ShopEntity> shopEntity = lookingAt.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
+        if (!shopEntity.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
         } else {
             if (!PermissionRegistra.ADMIN.hasPermission(player) &&
-                    !npc.get().isShopOwner(player.getUniqueId())) {
+                    !shopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
                         localString("permission.missing").resolve(player).orElse("[permission missing]")));
             }
-            Integer index = (Integer) args.getOne("Index").get();
-            if (index < 1 || index > npc.get().getMenu().size()) {
+            int index = (Integer) args.getOne("Index").get();
+            if (index < 1 || index > shopEntity.get().getMenu().size()) {
                 throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                         localString("cmd.remove.invalidindex").resolve(player).orElse("[invalid index]")));
             } else {
-                VillagerShops.closeShopInventories(npc.get().getIdentifier()); //so players are forced to update
-                String auditRemoved=npc.get().getMenu().getItem(index-1).toString();
-                npc.get().getMenu().removeIndex(index - 1);
+                VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
+                String auditRemoved=shopEntity.get().getMenu().getItem(index-1).toString();
+                shopEntity.get().getMenu().removeIndex(index - 1);
 
                 player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                         localString("cmd.remove.success")
@@ -61,7 +61,7 @@ public class cmdRemove extends Command {
                                 .resolve(player).orElse("[success]")));
 
                 VillagerShops.audit("%s removed the item %s from shop %s",
-                        Utilities.toString(src), auditRemoved, npc.get().toString());
+                        Utilities.toString(src), auditRemoved, shopEntity.get().toString());
                 return CommandResult.success();
             }
         }

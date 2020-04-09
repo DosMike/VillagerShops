@@ -42,10 +42,10 @@ public class ShopEntitySerializer implements TypeSerializer<ShopEntity> {
         rootNode.getNode("entitytype").setValue(npc.getNpcType().getId());
         rootNode.getNode("variant").setValue(npc.getVariantName());
         rootNode.getNode("displayName").setValue(TextSerializers.FORMATTING_CODE.serialize(npc.getDisplayName()));
-        if (npc.playershopholder != null)
-            rootNode.getNode("playershop").setValue(npc.playershopholder.toString());
-        if (npc.playershopcontainer != null)
-            rootNode.getNode("stocklocation").setValue(tokenLocationWorld, npc.playershopcontainer);
+        if (npc.playershopOwner != null)
+            rootNode.getNode("playershop").setValue(npc.playershopOwner.toString());
+        if (npc.playershopContainer != null)
+            rootNode.getNode("stocklocation").setValue(tokenLocationWorld, npc.playershopContainer);
     }
 
     @Override
@@ -83,8 +83,8 @@ public class ShopEntitySerializer implements TypeSerializer<ShopEntity> {
         npc.setDisplayName(TextSerializers.FORMATTING_CODE.deserialize(cfg.getNode("displayName").getString("VillagerShop")));
         String tmp = cfg.getNode("playershop").getString(null);
         if (tmp != null && !tmp.isEmpty())
-            npc.playershopholder = UUID.fromString(tmp);
-        npc.playershopcontainer = cfg.getNode("stocklocation").getValue(tokenLocationWorld);
+            npc.playershopOwner = UUID.fromString(tmp);
+        npc.playershopContainer = cfg.getNode("stocklocation").getValue(tokenLocationWorld);
         return npc;
     }
 }

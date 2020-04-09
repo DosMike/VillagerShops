@@ -39,14 +39,7 @@ public class LedgerManager {
 
     public static void backstuffChat(Transaction transaction) {
         synchronized (spamless) {
-            Set<Transaction> v;
-            if (spamless.containsKey(transaction.vendor)) {
-                v = spamless.get(transaction.vendor);
-            } else {
-                v = new HashSet<>();
-            }
-            v.add(transaction);
-            spamless.put(transaction.vendor, v);
+            spamless.computeIfAbsent(transaction.vendor, k->new HashSet<>()).add(transaction);
         }
     }
 
@@ -84,17 +77,15 @@ public class LedgerManager {
 
     public static void dumpChat() {
         synchronized (spamless) {
-            for (Entry<UUID, Set<Transaction>> e : spamless.entrySet()) {
-                Optional<ShopEntity> vendor = VillagerShops.getShopFromShopId(e.getKey());
-                if (!vendor.isPresent()) continue; //deleted vendor
-                if (!vendor.get().getShopOwner().isPresent()) continue; //not playershop
-                Optional<User> owner = VillagerShops.getUserStorage().get(vendor.get().getShopOwner().get());
-                if (!owner.isPresent() || !owner.get().isOnline()) continue; //player no more present or disconnected
-                Player online = owner.get().getPlayer().orElse(null);
+            for (Entry<UUID, Set<Transaction>> entry : spamless.entrySet()) {
+                Optional<ShopEntity> shopEntity = VillagerShops.getShopFromShopId(entry.getKey());
+                if (!shopEntity.isPresent()) continue; //deleted vendor
+                if (!shopEntity.get().getShopOwner().isPresent()) continue; //not playershop
+                Player online = Sponge.getServer().getPlayer(shopEntity.get().getShopOwner().get()).orElse(null);
 
                 Map<Currency, Double> income = new HashMap<>(); //currency -> money
                 Map<ItemType, DataCollector> data = new HashMap<>();
-                for (Transaction t : e.getValue()) {
+                for (Transaction t : entry.getValue()) {
                     if (income.containsKey(t.currency)) {
                         income.put(t.currency, income.get(t.currency) + t.payed);
                     } else {
@@ -120,7 +111,7 @@ public class LedgerManager {
 
                 if (online != null)
                     online.sendMessage(VillagerShops.getTranslator().localText("shop.chat.transaction.base")
-                        .replace("%shop%", Transaction.shopText(e.getKey()))
+                        .replace("%shop%", Transaction.shopText(entry.getKey()))
                         .replace("%items%", Text.joinWith(Text.of(", "), items))
                         .replace("%money%", Text.joinWith(Text.of(", "), icl))
                         .resolve(online).orElse(Text.of("[Chat transaction notification]"))
@@ -191,32 +182,32 @@ public class LedgerManager {
         }
 
         static Text shopText(UUID shopId) {
-            Optional<ShopEntity> vendor = VillagerShops.getShopFromShopId(shopId);
-            if (!vendor.isPresent()) return Text.of(TextColors.GRAY, "???", TextColors.RESET);
-            Text.Builder builder = Text.builder().append(vendor.get().getDisplayName());
-            if (!vendor.get().getShopOwner().isPresent())
+            Optional<ShopEntity> shopEntity = VillagerShops.getShopFromShopId(shopId);
+            if (!shopEntity.isPresent()) return Text.of(TextColors.GRAY, "???", TextColors.RESET);
+            Text.Builder builder = Text.builder().append(shopEntity.get().getDisplayName());
+            if (!shopEntity.get().getShopOwner().isPresent())
                 builder.onHover(TextActions.showText(Text.of(
                         TextColors.RED, "admin", Text.NEW_LINE,
-                        TextColors.WHITE, "UUID: ", TextColors.GRAY, vendor.get().getIdentifier().toString()
+                        TextColors.WHITE, "UUID: ", TextColors.GRAY, shopEntity.get().getIdentifier().toString()
                 )));
             else {
-                UUID oid = vendor.get().getShopOwner().get();
-                Optional<User> user = VillagerShops.getUserStorage().get(oid);
+                UUID ownerId = shopEntity.get().getShopOwner().get();
+                Optional<User> user = VillagerShops.getUserStorage().get(ownerId);
                 if (!user.isPresent())
                     builder.onHover(TextActions.showText(Text.of(
                             TextColors.WHITE, "Owner: ", TextColors.GRAY, "Unknown", Text.NEW_LINE,
-                            TextColors.WHITE, "Owner UUID: ", TextColors.GRAY, oid.toString(), Text.NEW_LINE,
-                            TextColors.WHITE, "UUID: ", TextColors.GRAY, vendor.get().getIdentifier().toString()
+                            TextColors.WHITE, "Owner UUID: ", TextColors.GRAY, ownerId.toString(), Text.NEW_LINE,
+                            TextColors.WHITE, "UUID: ", TextColors.GRAY, shopEntity.get().getIdentifier().toString()
                     )));
                 else builder.onHover(TextActions.showText(Text.of(
                         TextColors.WHITE, "Owner: ", TextColors.GRAY, user.get().getName(), Text.NEW_LINE,
-                        TextColors.WHITE, "Owner UUID: ", TextColors.GRAY, oid.toString(), Text.NEW_LINE,
+                        TextColors.WHITE, "Owner UUID: ", TextColors.GRAY, ownerId.toString(), Text.NEW_LINE,
                         TextColors.WHITE, "Last Seen: ",
                         (user.get().isOnline()
                                 ? Text.of(TextColors.GREEN, "Online")
                                 : Text.of(TextColors.GRAY, user.get().get(Keys.LAST_DATE_PLAYED).orElse(Instant.now()).toString()))
                         , Text.NEW_LINE,
-                        TextColors.WHITE, "UUID: ", TextColors.GRAY, vendor.get().getIdentifier().toString()
+                        TextColors.WHITE, "UUID: ", TextColors.GRAY, shopEntity.get().getIdentifier().toString()
                 )));
             }
             return Text.of(builder.build(), TextColors.RESET);

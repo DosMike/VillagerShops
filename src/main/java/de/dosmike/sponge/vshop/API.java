@@ -23,21 +23,21 @@ public class API {
 
     public static ShopEntity create(EntityType type, String variant, Text displayName, Location<World> location, Double rotation) {
         if (VillagerShops.getShopFromLocation(location).isPresent()) return null;
-        ShopEntity npc = new ShopEntity(UUID.randomUUID());
+        ShopEntity shopEntity = new ShopEntity(UUID.randomUUID());
         ShopMenuManager prep = new ShopMenuManager();
-        npc.setNpcType(type);
-        npc.setVariant(variant);
-        npc.setDisplayName(displayName);
-        npc.setMenu(prep);
-        npc.setLocation(location);
-        npc.setRotation(new Vector3d(0, rotation, 0));
-        VillagerShops.addShop(npc);
+        shopEntity.setNpcType(type);
+        shopEntity.setVariant(variant);
+        shopEntity.setDisplayName(displayName);
+        shopEntity.setMenu(prep);
+        shopEntity.setLocation(location);
+        shopEntity.setRotation(new Vector3d(0, rotation, 0));
+        VillagerShops.addShop(shopEntity);
         VillagerShops.audit("The shop %s [%s] was created via API { entity: %s, skin: %s, location: %s }",
-                displayName.toPlain(), npc.getIdentifier().toString(),
-                type.getId(), npc.getVariantName(),
+                displayName.toPlain(), shopEntity.getIdentifier().toString(),
+                type.getId(), shopEntity.getVariantName(),
                 location.getExtent().getName()+"@"+location.getBlockX()+"/"+location.getBlockY()+"/"+location.getBlockZ()+"Y"+rotation
         );
-        return npc;
+        return shopEntity;
     }
 
     public static Collection<ShopEntity> list() {

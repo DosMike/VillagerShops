@@ -19,7 +19,9 @@ public class cmdReload extends Command {
         return CommandSpec.builder()
                 .permission(PermissionRegistra.ADMIN.getId())
                 .arguments(
-                        GenericArguments.none()
+                        GenericArguments.flags().flag("-translations").buildWith(
+                                GenericArguments.none()
+                        )
                 ).executor(new cmdReload()).build();
     }
 
@@ -27,7 +29,7 @@ public class cmdReload extends Command {
     @Override
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         VillagerShops.getInstance().loadConfigs();
-        TranslationLoader.fetchTranslations();
+        TranslationLoader.fetchTranslations(args.hasAny("-translations"));
         src.sendMessage(Text.of("Reload complete"));
         VillagerShops.audit("%s reloaded the settings", Utilities.toString(src));
         return CommandResult.success();

@@ -35,24 +35,24 @@ public class cmdDelete extends Command {
         }
         Player player = (Player) src;
 
-        Optional<Entity> ent = getEntityLookingAt(player, 5.0);
+        Optional<Entity> lookingAt = getEntityLookingAt(player, 5.0);
 
-        Optional<ShopEntity> npc = VillagerShops.getShopFromEntityId(ent.map(Entity::getUniqueId).orElse(null));
-        if (!npc.isPresent()) {
+        Optional<ShopEntity> shopEntity = VillagerShops.getShopFromEntityId(lookingAt.map(Entity::getUniqueId).orElse(null));
+        if (!shopEntity.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
         } else {
             if (!PermissionRegistra.ADMIN.hasPermission(player) &&
-                    !npc.get().isShopOwner(player.getUniqueId())) {
+                    !shopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
                         localString("permission.missing").resolve(player).orElse("[permission missing]")));
             }
             VillagerShops.audit("%s deleted the shop %s",
-                    Utilities.toString(src), npc.get().toString());
+                    Utilities.toString(src), shopEntity.get().toString());
 
-            VillagerShops.closeShopInventories(npc.get().getIdentifier());
-            ent.get().remove();
-            VillagerShops.removeShop(npc.get());
+            VillagerShops.closeShopInventories(shopEntity.get().getIdentifier());
+            lookingAt.get().remove();
+            VillagerShops.removeShop(shopEntity.get());
             src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                     localString("cmd.deleted").resolve(player).orElse("[deleted]")));
 

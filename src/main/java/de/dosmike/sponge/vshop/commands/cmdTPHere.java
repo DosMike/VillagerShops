@@ -39,17 +39,17 @@ public class cmdTPHere extends Command {
         }
         Player player = (Player) src;
 
-        Optional<ShopEntity> npc = VillagerShops.getShopFromShopId(args.<UUID>getOne("shopid").get());
-        if (!npc.isPresent()) {
+        Optional<ShopEntity> optionalShopEntity = VillagerShops.getShopFromShopId(args.<UUID>getOne("shopid").get());
+        if (!optionalShopEntity.isPresent()) {
             src.sendMessage(localText("cmd.common.noshopforid").resolve(src).orElse(Text.of("[Shop not found]")));
         } else {
             if (!PermissionRegistra.ADMIN.hasPermission(player) &&
-                    !npc.get().isShopOwner(player.getUniqueId())) {
+                    !optionalShopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
                         localString("permission.missing").resolve(player).orElse("[permission missing]")));
             }
             Optional<Integer> distance = Optional.empty();
-            if (npc.get().getShopOwner().isPresent()) try {
+            if (optionalShopEntity.get().getShopOwner().isPresent()) try {
                 distance = getMaximumStockDistance(player);
             } catch (NumberFormatException nfe) {
                 throw new CommandException(localText("option.invalidvalue")
@@ -59,24 +59,24 @@ public class cmdTPHere extends Command {
                         .orElse(Text.of("[option value invalid]"))
                 );
             }
-            ShopEntity guard = npc.get();
-            Location<World> to = player.getLocation();
-            if (distance.isPresent() && guard.getStockContainer().isPresent() && (
-                    !to.getExtent().equals(guard.getStockContainer().get().getExtent()) ||
-                            to.getPosition().distance(guard.getStockContainer().get().getPosition()) > distance.get()))
+            ShopEntity shopEntity = optionalShopEntity.get();
+            Location<World> destination = player.getLocation();
+            if (distance.isPresent() && shopEntity.getStockContainer().isPresent() && (
+                    !destination.getExtent().equals(shopEntity.getStockContainer().get().getExtent()) ||
+                            destination.getPosition().distance(shopEntity.getStockContainer().get().getPosition()) > distance.get()))
                 throw new CommandException(localText("cmd.link.distance")
                         .replace("%distance%", distance.get())
                         .resolve(player)
                         .orElse(Text.of("[too far away]")));
 
             VillagerShops.audit("%s relocated shop %s to %s°%.2f, %d blocks",
-                    Utilities.toString(src), guard.toString(),
-                    Utilities.toString(to), player.getHeadRotation().getY(),
+                    Utilities.toString(src), shopEntity.toString(),
+                    Utilities.toString(destination), player.getHeadRotation().getY(),
                     distance.orElse(-1)
             );
-            VillagerShops.closeShopInventories(guard.getIdentifier());
-            guard.move(new Location<>(to.getExtent(), to.getBlockX() + 0.5, to.getY(), to.getBlockZ() + 0.5));
-            guard.setRotation(new Vector3d(0.0, player.getHeadRotation().getY(), 0.0));
+            VillagerShops.closeShopInventories(shopEntity.getIdentifier());
+            shopEntity.move(new Location<>(destination.getExtent(), destination.getBlockX() + 0.5, destination.getY(), destination.getBlockZ() + 0.5));
+            shopEntity.setRotation(new Vector3d(0.0, player.getHeadRotation().getY(), 0.0));
         }
         return CommandResult.success();
     }
