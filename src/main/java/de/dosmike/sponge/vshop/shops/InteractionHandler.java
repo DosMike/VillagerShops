@@ -56,7 +56,7 @@ public class InteractionHandler {
         if (shopOwnerId.isPresent() && !ownerAccount.isPresent()) return 0;
 
         Currency currency = item.getCurrency();
-        ShopResult result;
+        Purchase.Result result;
         double finalPrice;
 
         ItemStack displayItem = item.getItem(!shop.getShopOwner().isPresent());

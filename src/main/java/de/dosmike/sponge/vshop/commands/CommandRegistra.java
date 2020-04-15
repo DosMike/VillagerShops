@@ -4,7 +4,10 @@ import de.dosmike.sponge.languageservice.API.PluginTranslation;
 import de.dosmike.sponge.vshop.VillagerShops;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandMapping;
+import org.spongepowered.api.command.CommandResult;
+import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
+import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.text.Text;
 
 import java.util.*;
