@@ -123,6 +123,8 @@ public class cmdImport extends Command {
                         localString("cmd.create.playershop.missingcontainer").orLiteral(player)));
             }
         }
+        entity.offer(Keys.AI_ENABLED, false);
+        entity.offer(Keys.IS_SILENT, true);
         VillagerShops.addShop(shopEntity);
 
         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
