@@ -44,6 +44,12 @@ public class ShopEntity {
     }
 
     public Location<World> getLocation() {
+        //update the location the shop is actually at by updating the location (if loaded/possible)
+        if (location.getExtent().isLoaded()) {
+            Entity ent = location.getExtent().getEntity(lastEntity).orElse(null);
+            if (ent != null && ent.isLoaded() && !ent.isRemoved())
+                location = ent.getLocation();
+        }
         return location;
     }
 

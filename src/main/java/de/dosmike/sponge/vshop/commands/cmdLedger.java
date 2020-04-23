@@ -32,9 +32,9 @@ public class cmdLedger extends Command {
     @Override
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         if (args.hasAny("Target") && args.hasAny("t")) {
-            throw new CommandException(localText("cmd.ledger.invalid").resolve(src).orElse(Text.of("[Choose one argument]")));
+            throw new CommandException(localText("cmd.ledger.invalid").orLiteral(src));
         } else if (!args.hasAny("Target") && !(src instanceof Player)) {
-            throw new CommandException(localText("cmd.missingargument").resolve(src).orElse(Text.of("[Missing argument]")));
+            throw new CommandException(localText("cmd.missingargument").orLiteral(src));
         } else {
             User target;
             if (src instanceof Player)

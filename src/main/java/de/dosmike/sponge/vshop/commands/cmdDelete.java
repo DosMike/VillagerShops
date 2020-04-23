@@ -31,7 +31,7 @@ public class cmdDelete extends Command {
     @Override
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         if (!(src instanceof Player)) {
-            throw new CommandException(localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
+            throw new CommandException(localText("cmd.playeronly").orLiteral(src));
         }
         Player player = (Player) src;
 
@@ -40,12 +40,12 @@ public class cmdDelete extends Command {
         Optional<ShopEntity> shopEntity = VillagerShops.getShopFromEntityId(lookingAt.map(Entity::getUniqueId).orElse(null));
         if (!shopEntity.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
+                    localString("cmd.common.notarget").orLiteral(player)));
         } else {
             if (!PermissionRegistra.ADMIN.hasPermission(player) &&
                     !shopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
-                        localString("permission.missing").resolve(player).orElse("[permission missing]")));
+                        localString("permission.missing").orLiteral(player)));
             }
             VillagerShops.audit("%s deleted the shop %s",
                     Utilities.toString(src), shopEntity.get().toString());
@@ -54,7 +54,7 @@ public class cmdDelete extends Command {
             lookingAt.get().remove();
             VillagerShops.removeShop(shopEntity.get());
             src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
-                    localString("cmd.deleted").resolve(player).orElse("[deleted]")));
+                    localString("cmd.deleted").orLiteral(player)));
 
             return CommandResult.success();
         }

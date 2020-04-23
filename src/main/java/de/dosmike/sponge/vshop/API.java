@@ -22,7 +22,7 @@ import java.util.UUID;
 public class API {
 
     public static ShopEntity create(EntityType type, String variant, Text displayName, Location<World> location, Double rotation) {
-        if (VillagerShops.getShopFromLocation(location).isPresent()) return null;
+        if (VillagerShops.isLocationOccupied(location)) return null;
         ShopEntity shopEntity = new ShopEntity(UUID.randomUUID());
         ShopMenuManager prep = new ShopMenuManager();
         shopEntity.setNpcType(type);

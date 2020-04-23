@@ -227,13 +227,14 @@ public class VillagerShops {
         instance.shopsDirty.set(true);
     }
 
-    public static Optional<ShopEntity> getShopFromLocation(Location<World> location) {
+    /** @return true if there is any shop at this location */
+    public static boolean isLocationOccupied(Location<World> location) {
         synchronized (shops) {
             return shops.stream()
-                    .filter(shopEntity -> {
+                    .anyMatch(shopEntity -> {
                         Location<World> shopLocation = shopEntity.getLocation();
                         return shopLocation.getBlockPosition().equals(location.getBlockPosition()) && shopLocation.getExtent().equals(location.getExtent());
-                    }).findFirst();
+                    });
         }
     }
 
@@ -511,9 +512,11 @@ public class VillagerShops {
                     .setPath(privateConfigDir.resolve("world_" + worldId.toString() + ".conf")).build();
             ConfigurationNode root = loader.createEmptyNode(options);
             List<ShopEntity> worldShops = new LinkedList<>();
-            for (ShopEntity shopEntity : shops)
-                if (shopEntity.getLocation().getExtent().getUniqueId().equals(worldId))
+            for (ShopEntity shopEntity : shops) {
+                if (shopEntity.getLocation().getExtent().getUniqueId().equals(worldId)) {
                     worldShops.add(shopEntity);
+                }
+            }
             root.getNode("shops").setValue(ShopEntitySerializer.tokenListNPCguard, worldShops);
             loader.save(root);
         } catch (Exception e1) {

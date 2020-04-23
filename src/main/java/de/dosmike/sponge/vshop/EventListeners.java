@@ -67,7 +67,7 @@ public class EventListeners {
         }
     }
 
-    /**
+    /*
      * protect playershop crates
      */
 
@@ -119,6 +119,10 @@ public class EventListeners {
         });
     }
 
+    /*
+     * Menu stuff
+     */
+
     @Listener
     public void onPlayerDisconnect(ClientConnectionEvent.Disconnect event) {
         ChestLinkManager.cancel(event.getTargetEntity());
@@ -129,6 +133,10 @@ public class EventListeners {
                 .map(ShopMenuManager::getMenu)
                 .forEach(m->m.clearPlayerState(event.getTargetEntity().getUniqueId()));
     }
+
+    /*
+     * Loading and unloading of worlds, chunks and entities
+     */
 
     @Listener
     public void onWorldSave(SaveWorldEvent event) {
@@ -152,6 +160,10 @@ public class EventListeners {
                 .filter(npc-> event.getTargetChunk().getPosition().equals(npc.getLocation().getChunkPosition()))
                 .forEach(ShopEntity::findOrCreate);
     }
+
+    /*
+     * AI stuff
+     */
 
 //    @Listener //someone that knows how to do that please :D
 //    public void onAiTargetEntity(AITaskEvent event) {

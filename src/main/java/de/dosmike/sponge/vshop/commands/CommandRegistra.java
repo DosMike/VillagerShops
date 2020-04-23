@@ -4,10 +4,7 @@ import de.dosmike.sponge.languageservice.API.PluginTranslation;
 import de.dosmike.sponge.vshop.VillagerShops;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandMapping;
-import org.spongepowered.api.command.CommandResult;
-import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
-import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.text.Text;
 
 import java.util.*;
@@ -24,7 +21,7 @@ public class CommandRegistra {
         children.put(Collections.singletonList("create"), cmdCreate.getCommandSpec());
         children.put(Collections.singletonList("add"), cmdAdd.getCommandSpec());
         children.put(Collections.singletonList("remove"), cmdRemove.getCommandSpec());
-        children.put(Collections.singletonList("delete"), cmdDelete.getCommandSpec());
+        children.put(Arrays.asList("delete", "exterminate"), cmdDelete.getCommandSpec());
         children.put(Collections.singletonList("save"), cmdSave.getCommandSpec());
         children.put(Collections.singletonList("reload"), cmdReload.getCommandSpec());
         children.put(Arrays.asList("list", "get", "for"), cmdList.getCommandSpec());

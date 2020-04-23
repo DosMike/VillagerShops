@@ -28,7 +28,7 @@ public class cmdSave extends Command {
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         VillagerShops.getInstance().saveConfigs();
         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
-                localString("cmd.saved").resolve(src).orElse("[saved]")));
+                localString("cmd.saved").orLiteral(src)));
         VillagerShops.audit("%s saved the shops", Utilities.toString(src));
         return CommandResult.success();
     }

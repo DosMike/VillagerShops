@@ -65,14 +65,14 @@ public class cmdCreate extends Command {
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
 
         if (!(src instanceof Player)) {
-            throw new CommandException(localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
+            throw new CommandException(localText("cmd.playeronly").orLiteral(src));
         }
         Player player = (Player) src;
 
         if (!PermissionRegistra.ADMIN.hasPermission(player) &&
                 !PermissionRegistra.PLAYER.hasPermission(player)) {
             throw new CommandException(Text.of(TextColors.RED,
-                    localString("permission.missing").resolve(player).orElse("[permission missing]")));
+                    localString("permission.missing").orLiteral(player)));
         }
         boolean asAdminShop = PermissionRegistra.ADMIN.hasPermission(player);
 
@@ -90,7 +90,7 @@ public class cmdCreate extends Command {
 
                 if (cnt >= limit) {
                     throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                            localString("cmd.create.playershop.limit").replace("%limit%", limit).resolve(player).orElse("[limit reached]")));
+                            localString("cmd.create.playershop.limit").replace("%limit%", limit).orLiteral(player)));
                 }
             }
         }
@@ -104,14 +104,14 @@ public class cmdCreate extends Command {
         shopEntity.setNpcType((EntityType) args.getOne("EntityType").get()); // required argument
         if (shopEntity.getNpcType() == null) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.create.invalidtype").resolve(player).orElse("[invalid type]")));
+                    localString("cmd.create.invalidtype").orLiteral(player)));
         }
         if (!asAdminShop) {
             String entityPermission = shopEntity.getNpcType().getId();
             entityPermission = "vshop.create." + entityPermission.replace(':', '.').replace("_", "").replace("-", "");
             if (!player.hasPermission(entityPermission)) {
                 throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                        localString("cmd.create.entitypermission").replace("%permission%", entityPermission).resolve(player).orElse("[entity permission missing]")));
+                        localString("cmd.create.entitypermission").replace("%permission%", entityPermission).orLiteral(player)));
             }
         }
         shopEntity.setVariant(skinVariant);
@@ -122,7 +122,7 @@ public class cmdCreate extends Command {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.create.invalidvariant")
                             .replace("%variant%", shopEntity.getNpcType().getTranslation().get(Utilities.playerLocale(player)))
-                            .resolve(player).orElse("[invalid variant]")));
+                            .orLiteral(player)));
         }
         Location<World> createAt = player.getLocation();
         double rotateYaw = player.getHeadRotation().getY();
@@ -133,14 +133,17 @@ public class cmdCreate extends Command {
             }
             Optional<World> w = Sponge.getServer().getWorld(parts[0]);
             if (!w.isPresent()) {
-                throw new CommandException(Text.of(TextColors.RED, "[vShop] ", localString("cmd.create.invalidworld").resolve(player).orElse("[Invalid pos]")));
+                throw new CommandException(Text.of(TextColors.RED, "[vShop] ", localString("cmd.create.invalidworld").orLiteral(player)));
             }
             createAt = w.get().getLocation(Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
             rotateYaw = Double.parseDouble(parts[4]);
             while (rotateYaw > 180) rotateYaw -= 360;
             while (rotateYaw <= -180) rotateYaw += 360;
         } catch (Exception e) {
-            throw new CommandException(Text.of(TextColors.RED, "[vShop] ", localString("cmd.create.invalidpos").resolve(player).orElse("[Invalid pos]")));
+            throw new CommandException(Text.of(TextColors.RED, "[vShop] ", localString("cmd.create.invalidpos").orLiteral(player)));
+        }
+        if (VillagerShops.isLocationOccupied(createAt)) {
+            throw new CommandException(Text.of(TextColors.RED, "[vshop] ", localString("cmd.create.occupied").orLiteral(player)));
         }
 
         shopEntity.setDisplayName(displayName);
@@ -154,13 +157,13 @@ public class cmdCreate extends Command {
         } catch (Exception e) {
             if (!asAdminShop) {
                 throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                        localString("cmd.create.playershop.missingcontainer").resolve(player).orElse("[no chest below]")));
+                        localString("cmd.create.playershop.missingcontainer").orLiteral(player)));
             }
         }
         VillagerShops.addShop(shopEntity);
 
         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
-                localText(playershop ? "cmd.create.playershop.success" : "cmd.create.success").replace("%name%", Text.of(TextColors.RESET, displayName)).resolve(player).orElse(Text.of("[success]"))));
+                localText(playershop ? "cmd.create.playershop.success" : "cmd.create.success").replace("%name%", Text.of(TextColors.RESET, displayName)).orLiteral(player)));
 
         VillagerShops.audit("%s created a new shop %s", Utilities.toString(src), shopEntity.toString());
         return CommandResult.success();

@@ -35,7 +35,7 @@ public class cmdIdentify extends Command {
     @Override
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         if (!(src instanceof Player)) {
-            throw new CommandException(localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
+            throw new CommandException(localText("cmd.playeronly").orLiteral(src));
         }
         Player player = (Player) src;
 
@@ -43,7 +43,7 @@ public class cmdIdentify extends Command {
         Optional<ShopEntity> shopEntity = lookingAt.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
         if (!shopEntity.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
+                    localString("cmd.common.notarget").orLiteral(player)));
         } else {
             Optional<UUID> ownerId = shopEntity.get().getShopOwner();
             Optional<Player> ownerPlayer = ownerId.flatMap(uuid -> Sponge.getServer().getPlayer(uuid));
@@ -51,7 +51,7 @@ public class cmdIdentify extends Command {
                     ? (ownerPlayer.isPresent()
                     ? ownerPlayer.get().getName()
                     : ownerId.get().toString())
-                    : localString("cmd.identify.adminshop").resolve(player).orElse("[Server]"));
+                    : localString("cmd.identify.adminshop").orLiteral(player));
             if (ownerId.isPresent()) {
                 ownername.onHover(TextActions.showText(Text.of("UUID: " + ownerId.get().toString())));
                 ownername.onShiftClick(TextActions.insertText(ownerId.get().toString()));
@@ -67,10 +67,10 @@ public class cmdIdentify extends Command {
                             .replace("%id%",
                                     Text.builder(shopEntity.get().getIdentifier().toString())
                                             .onShiftClick(TextActions.insertText(shopEntity.get().getIdentifier().toString()))
-                                            .onHover(TextActions.showText(localText("cmd.identify.shiftclick").resolve(src).orElse(Text.of("Shift-click"))))
+                                            .onHover(TextActions.showText(localText("cmd.identify.shiftclick").orLiteral(src)))
                                             .build())
                             .replace("%owner%", ownername.build())
-                            .resolve(player).orElse(Text.of("[much data, such wow]"))));
+                            .orLiteral(player)));
 
             VillagerShops.audit("%s identified shop %s",
                     Utilities.toString(src), shopEntity.get().toString() );

@@ -13,7 +13,6 @@ import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.text.Text;
 
 import java.util.Optional;
 
@@ -31,7 +30,7 @@ public class cmdLink extends Command {
     @Override
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         if (!(src instanceof Player)) {
-            throw new CommandException(localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
+            throw new CommandException(localText("cmd.playeronly").orLiteral(src));
         }
         Player player = (Player) src;
 

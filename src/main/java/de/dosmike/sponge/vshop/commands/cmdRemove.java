@@ -31,7 +31,7 @@ public class cmdRemove extends Command {
     @Override
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         if (!(src instanceof Player)) {
-            throw new CommandException(localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
+            throw new CommandException(localText("cmd.playeronly").orLiteral(src));
         }
         Player player = (Player) src;
 
@@ -39,17 +39,17 @@ public class cmdRemove extends Command {
         Optional<ShopEntity> shopEntity = lookingAt.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
         if (!shopEntity.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
+                    localString("cmd.common.notarget").orLiteral(player)));
         } else {
             if (!PermissionRegistra.ADMIN.hasPermission(player) &&
                     !shopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
-                        localString("permission.missing").resolve(player).orElse("[permission missing]")));
+                        localString("permission.missing").orLiteral(player)));
             }
             int index = (Integer) args.getOne("Index").get();
             if (index < 1 || index > shopEntity.get().getMenu().size()) {
                 throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                        localString("cmd.remove.invalidindex").resolve(player).orElse("[invalid index]")));
+                        localString("cmd.remove.invalidindex").orLiteral(player)));
             } else {
                 VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
                 String auditRemoved=shopEntity.get().getMenu().getItem(index-1).toString();
@@ -58,7 +58,7 @@ public class cmdRemove extends Command {
                 player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                         localString("cmd.remove.success")
                                 .replace("%pos%", index)
-                                .resolve(player).orElse("[success]")));
+                                .orLiteral(player)));
 
                 VillagerShops.audit("%s removed the item %s from shop %s",
                         Utilities.toString(src), auditRemoved, shopEntity.get().toString());

@@ -30,22 +30,25 @@ public class ShopEntitySerializer implements TypeSerializer<ShopEntity> {
     };
 
     @Override
-    public void serialize(@NotNull TypeToken<?> arg0, ShopEntity npc, ConfigurationNode rootNode) throws ObjectMappingException {
-        rootNode.getNode("uuid").setValue(npc.getIdentifier().toString());
-        rootNode.getNode("items").setValue(tokenListStockItem, npc.getMenu().getAllItems());
+    public void serialize(@NotNull TypeToken<?> arg0, ShopEntity shop, ConfigurationNode rootNode) throws ObjectMappingException {
+        if (shop == null) return;
+        rootNode.getNode("uuid").setValue(shop.getIdentifier().toString());
+        rootNode.getNode("items").setValue(tokenListStockItem, shop.getMenu().getAllItems());
         ConfigurationNode location = rootNode.getNode("location");
-        location.getNode("WorldUuid").setValue(npc.getLocation().getExtent().getUniqueId().toString());
-        location.getNode("X").setValue(npc.getLocation().getX());
-        location.getNode("Y").setValue(npc.getLocation().getY());
-        location.getNode("Z").setValue(npc.getLocation().getZ());
-        rootNode.getNode("rotation").setValue(npc.getRotation().getY()); // we only need the yaw rotationb
-        rootNode.getNode("entitytype").setValue(npc.getNpcType().getId());
-        rootNode.getNode("variant").setValue(npc.getVariantName());
-        rootNode.getNode("displayName").setValue(TextSerializers.FORMATTING_CODE.serialize(npc.getDisplayName()));
-        if (npc.playershopOwner != null)
-            rootNode.getNode("playershop").setValue(npc.playershopOwner.toString());
-        if (npc.playershopContainer != null)
-            rootNode.getNode("stocklocation").setValue(tokenLocationWorld, npc.playershopContainer);
+        //save the location the shop is actually at by updating the location (if loaded/possible)
+        Location<World> currentLocation = shop.getLocation();
+        location.getNode("WorldUuid").setValue(currentLocation.getExtent().getUniqueId().toString());
+        location.getNode("X").setValue(currentLocation.getX());
+        location.getNode("Y").setValue(currentLocation.getY());
+        location.getNode("Z").setValue(currentLocation.getZ());
+        rootNode.getNode("rotation").setValue(shop.getRotation().getY()); // we only need the yaw rotationb
+        rootNode.getNode("entitytype").setValue(shop.getNpcType().getId());
+        rootNode.getNode("variant").setValue(shop.getVariantName());
+        rootNode.getNode("displayName").setValue(TextSerializers.FORMATTING_CODE.serialize(shop.getDisplayName()));
+        if (shop.playershopOwner != null)
+            rootNode.getNode("playershop").setValue(shop.playershopOwner.toString());
+        if (shop.playershopContainer != null)
+            rootNode.getNode("stocklocation").setValue(tokenLocationWorld, shop.playershopContainer);
     }
 
     @Override

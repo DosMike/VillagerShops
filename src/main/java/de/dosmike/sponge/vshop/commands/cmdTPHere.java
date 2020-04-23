@@ -35,18 +35,18 @@ public class cmdTPHere extends Command {
     @Override
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         if (!(src instanceof Player)) {
-            throw new CommandException(localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
+            throw new CommandException(localText("cmd.playeronly").orLiteral(src));
         }
         Player player = (Player) src;
 
         Optional<ShopEntity> optionalShopEntity = VillagerShops.getShopFromShopId(args.<UUID>getOne("shopid").get());
         if (!optionalShopEntity.isPresent()) {
-            src.sendMessage(localText("cmd.common.noshopforid").resolve(src).orElse(Text.of("[Shop not found]")));
+            src.sendMessage(localText("cmd.common.noshopforid").orLiteral(src));
         } else {
             if (!PermissionRegistra.ADMIN.hasPermission(player) &&
                     !optionalShopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
-                        localString("permission.missing").resolve(player).orElse("[permission missing]")));
+                        localString("permission.missing").orLiteral(player)));
             }
             Optional<Integer> distance = Optional.empty();
             if (optionalShopEntity.get().getShopOwner().isPresent()) try {
@@ -55,8 +55,7 @@ public class cmdTPHere extends Command {
                 throw new CommandException(localText("option.invalidvalue")
                         .replace("%option%", "vshop.option.chestlink.distance")
                         .replace("%player%", player.getName())
-                        .resolve(player)
-                        .orElse(Text.of("[option value invalid]"))
+                        .orLiteral(player)
                 );
             }
             ShopEntity shopEntity = optionalShopEntity.get();
@@ -66,8 +65,7 @@ public class cmdTPHere extends Command {
                             destination.getPosition().distance(shopEntity.getStockContainer().get().getPosition()) > distance.get()))
                 throw new CommandException(localText("cmd.link.distance")
                         .replace("%distance%", distance.get())
-                        .resolve(player)
-                        .orElse(Text.of("[too far away]")));
+                        .orLiteral(player));
 
             VillagerShops.audit("%s relocated shop %s to %s°%.2f, %d blocks",
                     Utilities.toString(src), shopEntity.toString(),

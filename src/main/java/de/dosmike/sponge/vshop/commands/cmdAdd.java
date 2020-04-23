@@ -60,7 +60,7 @@ public class cmdAdd extends Command {
     @NotNull @Override
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         if (!(src instanceof Player)) {
-            src.sendMessage(localText("cmd.playeronly").resolve(src).orElse(Text.of("[Player only]")));
+            src.sendMessage(localText("cmd.playeronly").orLiteral(src));
             return CommandResult.success();
         }
         Player player = (Player) src;
@@ -69,12 +69,12 @@ public class cmdAdd extends Command {
         Optional<ShopEntity> shopEntity = lookingAt.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
         if (!shopEntity.isPresent()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.common.notarget").resolve(player).orElse("[no target]")));
+                    localString("cmd.common.notarget").orLiteral(player)));
         }
         if (!PermissionRegistra.ADMIN.hasPermission(player) &&
                 !shopEntity.get().isShopOwner(player.getUniqueId())) {
             throw new CommandException(Text.of(TextColors.RED,
-                    localString("permission.missing").resolve(player).orElse("[permission missing]")));
+                    localString("permission.missing").orLiteral(player)));
         }
 
         ShopMenuManager menu = shopEntity.get().getMenu();
@@ -84,7 +84,7 @@ public class cmdAdd extends Command {
             int testslot = args.<Integer>getOne("slot").get();
             if (testslot > menu.size() || testslot < 1) {
                 throw new CommandException(Text.of(TextColors.RED,
-                        localString("cmd.add.overwrite.index").resolve(player).orElse("[invalid overwrite index]")));
+                        localString("cmd.add.overwrite.index").orLiteral(player)));
             }
             overwriteindex = testslot - 1;
         }
@@ -94,7 +94,7 @@ public class cmdAdd extends Command {
             // check for player-shop, only those have stock
             if (!shopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
-                        localString("cmd.add.limit.adminshop").resolve(player).orElse("[cant limit stockless]")));
+                        localString("cmd.add.limit.adminshop").orLiteral(player)));
             } else {
                 limit = args.<Integer>getOne("limit").orElse(0);
             }
@@ -105,23 +105,23 @@ public class cmdAdd extends Command {
             buyFor = parse.equals("~") ? null : Double.parseDouble(parse);
         } catch (Exception e) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.add.buyprice").resolve(player).orElse("[No buy price]")));
+                    localString("cmd.add.buyprice").orLiteral(player)));
         }
         parse = args.getOne("SellPrice").orElse("~").toString();
         try {
             sellFor = parse.equals("~") ? null : Double.parseDouble(parse);
         } catch (Exception e) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.add.sellprice").resolve(player).orElse("[No sell price]")));
+                    localString("cmd.add.sellprice").orLiteral(player)));
         }
 
         if (buyFor == null && sellFor == null) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.add.noprice").resolve(player).orElse("[No price]")));
+                    localString("cmd.add.noprice").orLiteral(player)));
         }
         if ((buyFor != null && buyFor < 0) || (sellFor != null && sellFor < 0)) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.add.negativeprice").resolve(player).orElse("[Negative price]")));
+                    localString("cmd.add.negativeprice").orLiteral(player)));
         }
 
         Optional<ItemStack> item = player.getItemInHand(HandTypes.MAIN_HAND);
@@ -129,7 +129,7 @@ public class cmdAdd extends Command {
             item = player.getItemInHand(HandTypes.OFF_HAND);
         if (!item.isPresent() || item.get().isEmpty()) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.add.itemisair").resolve(player).orElse("[Item is air]")));
+                    localString("cmd.add.itemisair").orLiteral(player)));
         }
 
 
@@ -147,14 +147,14 @@ public class cmdAdd extends Command {
                     throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                             localString("cmd.add.filter.missing")
                                     .replace("%filter%", filterName)
-                                    .resolve(player).orElse("[No such filter]")));
+                                    .orLiteral(player)));
 
                 pluginItemFilter = pif.get();
             } else {
                 nbtfilter = StockItem.FilterOptions.valueOf(filterName);
                 if (nbtfilter.equals(StockItem.FilterOptions.OREDICT) && !GameDictHelper.hasGameDict()) {
                     throw new CommandException(Text.of(TextColors.RED,
-                            localString("cmd.add.filter.nooredict").resolve(player).orElse("[no oredict]"))
+                            localString("cmd.add.filter.nooredict").orLiteral(player))
                     );
                 }
             }
@@ -169,10 +169,10 @@ public class cmdAdd extends Command {
                         localString(shopEntity.get().getShopOwner().isPresent() // is player-shop && denied
                                 ? "cmd.add.filter.adminonly"
                                 : "cmd.add.filter.playeronly"
-                        ).resolve(player).orElse("[Shop not supported]")));
+                        ).orLiteral(player)));
             if (!pluginItemFilter.isItem(item.get()))
                 throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                        localString("cmd.add.filter.incomaptible").resolve(player).orElse("[Item <-> Filter missmatch]")));
+                        localString("cmd.add.filter.incomaptible").orLiteral(player)));
 
             newItem = new StockItem(item.get(), pluginItemFilter, sellFor, buyFor,
                     Utilities.CurrencyByName((String) args.getOne("Currency").orElse(null)),
@@ -216,7 +216,7 @@ public class cmdAdd extends Command {
                         .replace("%item%", Text.of(TextColors.RESET, item.get().get(Keys.DISPLAY_NAME)
                                 .orElse(Text.of(item.get().getType().getTranslation().get(Utilities.playerLocale(player)))), TextColors.GREEN))
                         .replace("%pos%", menu.size())
-                        .resolve(player).orElse(Text.of(overwriteindex < 0 ? "[item added]" : "[item replaced]"))
+                        .orLiteral(player)
         ));
 
         if (overwriteindex < 0) {
@@ -232,7 +232,7 @@ public class cmdAdd extends Command {
     private static void _displayAddItemOreDictSelector(Player player, UUID shopId, Collection<String> keys, Double buy, Double sell, Currency currency, int limit, int position) {
         List<Text> pages = new LinkedList<>();
         Text.Builder builder = Text.builder(
-                VillagerShops.getTranslator().local("cmd.add.filter.oredictchoice").resolve(player).orElse("cmd.add.filter.oredictchoice")
+                VillagerShops.getTranslator().local("cmd.add.filter.oredictchoice").orLiteral(player)
         ).append(Text.NEW_LINE);
         int i = 5;
         for (String s : keys) {
@@ -276,7 +276,7 @@ public class cmdAdd extends Command {
                         .replace("%item%", Text.of(TextColors.RESET, displayItem.get(Keys.DISPLAY_NAME)
                                 .orElse(Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(player)))), TextColors.GREEN))
                         .replace("%pos%", menu.size())
-                        .resolve(player).orElse(Text.of(position < 0 ? "[item added]" : "[item replaced]"))
+                        .orLiteral(player)
         ));
 
         if (position < 0) {
