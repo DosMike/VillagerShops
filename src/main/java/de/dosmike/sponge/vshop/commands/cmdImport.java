@@ -31,6 +31,7 @@ public class cmdImport extends Command {
 
     static CommandSpec getCommandSpec() {
         return CommandSpec.builder()
+                .permission(PermissionRegistra.IMPORT.getId())
                 .arguments(GenericArguments.none()).executor(new cmdImport()).build();
     }
 
