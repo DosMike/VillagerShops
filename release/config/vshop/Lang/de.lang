@@ -12,9 +12,15 @@ cmd.create.invalidvariant:Diese(n) Skin/Variante gibt es nicht für %variant% - 
 cmd.create.playershop.missingcontainer:Du must eine Kiste unter deinen Playershop stellen!
 cmd.create.invalidpos:Die Position benötigt folgendes Format: WELT/X/Y/Z/DREHUNG
 cmd.create.invalidworld:Die angegebene Welt existiert nicht
+cmd.create.occupied:An dieser stelle befindet sich bereits ein Shop
 cmd.create.playershop.success:Ein neuer Player-Shop namens %name% wurde erstellt
 cmd.create.playershop.limit:Du darfst nicht mehr als %limit% Shops erstellen
 cmd.create.success:Ein neuer Admin-Shop namens %name% wurde erstellt
+cmd.import.notarget:Du siehst gerade keine Entity an!
+cmd.import.occupied:Diese Entity ist bereits ein Shop
+cmd.import.entitypermission:Diese Entity benötigt die Berechtigung %permission%
+cmd.import.success:Die Entity wurde als Admin-Shop namens %name% importiert
+cmd.import.playershop.success:Die Entity wurde als Player-Shop namens %name% importiert
 cmd.add.limit.adminshop:Du kannst den Vorrat in einem Admin-Shop nicht begrenzen
 cmd.add.overwrite.index:And der angegebenen Position befindet sich kein Item
 cmd.add.filter.nooredict:Der server usterstützt OreDict nicht

@@ -12,9 +12,15 @@ cmd.create.invalidvariant:No such Style/Variant found for %variant% - Use NONE o
 cmd.create.playershop.missingcontainer:You need to put a container below your playershop!
 cmd.create.invalidpos:The positions needs to be formatted like WORLD/X/Y/Z/ROTATION
 cmd.create.invalidworld:Such a world does not exist
+cmd.create.occupied:There is already a shop at this location
 cmd.create.playershop.success:Created a new player shop called %name%
 cmd.create.playershop.limit:You may not create more than %limit% shops
 cmd.create.success:Created a new admin shop called %name%
+cmd.import.notarget:There is not entity where you're looking!
+cmd.import.occupied:The entity is already a shop
+cmd.import.entitypermission:This Entity requires permission %permission%
+cmd.import.success:Imported entity as admin shop called %name%
+cmd.import.playershop.success:Imported entity as player shop called %name%
 cmd.add.limit.adminshop:You can't add stock limits to an admin-shop
 cmd.add.overwrite.index:There is no item on the specified position
 cmd.add.filter.nooredict:This server does not support OreDict

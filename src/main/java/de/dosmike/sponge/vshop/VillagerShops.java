@@ -233,7 +233,8 @@ public class VillagerShops {
             return shops.stream()
                     .anyMatch(shopEntity -> {
                         Location<World> shopLocation = shopEntity.getLocation();
-                        return shopLocation.getBlockPosition().equals(location.getBlockPosition()) && shopLocation.getExtent().equals(location.getExtent());
+                        return shopLocation.getPosition().distanceSquared(location.getPosition()) < 0.2 && // about half a block radius
+                            shopLocation.getExtent().equals(location.getExtent());
                     });
         }
     }

@@ -110,12 +110,13 @@ public class FieldResolver {
     }
 
     public String getVariant(Entity targetEntity) {
-        return keys.stream()
+        String variantMagic = keys.stream()
                 .map(key->{
                     Object keyValue = targetEntity.getValue((Key<? extends BaseValue<Object>>)key).orElse(null);
                     if (keyValue instanceof CatalogType) return ((CatalogType) keyValue).getId();
                     else return keyValue == null ? "" : keyValue.toString();
                 }).collect(Collectors.joining(VARIANT_CONCATINATOR));
+        return variantMagic.isEmpty() ? "none" : variantMagic;
     }
     public Set<String> registerAutoComplete() {
         List<List<String>> perKey = new LinkedList<>();

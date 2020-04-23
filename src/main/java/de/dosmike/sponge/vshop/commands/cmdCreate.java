@@ -106,14 +106,14 @@ public class cmdCreate extends Command {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                     localString("cmd.create.invalidtype").orLiteral(player)));
         }
-        if (!asAdminShop) {
-            String entityPermission = shopEntity.getNpcType().getId();
-            entityPermission = "vshop.create." + entityPermission.replace(':', '.').replace("_", "").replace("-", "");
-            if (!player.hasPermission(entityPermission)) {
-                throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                        localString("cmd.create.entitypermission").replace("%permission%", entityPermission).orLiteral(player)));
-            }
+
+        String entityPermission = shopEntity.getNpcType().getId();
+        entityPermission = "vshop.create." + entityPermission.replace(':', '.').replace("_", "").replace("-", "");
+        if (!player.hasPermission(entityPermission)) {
+            throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
+                    localString("cmd.create.entitypermission").replace("%permission%", entityPermission).orLiteral(player)));
         }
+
         shopEntity.setVariant(skinVariant);
         //var wanted, but none returned/found
         if (!"none".equalsIgnoreCase(skinVariant) &&
@@ -142,6 +142,7 @@ public class cmdCreate extends Command {
         } catch (Exception e) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ", localString("cmd.create.invalidpos").orLiteral(player)));
         }
+        // check if there's already a shop at this location
         if (VillagerShops.isLocationOccupied(createAt)) {
             throw new CommandException(Text.of(TextColors.RED, "[vshop] ", localString("cmd.create.occupied").orLiteral(player)));
         }
