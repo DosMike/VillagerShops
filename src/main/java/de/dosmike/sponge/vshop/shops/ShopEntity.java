@@ -232,7 +232,7 @@ public class ShopEntity {
      * if present this shop is a player-shop as defined by setPlayerShop
      */
     public Optional<UUID> getShopOwner() {
-        return playershopOwner == null ? Optional.empty() : Optional.of(playershopOwner);
+        return Optional.ofNullable(playershopOwner);
     }
     /** used for internals */
     public void setShopOwnerRaw(UUID shopOwnerRawId) {

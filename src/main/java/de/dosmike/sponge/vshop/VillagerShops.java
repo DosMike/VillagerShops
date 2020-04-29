@@ -63,6 +63,7 @@ public class VillagerShops {
     //=====----- - - - Services, Scheduler, Constants and their getters
 
     static VillagerShops instance;
+    public VillagerShops() { instance = this; }
 
     public static VillagerShops getInstance() {
         return instance;
@@ -108,13 +109,17 @@ public class VillagerShops {
     @Listener
     public void onChangeServiceProvider(ChangeServiceProviderEvent event) {
         if (event.getService().equals(EconomyService.class)) {
+            l("Found Economy Service");
             economyService = (EconomyService) event.getNewProvider();
         } else if (event.getService().equals(LanguageService.class)) {
+            l("Found Language Service");
             languageService = (LanguageService) event.getNewProvider();
             translator = languageService.registerTranslation(this); //add this plugin to langswitch
         } else if (event.getService().equals(UserStorageService.class)) {
+            l("Found UserStorage Service");
             userStorage = (UserStorageService) event.getNewProvider();
         } else if (event.getService().equals(PermissionService.class)) {
+            l("Found Permission Service");
             permissions = (PermissionService)event.getNewProvider();
         }
     }
