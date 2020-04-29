@@ -555,6 +555,12 @@ public class VillagerShops {
     public void onServerInit(GameInitializationEvent event) {
         Sponge.getEventManager().registerListeners(this, new EventListeners());
 
+        //Some are provided earlier than when plugins are initialized
+        if (userStorage == null)
+            userStorage = Sponge.getServiceManager().provide(UserStorageService.class).orElseThrow(()->new IllegalStateException("Could not find UserStorageService"));
+        if (permissions == null)
+            permissions = Sponge.getServiceManager().provide(PermissionService.class).orElseThrow(()->new IllegalStateException("Could not find PermissionService"));
+
         l("Registering commands...");
         CommandRegistra.register();
         l("Loading configs...");
