@@ -134,6 +134,8 @@ public class EventListeners {
                 .map(NPCguard::getPreparator)
                 .map(InvPrep::getMenu)
                 .forEach(m->m.clearPlayerState(event.getTargetEntity().getUniqueId()));
+
+        Utilities.openShops.remove(event.getTargetEntity().getUniqueId());
     }
 
     @Listener
