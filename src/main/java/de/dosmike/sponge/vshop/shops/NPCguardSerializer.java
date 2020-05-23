@@ -42,6 +42,7 @@ public class NPCguardSerializer implements TypeSerializer<NPCguard> {
         rootNode.getNode("rotation").setValue(npc.getRot().getY()); // we only need the yaw rotationb
         rootNode.getNode("entitytype").setValue(npc.getNpcType().getId());
         rootNode.getNode("variant").setValue(npc.getVariantName());
+        rootNode.getNode("invulnerable").setValue(npc.getInvulnerable());
         rootNode.getNode("displayName").setValue(TextSerializers.FORMATTING_CODE.serialize(npc.getDisplayName()));
         if (npc.playershopholder != null)
             rootNode.getNode("playershop").setValue(npc.playershopholder.toString());
@@ -80,6 +81,7 @@ public class NPCguardSerializer implements TypeSerializer<NPCguard> {
         npc.setRot(new Vector3d(0.0, cfg.getNode("rotation").getDouble(0.0), 0.0));
         npc.setNpcType(Sponge.getRegistry().getType(EntityType.class, cfg.getNode("entitytype").getString("minecraft:villager")).orElse(null));
         npc.setVariant(cfg.getNode("variant").getString("NONE"));
+        npc.setInvulnerable(cfg.getNode("invulnerable").getBoolean(false));
         npc.setDisplayName(TextSerializers.FORMATTING_CODE.deserialize(cfg.getNode("displayName").getString("VillagerShop")));
         String tmp = cfg.getNode("playershop").getString(null);
         if (tmp != null && !tmp.isEmpty())

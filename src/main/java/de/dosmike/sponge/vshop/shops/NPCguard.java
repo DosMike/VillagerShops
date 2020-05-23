@@ -31,6 +31,7 @@ public class NPCguard {
     private EntityType npcType = EntityTypes.VILLAGER;
     private String variantName;
     private FieldResolver.KeyAttacher variant;
+    private boolean invulnerable;
     private Text displayName;
     private UUID ident; //for configs;
     UUID playershopholder = null;
@@ -169,6 +170,14 @@ public class NPCguard {
         return variantName;
     }
 
+    public void setInvulnerable(boolean invulnerable) {
+        this.invulnerable = invulnerable;
+    }
+
+    public boolean getInvulnerable() {
+        return this.invulnerable;
+    }
+
     public Entity getLe() {
         return le;
     }
@@ -268,6 +277,9 @@ public class NPCguard {
                         } catch (Exception e) {
                             VillagerShops.l("Variant no longer supported! Did the EntityType change?");
                         }
+
+                    if (invulnerable)
+                        shop.offer(Keys.INVULNERABLE, true);
 
                     shop.offer(Keys.DISPLAY_NAME, displayName);
 

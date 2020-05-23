@@ -63,6 +63,8 @@ public class CommandRegistra {
                         GenericArguments.flags().valueFlag(
                                 GenericArguments.string(Text.of("position")), "-at"
                         ).valueFlag(
+                                GenericArguments.bool(Text.of("invulnerable")), "-invulnerable"
+                        ).valueFlag(
                                 DependingSuggestionElement.denenentSuggest(
                                         GenericArguments.string(Text.of("Skin")),
                                         Text.of("EntityType"),
@@ -158,6 +160,11 @@ public class CommandRegistra {
                     npc.setPreparator(prep);
                     npc.setLoc(createAt);
                     npc.setRot(new Vector3d(0, rotateYaw, 0));
+                    if (args.hasAny("invulnerable")) try {
+                        npc.setInvulnerable(args.<Boolean>getOne("invulnerable").get());
+                    } catch (Exception e) {
+                        throw new CommandException(Text.of(TextColors.RED, "[vShop] ", lang.local("cmd.create.invalidinvulnerable").resolve(player).orElse("[Invalid invulnerable]")));
+                    }
                     boolean playershop = false;
                     try {
                         npc.setPlayerShop(player.getUniqueId());

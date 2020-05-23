@@ -11,6 +11,7 @@ cmd.create.entitypermission:This EntityType requires permission %permission%
 cmd.create.invalidvariant:No such Style/Variant found for %variant% - Use NONE or 0 to get the default Style/Variant
 cmd.create.playershop.missingcontainer:You need to put a container below your playershop!
 cmd.create.invalidpos:The positions needs to be formatted like WORLD/X/Y/Z/ROTATION
+cmd.create.invalidinvulnerable:The invulnerable flag needs to be formatted like true or false
 cmd.create.invalidworld:Such a world does not exist
 cmd.create.playershop.success:Created a new player shop called %name%
 cmd.create.playershop.limit:You may not create more than %limit% shops
