@@ -126,6 +126,7 @@ public class cmdImport extends Command {
         }
         entity.offer(Keys.AI_ENABLED, false);
         entity.offer(Keys.IS_SILENT, true);
+        entity.offer(Keys.INVULNERABLE, true);
         VillagerShops.addShop(shopEntity);
 
         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",

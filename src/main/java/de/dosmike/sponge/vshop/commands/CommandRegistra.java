@@ -19,10 +19,11 @@ public class CommandRegistra {
 
         children = new HashMap<>();
         children.put(Collections.singletonList("create"), cmdCreate.getCommandSpec());
-        children.put(Collections.singletonList("import"), cmdImport.getCommandSpec());
+        children.put(Arrays.asList("import", "adapt"), cmdImport.getCommandSpec());
         children.put(Collections.singletonList("add"), cmdAdd.getCommandSpec());
         children.put(Collections.singletonList("remove"), cmdRemove.getCommandSpec());
         children.put(Arrays.asList("delete", "exterminate"), cmdDelete.getCommandSpec());
+        children.put(Arrays.asList("free", "release"), cmdRelease.getCommandSpec());
         children.put(Collections.singletonList("save"), cmdSave.getCommandSpec());
         children.put(Collections.singletonList("reload"), cmdReload.getCommandSpec());
         children.put(Arrays.asList("list", "get", "for"), cmdList.getCommandSpec());

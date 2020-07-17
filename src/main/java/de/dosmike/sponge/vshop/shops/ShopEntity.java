@@ -269,6 +269,7 @@ public class ShopEntity {
         Entity shop = location.getExtent().createEntity(npcType, location.getPosition());
         shop.offer(Keys.AI_ENABLED, false);
         shop.offer(Keys.IS_SILENT, true);
+        shop.offer(Keys.INVULNERABLE, true);
         shop.offer(Keys.DISPLAY_NAME, displayName);
 
         //setting variant. super consistent ;D
@@ -290,6 +291,14 @@ public class ShopEntity {
                     shop.getLocation().getBlockZ());
         }
         return shop;
+    }
+    public void freeEntity() {
+        getEntity().ifPresent(shop->{
+            shop.offer(Keys.AI_ENABLED, true);
+            shop.offer(Keys.IS_SILENT, false);
+            shop.offer(Keys.INVULNERABLE, false);
+            lastEntity = null;
+        });
     }
 
     /** Custom toString name [is] { more } */

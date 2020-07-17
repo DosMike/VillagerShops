@@ -50,6 +50,7 @@ cmd.link.success:Dieser Kontainer ist nun mit dem Shop verbinden. Der alte Konta
 cmd.remove.invalidindex:An der angegebenen Position befindet sich kein Item
 cmd.remove.success:Item an der Position %pos% wurde vom Shop entfernt
 cmd.deleted:Shop gelöscht!
+cmd.released:Die Entity wurde freigegeben!
 cmd.saved:Shops gespeichert!
 cmd.reloaded:Reload komplett!
 cmd.ledger.invalid:Du kannst -t nicht mit einem Target verwenden 

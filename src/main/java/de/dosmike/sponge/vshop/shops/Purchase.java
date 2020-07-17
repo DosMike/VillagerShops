@@ -60,7 +60,7 @@ public class Purchase {
      * @param quantity the amount of items supposed to take, overriding the default in item
      * @return the ItemStacks taken from the inventory
      */
-    public Set<ItemStack> getFrom(Inventory inv, int quantity) {
+    private Set<ItemStack> getFrom(Inventory inv, int quantity) {
         int ammountLeft = quantity;
         Set<ItemStack> stacks = new HashSet<>();
         Inventory result = stockItem.filterInventory(inv);

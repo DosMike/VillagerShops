@@ -31,7 +31,7 @@ cmd.add.filter.playeronly:Only player-shops can trade this item.
 cmd.add.filter.incomaptible:This item does not match the filter.
 cmd.add.buyprice:The BuyPrice was not '~' or a decimal
 cmd.add.sellprice:The SellPrice was not '~ or a decimal
-cmd.add.noprice:You need to specify at lease one of BuyPrice and SellPrice
+cmd.add.noprice:You need to specify at least one of BuyPrice and SellPrice
 cmd.add.negativeprice:Prices may not be negative
 cmd.add.itemisair:Please hold the exact item you want to sell in your hand
 cmd.add.success:Added %item% to the shop at position %pos%
@@ -50,6 +50,7 @@ cmd.link.missingshop:Couldn't find the shop supposed to link this chest to
 cmd.link.distance:You are too far away! The distance to the container may not exceed %distance% blocks.
 cmd.link.success:This chest is now linked to the shop. The old container is no longer protected!
 cmd.deleted:Shop deleted!
+cmd.released:The entity was released!
 cmd.saved:Shops saved!
 cmd.reloaded:Reload complete!
 cmd.ledger.invalid:You can't use -t with a Target

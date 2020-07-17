@@ -132,6 +132,8 @@ public class EventListeners {
                 .map(ShopEntity::getMenu)
                 .map(ShopMenuManager::getMenu)
                 .forEach(m->m.clearPlayerState(event.getTargetEntity().getUniqueId()));
+
+        Utilities._openShops_remove(event.getTargetEntity());
     }
 
     /*
