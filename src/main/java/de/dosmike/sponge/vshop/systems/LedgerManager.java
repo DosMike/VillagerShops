@@ -340,6 +340,7 @@ public class LedgerManager {
                         ((Player) viewer).sendBookView(BookView.builder()
                                 .title(Text.of("Business Ledger for ", target.getName()))
                                 .addPages(pages)
+                                .author(Text.of(target.getName()))
                                 .build()
                         );
                     } else {

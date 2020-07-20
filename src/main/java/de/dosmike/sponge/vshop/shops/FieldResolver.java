@@ -112,9 +112,13 @@ public class FieldResolver {
     public String getVariant(Entity targetEntity) {
         String variantMagic = keys.stream()
                 .map(key->{
-                    Object keyValue = targetEntity.getValue((Key<? extends BaseValue<Object>>)key).orElse(null);
-                    if (keyValue instanceof CatalogType) return ((CatalogType) keyValue).getId();
-                    else return keyValue == null ? "" : keyValue.toString();
+                    Object value = targetEntity.getValue((Key<? extends BaseValue<Object>>)key)
+                            .map(BaseValue::get).orElse(null);
+                    if (value instanceof CatalogType) {
+                        return ((CatalogType) value).getId();
+                    } else {
+                        return value == null ? "" : value.toString();
+                    }
                 }).collect(Collectors.joining(VARIANT_CONCATINATOR));
         return variantMagic.isEmpty() ? "none" : variantMagic;
     }

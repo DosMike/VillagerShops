@@ -25,6 +25,7 @@ public class ShopEntity {
     private Vector3d rotation;
     private ShopMenuManager menu;
     private UUID lastEntity = null;
+    private int ticksWithoutEntity = 0;
     private EntityType npcType = EntityTypes.VILLAGER;
     private String variantName;
     private FieldResolver.KeyAttacher variant;
@@ -38,6 +39,10 @@ public class ShopEntity {
     public ShopEntity(UUID identifier) {
         shopUniqueId = identifier;
     }
+    public ShopEntity(UUID identifier, UUID trackEntity) {
+        shopUniqueId = identifier;
+        lastEntity = trackEntity;
+    }
 
     public UUID getIdentifier() {
         return shopUniqueId;
@@ -48,7 +53,7 @@ public class ShopEntity {
         if (location.getExtent().isLoaded()) {
             Entity ent = location.getExtent().getEntity(lastEntity).orElse(null);
             if (ent != null && ent.isLoaded() && !ent.isRemoved())
-                location = ent.getLocation();
+                setLocation(ent.getLocation()); //block pos
         }
         return location;
     }
@@ -240,7 +245,17 @@ public class ShopEntity {
     }
 
     public void tick() {
-        getEntity().ifPresent(le->{
+        Optional<Entity> oe = getEntity();
+        if (!oe.isPresent()) {
+            // try to respawn the entity after 60 seconds, way better that every tick
+            // and still better than only on chunk load
+            if (++ticksWithoutEntity>=600) {
+                oe = findOrCreate();
+                ticksWithoutEntity=0;//reset regardless of whether spawning succeeded
+            }
+        }
+        oe.ifPresent(le->{
+            ticksWithoutEntity=0;
             if (le instanceof Living) {
                 if ((++lookAroundTicks > 15 && VillagerShops.rng.nextInt(10) == 0) || lookAroundTicks > 100) {
                     Living mo = (Living) le;
@@ -251,7 +266,8 @@ public class ShopEntity {
             }
         });
     }
-    public void findOrCreate() {
+    /** @return empty if the chunk/extent is not currently loaded */
+    public Optional<Entity> findOrCreate() {
         Optional<Chunk> chunk = location.getExtent().getChunk(location.getChunkPosition());
         if (chunk.isPresent() && chunk.get().isLoaded()) {
             //first try to link the entity again:
@@ -263,7 +279,8 @@ public class ShopEntity {
                     .findFirst().orElseGet(this::spawn); // or create new one
             shop.setLocationAndRotation(location, rotation);
             lastEntity = shop.getUniqueId();
-        }
+            return Optional.of(shop);
+        } else return Optional.empty();
     }
     public Entity spawn() {
         Entity shop = location.getExtent().createEntity(npcType, location.getPosition());
@@ -311,4 +328,5 @@ public class ShopEntity {
                 Utilities.toString(location), rotation.getY()
         );
     }
+
 }

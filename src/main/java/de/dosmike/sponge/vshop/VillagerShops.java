@@ -211,8 +211,8 @@ public class VillagerShops {
     }
     private static final List<ShopEntity> shops = new LinkedList<>();
 
-    public static void addShop(ShopEntity shopEntity) {
-        shopEntity.findOrCreate();
+    public static void addShop(ShopEntity shopEntity, boolean createIfAbsent) {
+        if (createIfAbsent) shopEntity.findOrCreate();
         synchronized (shops) {
             shops.add(shopEntity);
         }

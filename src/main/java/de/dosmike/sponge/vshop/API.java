@@ -31,7 +31,7 @@ public class API {
         shopEntity.setMenu(prep);
         shopEntity.setLocation(location);
         shopEntity.setRotation(new Vector3d(0, rotation, 0));
-        VillagerShops.addShop(shopEntity);
+        VillagerShops.addShop(shopEntity, true);
         VillagerShops.audit("The shop %s [%s] was created via API { entity: %s, skin: %s, location: %s }",
                 displayName.toPlain(), shopEntity.getIdentifier().toString(),
                 type.getId(), shopEntity.getVariantName(),

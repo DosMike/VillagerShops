@@ -161,7 +161,7 @@ public class cmdCreate extends Command {
                         localString("cmd.create.playershop.missingcontainer").orLiteral(player)));
             }
         }
-        VillagerShops.addShop(shopEntity);
+        VillagerShops.addShop(shopEntity, true);
 
         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                 localText(playershop ? "cmd.create.playershop.success" : "cmd.create.success").replace("%name%", Text.of(TextColors.RESET, displayName)).orLiteral(player)));

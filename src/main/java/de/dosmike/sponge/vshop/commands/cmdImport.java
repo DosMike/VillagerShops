@@ -15,8 +15,11 @@ import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.manipulator.mutable.entity.AgentData;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
+import org.spongepowered.api.entity.ai.task.AITaskTypes;
+import org.spongepowered.api.entity.living.Agent;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
@@ -80,6 +83,8 @@ public class cmdImport extends Command {
             throw new CommandException(Text.of(TextColors.RED, "[vshop] ", localString("cmd.import.occupied").orLiteral(player)));
         }
 
+        Location<World> blockifiedAt = findAt.getExtent().getLocation(findAt.getBlockPosition().toDouble().add(0.5,0,0.5));
+
         String skinVariant;
         if (entity.getType().equals(EntityTypes.HORSE)) {
             skinVariant = FieldResolver.HORSE_VARIANT.getVariant(entity);
@@ -96,8 +101,9 @@ public class cmdImport extends Command {
         } else {
             skinVariant = "none";
         }
+        VillagerShops.l("Entity Type extracted from %s: %s", entity.getType().getName(), skinVariant);
 
-        Text displayName = entity.get(Keys.DISPLAY_NAME).orElse(Text.of("VillagerShop"));
+        Text displayName = entity.get(Keys.DISPLAY_NAME).orElse(Text.EMPTY);
 
         String entityPermission = entity.getType().getId();
         entityPermission = "vshop.create." + entityPermission.replace(':', '.').replace("_", "").replace("-", "");
@@ -106,13 +112,13 @@ public class cmdImport extends Command {
                     localString("cmd.import.entitypermission").replace("%permission%", entityPermission).orLiteral(player)));
         }
 
-        ShopEntity shopEntity = new ShopEntity(UUID.randomUUID());
+        ShopEntity shopEntity = new ShopEntity(UUID.randomUUID(), entity.getUniqueId());
         ShopMenuManager menu = new ShopMenuManager();
         shopEntity.setNpcType(entity.getType());
         shopEntity.setVariant(skinVariant);
         shopEntity.setDisplayName(displayName);
         shopEntity.setMenu(menu);
-        shopEntity.setLocation(findAt);
+        shopEntity.setLocation(blockifiedAt);
         shopEntity.setRotation(new Vector3d(0, rotateYaw, 0));
         boolean playershop = false;
         try {
@@ -127,7 +133,8 @@ public class cmdImport extends Command {
         entity.offer(Keys.AI_ENABLED, false);
         entity.offer(Keys.IS_SILENT, true);
         entity.offer(Keys.INVULNERABLE, true);
-        VillagerShops.addShop(shopEntity);
+        entity.setLocation(blockifiedAt);
+        VillagerShops.addShop(shopEntity, false);
 
         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
                 localText(playershop ? "cmd.import.playershop.success" : "cmd.import.success").replace("%name%", Text.of(TextColors.RESET, displayName)).orLiteral(player)));
