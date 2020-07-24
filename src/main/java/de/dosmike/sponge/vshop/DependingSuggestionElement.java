@@ -1,27 +1,28 @@
 package de.dosmike.sponge.vshop;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.ArgumentParseException;
 import org.spongepowered.api.command.args.CommandArgs;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.CommandElement;
-import org.spongepowered.api.text.Text;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class DependingSuggestionElement extends CommandElement {
 
-    public static DependingSuggestionElement denenentSuggest(CommandElement wrapped, Text dependentKey, Function<List<String>, Iterable<String>> denendentSuggestions) {
-        return new DependingSuggestionElement(wrapped, denendentSuggestions, true);
+    public static DependingSuggestionElement dependentSuggest(CommandElement wrapped, Function<List<String>, Iterable<String>> dependentSuggestions) {
+        return new DependingSuggestionElement(wrapped, dependentSuggestions, true);
     }
-    public static DependingSuggestionElement denenentSuggest(CommandElement wrapped, Text dependentKey, Function<List<String>, Iterable<String>> denendentSuggestions, boolean requireBegin) {
-        return new DependingSuggestionElement(wrapped, denendentSuggestions, requireBegin);
+    public static DependingSuggestionElement dependentSuggest(CommandElement wrapped, Function<List<String>, Iterable<String>> dependentSuggestions, boolean requireBegin) {
+        return new DependingSuggestionElement(wrapped, dependentSuggestions, requireBegin);
     }
 
     private final CommandElement wrapped;
@@ -36,13 +37,13 @@ public class DependingSuggestionElement extends CommandElement {
     }
 
     @Override
-    public void parse(CommandSource source, CommandArgs args, CommandContext context) throws ArgumentParseException {
+    public void parse(@NotNull CommandSource source, @NotNull CommandArgs args, @NotNull CommandContext context) throws ArgumentParseException {
         wrapped.parse(source, args, context);
     }
 
     @Nullable
     @Override
-    protected Object parseValue(CommandSource source, CommandArgs args) throws ArgumentParseException {
+    protected Object parseValue(@NotNull CommandSource source, @NotNull CommandArgs args) {
         try {
             Method delegate = wrapped.getClass().getMethod("parseValue", CommandSource.class, CommandArgs.class);
             delegate.setAccessible(true);
@@ -52,11 +53,11 @@ public class DependingSuggestionElement extends CommandElement {
         }
     }
 
-    @Override
-    public List<String> complete(CommandSource src, CommandArgs args, CommandContext context) {
+    @NotNull @Override
+    public List<String> complete(@NotNull CommandSource src, @NotNull CommandArgs args, @NotNull CommandContext context) {
         if (this.requireBegin) {
             String arg = args.nextIfPresent().orElse("");
-            return ImmutableList.copyOf(Iterables.filter(this.suggestions.apply(args.getAll()), f -> f.startsWith(arg)));
+            return ImmutableList.copyOf(StreamSupport.stream(this.suggestions.apply(args.getAll()).spliterator(), false).filter(f -> f.startsWith(arg)).collect(Collectors.toList()));
         } else {
             return ImmutableList.copyOf(this.suggestions.apply(args.getAll()));
         }

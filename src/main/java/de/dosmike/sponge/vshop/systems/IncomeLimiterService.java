@@ -32,22 +32,22 @@ public class IncomeLimiterService {
 
     public BigDecimal earningFor(Player player) {
         dayCheck();
-        return earnings.containsKey(player.getUniqueId()) ? earnings.get(player.getUniqueId()) : BigDecimal.ZERO;
+        return earnings.getOrDefault(player.getUniqueId(), BigDecimal.ZERO);
     }
 
     /**
      * checks wether this player has a limit set, and if the limit actually specifies a limit (negative values mean infinite)
      */
     public boolean isIncomeLimited(Player player) {
-        Optional<String> oil = player.getOption("vshop.option.dailyincome.limit");
-        if (!oil.isPresent()) {
+        Optional<String> rawLimit = player.getOption("vshop.option.dailyincome.limit");
+        if (!rawLimit.isPresent()) {
             return false;
         }
-        BigDecimal limit = null;
+        BigDecimal limit;
         try {
-            limit = new BigDecimal(oil.get());
+            limit = new BigDecimal(rawLimit.get());
         } catch (Exception e) {
-            VillagerShops.w("Illegal value for 'vshop.option.dailyincome.limit' on %s: \"%s\" was not a decimal", player.getName(), oil.get());
+            VillagerShops.w("Illegal value for 'vshop.option.dailyincome.limit' on %s: \"%s\" was not a decimal", player.getName(), rawLimit.get());
             return false;
         }
         return (limit.compareTo(BigDecimal.ZERO) > 0);
@@ -57,15 +57,15 @@ public class IncomeLimiterService {
      * checks whether this players spendings are limited. kinda like child protection but in crappy
      */
     public boolean isSpendingsLimited(Player player) {
-        Optional<String> oil = player.getOption("vshop.option.dailyspendings.limit");
-        if (!oil.isPresent()) {
+        Optional<String> rawLimit = player.getOption("vshop.option.dailyspendings.limit");
+        if (!rawLimit.isPresent()) {
             return false;
         }
-        BigDecimal limit = null;
+        BigDecimal limit;
         try {
-            limit = new BigDecimal(oil.get());
+            limit = new BigDecimal(rawLimit.get());
         } catch (Exception e) {
-            VillagerShops.w("Illegal value for 'vshop.option.dailyspendings.limit' on %s: \"%s\" was not a decimal", player.getName(), oil.get());
+            VillagerShops.w("Illegal value for 'vshop.option.dailyspendings.limit' on %s: \"%s\" was not a decimal", player.getName(), rawLimit.get());
             return false;
         }
         return (limit.compareTo(BigDecimal.ZERO) > 0);
@@ -73,13 +73,13 @@ public class IncomeLimiterService {
 
     public Optional<BigDecimal> getRemainingIncome(Player player) {
         dayCheck();
-        Optional<String> oil = player.getOption("vshop.option.dailyincome.limit");
-        if (!oil.isPresent()) return Optional.empty();
-        BigDecimal limit = null;
+        Optional<String> rawLimit = player.getOption("vshop.option.dailyincome.limit");
+        if (!rawLimit.isPresent()) return Optional.empty();
+        BigDecimal limit;
         try {
-            limit = new BigDecimal(oil.get());
+            limit = new BigDecimal(rawLimit.get());
         } catch (Exception e) {
-            VillagerShops.w("Illegal value for 'vshop.option.dailyincome.limit' on %s: \"%s\" was not a decimal", player.getName(), oil.get());
+            VillagerShops.w("Illegal value for 'vshop.option.dailyincome.limit' on %s: \"%s\" was not a decimal", player.getName(), rawLimit.get());
             return Optional.empty();
         }
         if (limit.compareTo(BigDecimal.ZERO) > 0) { //applicable
@@ -92,13 +92,13 @@ public class IncomeLimiterService {
     }
 
     public Optional<BigDecimal> getRemainingSpendings(Player player) {
-        Optional<String> oil = player.getOption("vshop.option.dailyspendings.limit");
-        if (!oil.isPresent()) return Optional.empty();
-        BigDecimal limit = null;
+        Optional<String> rawLimit = player.getOption("vshop.option.dailyspendings.limit");
+        if (!rawLimit.isPresent()) return Optional.empty();
+        BigDecimal limit;
         try {
-            limit = new BigDecimal(oil.get());
+            limit = new BigDecimal(rawLimit.get());
         } catch (Exception e) {
-            VillagerShops.w("Illegal value for 'vshop.option.dailyspendings.limit' on %s: \"%s\" was not a decimal", player.getName(), oil.get());
+            VillagerShops.w("Illegal value for 'vshop.option.dailyspendings.limit' on %s: \"%s\" was not a decimal", player.getName(), rawLimit.get());
             return Optional.empty();
         }
         if (limit.compareTo(BigDecimal.ZERO) > 0) { //applicable
@@ -115,10 +115,10 @@ public class IncomeLimiterService {
      * This method will use getRemainingIncome and return the amount this player can hold from {@param amount}
      */
     public BigDecimal registerIncome(Player player, BigDecimal amount) {
-        Optional<BigDecimal> ore = getRemainingIncome(player);
-        if (!ore.isPresent()) return BigDecimal.ZERO;
-        BigDecimal space = ore.get().min(amount);
-        BigDecimal newbalance = earnings.containsKey(player.getUniqueId()) ? earnings.get(player.getUniqueId()) : BigDecimal.ZERO;
+        Optional<BigDecimal> remainingIncome = getRemainingIncome(player);
+        if (!remainingIncome.isPresent()) return BigDecimal.ZERO;
+        BigDecimal space = remainingIncome.get().min(amount);
+        BigDecimal newbalance = earnings.getOrDefault(player.getUniqueId(), BigDecimal.ZERO);
         newbalance = newbalance.add(space);
         earnings.put(player.getUniqueId(), newbalance);
         return space;
@@ -129,10 +129,10 @@ public class IncomeLimiterService {
      * Usage: getspendings(), get min between price, make purchase, call this with final price
      */
     public BigDecimal registerSpending(Player player, BigDecimal amount) {
-        Optional<BigDecimal> ore = getRemainingIncome(player);
-        if (!ore.isPresent()) return BigDecimal.ZERO;
-        BigDecimal space = ore.get().min(amount);
-        BigDecimal newbalance = spendings.containsKey(player.getUniqueId()) ? spendings.get(player.getUniqueId()) : BigDecimal.ZERO;
+        Optional<BigDecimal> remainingIncome = getRemainingIncome(player);
+        if (!remainingIncome.isPresent()) return BigDecimal.ZERO;
+        BigDecimal space = remainingIncome.get().min(amount);
+        BigDecimal newbalance = spendings.getOrDefault(player.getUniqueId(), BigDecimal.ZERO);
         newbalance = newbalance.add(space);
         spendings.put(player.getUniqueId(), newbalance);
         return space;

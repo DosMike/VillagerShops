@@ -10,7 +10,7 @@ import de.dosmike.sponge.vshop.ConfigSettings;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.shops.InteractionHandler;
-import de.dosmike.sponge.vshop.shops.NPCguard;
+import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.shops.StockItem;
 import org.apache.commons.lang3.NotImplementedException;
 import org.spongepowered.api.data.key.Keys;
@@ -24,7 +24,8 @@ import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public final class MShop extends IElementImpl implements IClickable<MShop> {
+/** represents a {@link StockItem} as button inside an inventory menu */
+public final class MShopSlot extends IElementImpl implements IClickable<MShopSlot> {
 
     public static final String MENU_SHOP_QUANTITY = "quantity";
 
@@ -32,23 +33,23 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
     private static final IIcon removeMeIcon = IIcon.of(ItemTypes.BARRIER);
     private StockItem stockItem;
     private int myPosition;
-    public MShop(StockItem stockItem, int listPosition) {
+    public MShopSlot(StockItem stockItem, int listPosition) {
         this.stockItem = stockItem;
         myPosition = listPosition;
     }
 
-    private OnClickListener<MShop> clickListener = (element, player, button, shift)-> {
+    private final OnClickListener<MShopSlot> clickListener = (element, player, button, shift) -> {
         StateObject state = element.getParent().getPlayerState(player);
-        boolean inRemoveMode = state.getBoolean(InvPrep.MENU_REMOVEMODE).orElse(false);
+        boolean inRemoveMode = state.getBoolean(ShopMenuManager.MENU_REMOVEMODE).orElse(false);
         if (inRemoveMode) {
-            HashSet<Integer> marked = (HashSet<Integer>) state.get(InvPrep.MENU_REMOVESET).orElse(new HashSet<Integer>());
+            HashSet<Integer> marked = state.<HashSet<Integer>>get(ShopMenuManager.MENU_REMOVESET).orElse(new HashSet<>());
             markedForRemoval=!markedForRemoval;
             if (markedForRemoval) {
                 marked.add(myPosition);
             } else {
                 marked.remove(myPosition);
             }
-            state.set(InvPrep.MENU_REMOVESET, marked);
+            state.set(ShopMenuManager.MENU_REMOVESET, marked);
             element.invalidate();
             return;
         }
@@ -63,10 +64,10 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
         } else return;
         UUID shopID = Utilities.getOpenShopFor(player);
         if (shopID == null) return;
-        NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+        ShopEntity shop = VillagerShops.getShopFromShopId(shopID).orElse(null);
         if (shop == null) return;
 
-        InvPrep.QuantityValues quantityValues = getParent().getPlayerState(player).getOfClass(MENU_SHOP_QUANTITY, InvPrep.QuantityValues.class)
+        ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(player).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
                         .orElse(ConfigSettings.getShopsDefaultStackSize());
         int quantity;
         if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
@@ -78,18 +79,18 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
 
         int change = InteractionHandler.shopItemClicked(player, shop, stockItem, doBuy, quantity);
         if (change > 0 && stockItem.getMaxStock()>0) {
-            shop.getStockInventory().ifPresent(stock->stockItem.updateStock(stock));
+            shop.getStockInventory().ifPresent(stockItem::updateStock);
             invalidate();
         }
     };
 
     @Override
-    public void setOnClickListener(OnClickListener<MShop> listener) {
+    public void setOnClickListener(OnClickListener<MShopSlot> listener) {
         throw new NotImplementedException("Can't set OnClickListener for Shop Menu Elements");
     }
 
     @Override
-    public OnClickListener<MShop> getOnClickListener() {
+    public OnClickListener<MShopSlot> getOnClickListener() {
         return clickListener;
     }
 
@@ -98,9 +99,10 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
         clickListener.onClick(this, viewer, button, shift);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public MShop copy() {
-        MShop copy = new MShop(stockItem, myPosition);
+    public MShopSlot copy() {
+        MShopSlot copy = new MShopSlot(stockItem, myPosition);
         copy.setPosition(getPosition());
         return copy;
     }
@@ -110,7 +112,7 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
             if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
                 UUID shopID = Utilities.getOpenShopFor(viewer);
                 if (shopID != null) {
-                    NPCguard shop = VillagerShops.getNPCfromShopUUID(shopID).orElse(null);
+                    ShopEntity shop = VillagerShops.getShopFromShopId(shopID).orElse(null);
                     if (shop != null) {
                         displayItem = stockItem.getItem(!shop.getShopOwner().isPresent());
                     }
@@ -131,7 +133,7 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
 
         ItemStack displayItem = _getDisplayItem(viewer);
 
-        InvPrep.QuantityValues quantityValues = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, InvPrep.QuantityValues.class)
+        ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
                 .orElse(ConfigSettings.getShopsDefaultStackSize());
         int quantity;
         if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
@@ -185,7 +187,7 @@ public final class MShop extends IElementImpl implements IClickable<MShop> {
         List<Text> lore = item.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
 
         Text currency = stockItem.getCurrency().getSymbol();
-        int quantity = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, InvPrep.QuantityValues.class)
+        int quantity = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
                         .orElse(ConfigSettings.getShopsDefaultStackSize())
                         .getStackSize(item.getType());
         if (stockItem.getBuyPrice() != null) {

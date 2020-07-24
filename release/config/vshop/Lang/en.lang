@@ -12,9 +12,15 @@ cmd.create.invalidvariant:No such Style/Variant found for %variant% - Use NONE o
 cmd.create.playershop.missingcontainer:You need to put a container below your playershop!
 cmd.create.invalidpos:The positions needs to be formatted like WORLD/X/Y/Z/ROTATION
 cmd.create.invalidworld:Such a world does not exist
+cmd.create.occupied:There is already a shop at this location
 cmd.create.playershop.success:Created a new player shop called %name%
 cmd.create.playershop.limit:You may not create more than %limit% shops
 cmd.create.success:Created a new admin shop called %name%
+cmd.import.notarget:There is not entity where you're looking!
+cmd.import.occupied:The entity is already a shop
+cmd.import.entitypermission:This Entity requires permission %permission%
+cmd.import.success:Imported entity as admin shop called %name%
+cmd.import.playershop.success:Imported entity as player shop called %name%
 cmd.add.limit.adminshop:You can't add stock limits to an admin-shop
 cmd.add.overwrite.index:There is no item on the specified position
 cmd.add.filter.nooredict:This server does not support OreDict
@@ -25,7 +31,7 @@ cmd.add.filter.playeronly:Only player-shops can trade this item.
 cmd.add.filter.incomaptible:This item does not match the filter.
 cmd.add.buyprice:The BuyPrice was not '~' or a decimal
 cmd.add.sellprice:The SellPrice was not '~ or a decimal
-cmd.add.noprice:You need to specify at lease one of BuyPrice and SellPrice
+cmd.add.noprice:You need to specify at least one of BuyPrice and SellPrice
 cmd.add.negativeprice:Prices may not be negative
 cmd.add.itemisair:Please hold the exact item you want to sell in your hand
 cmd.add.success:Added %item% to the shop at position %pos%
@@ -44,6 +50,7 @@ cmd.link.missingshop:Couldn't find the shop supposed to link this chest to
 cmd.link.distance:You are too far away! The distance to the container may not exceed %distance% blocks.
 cmd.link.success:This chest is now linked to the shop. The old container is no longer protected!
 cmd.deleted:Shop deleted!
+cmd.released:The entity was released!
 cmd.saved:Shops saved!
 cmd.reloaded:Reload complete!
 cmd.ledger.invalid:You can't use -t with a Target

@@ -5,8 +5,9 @@ import com.google.inject.Inject;
 import de.dosmike.sponge.VersionChecker;
 import de.dosmike.sponge.languageservice.API.LanguageService;
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
-import de.dosmike.sponge.vshop.shops.NPCguard;
-import de.dosmike.sponge.vshop.shops.NPCguardSerializer;
+import de.dosmike.sponge.vshop.commands.CommandRegistra;
+import de.dosmike.sponge.vshop.shops.ShopEntity;
+import de.dosmike.sponge.vshop.shops.ShopEntitySerializer;
 import de.dosmike.sponge.vshop.shops.StockItem;
 import de.dosmike.sponge.vshop.shops.StockItemSerializer;
 import de.dosmike.sponge.vshop.systems.*;
@@ -48,17 +49,20 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-@Plugin(id = "vshop", name = "VillagerShops", version = "2.5")
+@SuppressWarnings("UnstableApiUsage")
+@Plugin(id = "vshop", name = "VillagerShops", version = "2.6")
 public class VillagerShops {
 
     public static void main(String[] args) { System.err.println("This plugin can not be run as executable!");
     }
 
+    //=====----- - - - Services, Scheduler, Constants and their getters
+
     static VillagerShops instance;
+    public VillagerShops() { instance = this; }
 
     public static VillagerShops getInstance() {
         return instance;
@@ -104,13 +108,17 @@ public class VillagerShops {
     @Listener
     public void onChangeServiceProvider(ChangeServiceProviderEvent event) {
         if (event.getService().equals(EconomyService.class)) {
+            l("Found Economy Service");
             economyService = (EconomyService) event.getNewProvider();
         } else if (event.getService().equals(LanguageService.class)) {
+            l("Found Language Service");
             languageService = (LanguageService) event.getNewProvider();
             translator = languageService.registerTranslation(this); //add this plugin to langswitch
         } else if (event.getService().equals(UserStorageService.class)) {
+            l("Found UserStorage Service");
             userStorage = (UserStorageService) event.getNewProvider();
         } else if (event.getService().equals(PermissionService.class)) {
+            l("Found Permission Service");
             permissions = (PermissionService)event.getNewProvider();
         }
     }
@@ -118,6 +126,8 @@ public class VillagerShops {
     PluginContainer getContainer() {
         return Sponge.getPluginManager().fromInstance(this).orElseThrow(()->new InternalError("No plugin container for self returned"));
     }
+
+    //=====----- - - - Logging shortcuts
 
     @Inject
     private Logger logger;
@@ -132,7 +142,9 @@ public class VillagerShops {
         instance.logger.error(String.format(format, args));
     }
 
-    public static Random rng = new Random(System.currentTimeMillis());
+    public static final Random rng = new Random(System.currentTimeMillis());
+
+    //=====----- - - - Auto Logs (basically a super detailed log of user actions)
 
     private PrintWriter auditLog = null;
     private static final SimpleDateFormat auditTimestampFormatter = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
@@ -187,43 +199,85 @@ public class VillagerShops {
         }
     }
 
-    /// --- === Main Plugin stuff === --- \\\
+    //=====----- - - - Shop registry and management
 
     //save on world if the npcs list is marked dirty
     //this flag should be set every time the npcs list is changed, or a property of a shop changes
     //or a item was added or removed from the shop
-    AtomicBoolean npcsDirty = new AtomicBoolean(false);
-    public void markNpcsDirty() {
-        npcsDirty.set(true);
+    Set<UUID> shopsDirty = new HashSet<>();
+    public void markShopsDirty(UUID inWorld) {
+        shopsDirty.add(inWorld);
     }
-    private static final List<NPCguard> npcs = new LinkedList<>();
-
-    static void addNPCguard(NPCguard add) {
-        synchronized (npcs) {
-            npcs.add(add);
-        }
-        instance.npcsDirty.set(true);
+    public void markShopsDirty(ShopEntity fromShop) {
+        Location<World> loc = fromShop.getLocation();
+        if (loc != null) shopsDirty.add(loc.getExtent().getUniqueId());
     }
+    private static final List<ShopEntity> shops = new LinkedList<>();
 
-    public static Collection<NPCguard> getNPCguards() {
-        synchronized (npcs) {
-            List<NPCguard> res = new ArrayList<>(npcs.size());
-            for (NPCguard g : npcs) res.add(g);
-            return res;
+    public static void addShop(ShopEntity shopEntity, boolean createIfAbsent) {
+        if (createIfAbsent) shopEntity.findOrCreate();
+        synchronized (shops) {
+            shops.add(shopEntity);
         }
+        instance.markShopsDirty(shopEntity);
     }
 
-    static void removeNPCguard(NPCguard remove) {
-        synchronized (npcs) {
-            npcs.remove(remove);
+    public static Collection<ShopEntity> getShops() {
+        synchronized (shops) {
+            return new ArrayList<>(shops);
         }
-        instance.npcsDirty.set(true);
     }
+
+    public static void removeShop(ShopEntity shopEntity) {
+        synchronized (shops) {
+            shops.remove(shopEntity);
+        }
+        instance.markShopsDirty(shopEntity);
+    }
+
+    /** @return true if there is any shop at this location */
+    public static boolean isLocationOccupied(Location<World> location) {
+        synchronized (shops) {
+            return shops.stream()
+                    .anyMatch(shopEntity -> {
+                        Location<World> shopLocation = shopEntity.getLocation();
+                        return shopLocation.getPosition().distanceSquared(location.getPosition()) < 0.2 && // about half a block radius
+                            shopLocation.getExtent().equals(location.getExtent());
+                    });
+        }
+    }
+
+    public static Optional<ShopEntity> getShopFromShopId(UUID shopId) {
+        if (shopId == null) return Optional.empty();
+        synchronized (shops) {
+            return shops.stream()
+                    .filter(shopEntity -> Objects.equals(shopId, shopEntity.getIdentifier()))
+                    .findFirst();
+        }
+    }
+
+    public static Optional<ShopEntity> getShopFromEntityId(UUID entityId) {
+        if (entityId == null) return Optional.empty();
+        synchronized (shops) {
+            return shops.stream()
+                    .filter(shopEntity -> Objects.equals(entityId,shopEntity.getEntityUniqueID().orElse(null)))
+                    .findFirst();
+        }
+    }
+
+    public static boolean isEntityShop(Entity entity) {
+        synchronized (shops) {
+            return shops.stream()
+                    .anyMatch(shopEntity -> shopEntity.getEntityUniqueID().map(id->id.equals(entity.getUniqueId())).orElse(false));
+        }
+    }
+
+    //=====----- - - - Configuration
 
     @Inject
     @DefaultConfig(sharedRoot = false)
     private ConfigurationLoader<CommentedConfigurationNode> configManager;
-    private static TypeSerializerCollection customSerializer = TypeSerializers.getDefaultSerializers().newChild();
+    private static final TypeSerializerCollection customSerializer = TypeSerializers.getDefaultSerializers().newChild();
 
     @Inject
     @ConfigDir(sharedRoot = false)
@@ -233,58 +287,6 @@ public class VillagerShops {
     @ConfigDir(sharedRoot = true)
     private Path publicConfigDir;
 
-    @Listener
-    public void onServerPreInit(GamePreInitializationEvent event) {
-        instance = this;
-
-        incomeLimiter = new IncomeLimiterService();
-        asyncScheduler = Sponge.getScheduler().createAsyncExecutor(this);
-        syncScheduler = Sponge.getScheduler().createSyncExecutor(this);
-
-        customSerializer.registerType(TypeToken.of(StockItem.class), new StockItemSerializer());
-        customSerializer.registerType(TypeToken.of(NPCguard.class), new NPCguardSerializer());
-
-        // This service needs to become available before plugins try to use it,
-        // and those plugins need to use the service before shops load.
-        // -> Plugins will have to use the service in GameInit
-        Sponge.getServiceManager().setProvider(this, PluginItemService.class, new PluginItemServiceImpl());
-    }
-
-    @Listener
-    public void onServerInit(GameInitializationEvent event) {
-        Sponge.getEventManager().registerListeners(this, new EventListeners());
-
-        l("Registering commands...");
-        CommandRegistra.register();
-        l("Loading configs...");
-        loadConfigs();
-    }
-
-    @Listener
-    public void onLoadComplete(GameLoadCompleteEvent event) {
-        //Last GameState before worlds load, so configs have to be converted here (or earlier)
-        updateShopConfigs();
-    }
-
-    @Listener
-    public void onServerStart(GameStartedServerEvent event) {
-        l("Starting timers...");
-        startTimers();
-
-        //these two calls depend on loadConfig()
-        VersionChecker.checkPluginVersion(getContainer());
-        TranslationLoader.fetchTranslations();
-
-        l("VillagerShops is now ready!");
-    }
-
-    @Listener
-    public void onServerStopping(GameStoppingEvent event) {
-        terminateNPCs();
-        saveConfigs();
-        closeAuditLog();
-    }
-
     public void loadConfigs() {
         //settings.conf
         HoconConfigurationLoader loader = HoconConfigurationLoader.builder()
@@ -293,9 +295,10 @@ public class VillagerShops {
         try {
             CommentedConfigurationNode root = loader.load(ConfigurationOptions.defaults());
             if (root.getNode("DefaultStackSize").isVirtual() ||
-                root.getNode("SmartClick").isVirtual() ||
-                root.getNode("AuditLogs").isVirtual() ||
-                root.getNode("NBTblacklist").isVirtual()) {
+                    root.getNode("SmartClick").isVirtual() ||
+                    root.getNode("AuditLogs").isVirtual() ||
+                    root.getNode("NBTblacklist").isVirtual() ||
+                    root.getNode("AnimateShops").isVirtual()) {
                 HoconConfigurationLoader defaultLoader = HoconConfigurationLoader.builder()
                         .setURL(Sponge.getAssetManager().getAsset(this, "default_settings.conf").get().getUrl())
                         .build();
@@ -307,6 +310,10 @@ public class VillagerShops {
         } catch (IOException e) {
             new RuntimeException("Could not load settings.conf", e).printStackTrace();
         }
+
+        //update tasks in case config changed (animate shops)
+        stopTimers();
+        startTimers();
 
         closeAuditLog();
         if (ConfigSettings.recordAuditLogs())
@@ -342,9 +349,9 @@ public class VillagerShops {
 
     private void updateShopConfigs() {
         //vshops.conf (more database than config)
-        synchronized (npcs) {
-            npcsDirty.set(false);
-            npcs.clear();
+        synchronized (shops) {
+            shopsDirty.clear();
+            shops.clear();
 
             Path configFile = privateConfigDir.resolve("vshop.conf");
             //move legacy config
@@ -373,20 +380,16 @@ public class VillagerShops {
                 Map<String, List<ConfigurationNode>> perWorld = new HashMap<>();
                 try {
                     ConfigurationNode root = configManager.load(options);
-                    npcs.clear();
+                    shops.clear();
                     ConfigurationNode shopNode = root.getNode("shops");
                     if (!shopNode.isVirtual()) {
                         List<? extends ConfigurationNode> shopList = shopNode.getChildrenList();
-                        for (int i = 0; i < shopList.size(); i++) {
+                        for (ConfigurationNode configurationNode : shopList) {
                             //poke world uuid
-                            String uuid = shopList.get(i).getNode("location").getNode("WorldUuid").getString();
+                            String uuid = configurationNode.getNode("location").getNode("WorldUuid").getString();
                             //collect into list
-                            List<ConfigurationNode> wlist = perWorld.get(uuid);
-                            if (wlist == null) {
-                                wlist = new LinkedList<>();
-                                perWorld.put(uuid, wlist);
-                            }
-                            wlist.add(shopList.get(i).copy());
+                            List<ConfigurationNode> wlist = perWorld.computeIfAbsent(uuid, k -> new LinkedList<>());
+                            wlist.add(configurationNode.copy());
                         }
                     }
                 } catch (Exception e1) {
@@ -418,21 +421,18 @@ public class VillagerShops {
         }
     }
 
-    void loadShops(UUID world) {
-        //vshops.conf (more database than config)
-        synchronized (npcs) {
-            l("Loading shops from world_%s.conf", world.toString());
-//            npcsDirty.set(false);
-//            npcs.clear();
+    void loadWorldShops(UUID worldId) {
+        synchronized (shops) {
+            l("Loading shops from world_%s.conf", worldId.toString());
 
-            Path configFile = privateConfigDir.resolve("world_"+world.toString()+".conf");
+            Path configFile = privateConfigDir.resolve("world_"+worldId.toString()+".conf");
             //make backup
             try {
-                Path backupFile = privateConfigDir.resolve("world_"+world.toString()+"_backup.conf");
+                Path backupFile = privateConfigDir.resolve("world_"+worldId.toString()+"_backup.conf");
                 Files.deleteIfExists(backupFile);
                 Files.copy(configFile, backupFile);
             } catch (IOException e) {
-                w("Could not backup world_%s.conf!", world.toString());
+                w("Could not backup world_%s.conf!", worldId.toString());
             }
 
             ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
@@ -441,13 +441,12 @@ public class VillagerShops {
                         .setPath(configFile)
                         .setDefaultOptions(options).build();
                 ConfigurationNode root = loader.load(options);
-//                npcs.clear();
                 ConfigurationNode shopNode = root.getNode("shops");
                 if (!shopNode.isVirtual()) {
                     List<? extends ConfigurationNode> shopList = shopNode.getChildrenList();
                     for (int i = 0; i < shopList.size(); i++) {
                         try {
-                            npcs.add(shopList.get(i).getValue(TypeToken.of(NPCguard.class)));
+                            shops.add(shopList.get(i).getValue(TypeToken.of(ShopEntity.class)));
                         } catch (Exception e) {
                             System.err.println("Could not load shop "+(i+1)+":");
                             e.printStackTrace(System.err);
@@ -461,38 +460,44 @@ public class VillagerShops {
         }
     }
 
-    void unloadShops(UUID world) {
-        synchronized (npcs) {
-            Set<NPCguard> toUnload = new HashSet<>();
-            for (NPCguard npc : npcs) {
-                if (npc.getLoc().getExtent().getUniqueId().equals(world))
-                    toUnload.add(npc);
+    void unloadWorldShops(UUID worldId) {
+        synchronized (shops) {
+            if (shopsDirty.contains(worldId)) {
+                saveWorldShops(worldId);
+                shopsDirty.remove(worldId);
             }
-            npcs.removeAll(toUnload);
-            l(" > Shops for world %s unloaded", world.toString());
+            Set<ShopEntity> toUnload = new HashSet<>();
+            for (ShopEntity shopEntity : shops) {
+                if (shopEntity.getLocation().getExtent().getUniqueId().equals(worldId)) {
+                    toUnload.add(shopEntity);
+                }
+            }
+            shops.removeAll(toUnload);
+            l(" > Shops for world %s unloaded", worldId.toString());
         }
     }
 
-    void saveConfigs() {
+    public void saveConfigs() {
         saveShops();
         try {
             ConfigurationLoader<CommentedConfigurationNode> limitManager = HoconConfigurationLoader.builder()
                     .setPath(privateConfigDir.resolve("incomeLimits.conf")).build();
             ConfigurationNode root = limitManager.createEmptyNode(ConfigurationOptions.defaults());
+
             ConfigurationNode sub = root.getNode("income");
-            Map<String, String> ser = new HashMap<>();
-            for (Entry<UUID, BigDecimal> e : incomeLimiter.getEarnings().entrySet()) {
-                ser.put(e.getKey().toString(), e.getValue().toString());
+            Map<String, String> serialized = new HashMap<>();
+            for (Entry<UUID, BigDecimal> earnings : incomeLimiter.getEarnings().entrySet()) {
+                serialized.put(earnings.getKey().toString(), earnings.getValue().toString());
             }
-            sub.setValue(new TypeToken<Map<String, String>>() {
-            }, ser);
+            sub.setValue(new TypeToken<Map<String, String>>() {}, serialized);
+
             sub = root.getNode("spending");
-            ser.clear();
-            for (Entry<UUID, BigDecimal> e : incomeLimiter.getSpendings().entrySet()) {
-                ser.put(e.getKey().toString(), e.getValue().toString());
+            serialized.clear();
+            for (Entry<UUID, BigDecimal> spendings : incomeLimiter.getSpendings().entrySet()) {
+                serialized.put(spendings.getKey().toString(), spendings.getValue().toString());
             }
-            sub.setValue(new TypeToken<Map<String, String>>() {
-            }, ser);
+            sub.setValue(new TypeToken<Map<String, String>>() {}, serialized);
+
             root.getNode("timestamp").setValue(incomeLimiter.forTime());
 
             limitManager.save(root);
@@ -503,141 +508,134 @@ public class VillagerShops {
     }
 
     void saveShops() {
-        synchronized (npcs) {
-            if (!npcsDirty.getAndSet(false)) {
-                return;
-            }
+        synchronized (shops) {
+            if (shopsDirty.isEmpty()) return;
             l("Saving VillagerShops...");
-            for (World w : Sponge.getServer().getWorlds()) {
-                saveShops(w.getUniqueId());
+//            for (World world : Sponge.getServer().getWorlds()) {
+//                saveWorldShops(world.getUniqueId());
+//            }
+            while (!shopsDirty.isEmpty()) {
+                UUID world = shopsDirty.iterator().next();
+                saveWorldShops(world);
+                shopsDirty.remove(world);
             }
         }
     }
-    @SuppressWarnings("serial")
-    private void saveShops(UUID world) {
+    private void saveWorldShops(UUID worldId) {
         ConfigurationOptions options = ConfigurationOptions.defaults().setSerializers(customSerializer);
         try {
             HoconConfigurationLoader loader = HoconConfigurationLoader.builder()
                     .setDefaultOptions(options)
-                    .setPath(privateConfigDir.resolve("world_" + world.toString() + ".conf")).build();
+                    .setPath(privateConfigDir.resolve("world_" + worldId.toString() + ".conf")).build();
             ConfigurationNode root = loader.createEmptyNode(options);
-            List<NPCguard> worldNpcs = new LinkedList<>();
-            for (NPCguard npc : npcs)
-                if (npc.getLoc().getExtent().getUniqueId().equals(world))
-                    worldNpcs.add(npc);
-            root.getNode("shops").setValue(NPCguardSerializer.tokenListNPCguard, worldNpcs);
+            List<ShopEntity> worldShops = new LinkedList<>();
+            for (ShopEntity shopEntity : shops) {
+                if (shopEntity.getLocation().getExtent().getUniqueId().equals(worldId)) {
+                    worldShops.add(shopEntity);
+                }
+            }
+            root.getNode("shops").setValue(ShopEntitySerializer.tokenListNPCguard, worldShops);
             loader.save(root);
         } catch (Exception e1) {
             Sponge.getServer().getBroadcastChannel().send(Text.of(TextColors.RED, "[VShop] Error: ", e1.getMessage()));
             e1.printStackTrace();
         }
-        l(" > Shops for world %s saved", world.toString());
+        l(" > Shops for world %s saved", worldId.toString());
     }
 
-    private static void terminateNPCs() {
+    //=====----- - - - Lifecycle Events
+
+    @Listener
+    public void onServerPreInit(GamePreInitializationEvent event) {
+        instance = this;
+
+        incomeLimiter = new IncomeLimiterService();
+        asyncScheduler = Sponge.getScheduler().createAsyncExecutor(this);
+        syncScheduler = Sponge.getScheduler().createSyncExecutor(this);
+
+        customSerializer.registerType(TypeToken.of(StockItem.class), new StockItemSerializer());
+        customSerializer.registerType(TypeToken.of(ShopEntity.class), new ShopEntitySerializer());
+
+        // This service needs to become available before plugins try to use it,
+        // and those plugins need to use the service before shops load.
+        // -> Plugins will have to use the service in GameInit
+        Sponge.getServiceManager().setProvider(this, PluginItemService.class, new PluginItemServiceImpl());
+    }
+
+    @Listener
+    public void onServerInit(GameInitializationEvent event) {
+        Sponge.getEventManager().registerListeners(this, new EventListeners());
+
+        //Some are provided earlier than when plugins are initialized
+        if (userStorage == null)
+            userStorage = Sponge.getServiceManager().provide(UserStorageService.class).orElseThrow(()->new IllegalStateException("Could not find UserStorageService"));
+        if (permissions == null)
+            permissions = Sponge.getServiceManager().provide(PermissionService.class).orElseThrow(()->new IllegalStateException("Could not find PermissionService"));
+
+        l("Registering commands...");
+        CommandRegistra.register();
+        l("Loading configs...");
+        loadConfigs();
+    }
+
+    @Listener
+    public void onLoadComplete(GameLoadCompleteEvent event) {
+        //Last GameState before worlds load, so configs have to be converted here (or earlier)
+        updateShopConfigs();
+    }
+
+    @Listener
+    public void onServerStart(GameStartedServerEvent event) {
+        l("Starting timers...");
+        startTimers();
+
+        //these two calls depend on loadConfig()
+        VersionChecker.checkPluginVersion(getContainer());
+        TranslationLoader.fetchTranslations(false);
+
+        l("VillagerShops is now ready!");
+    }
+
+    @Listener
+    public void onServerStopping(GameStoppingEvent event) {
         stopTimers();
-
-        closeShopInventories();
-
-        synchronized (npcs) {
-            for (NPCguard npc : npcs) {
-                Entity e = npc.getLe();
-                if (e != null) e.remove();
-            }
-        }
+        saveConfigs();
+        closeAuditLog();
     }
+
+    //=====----- - - - Utility functions
 
     static void stopTimers() {
         Set<Task> tasks = Sponge.getScheduler().getScheduledTasks(instance);
         for (Task t : tasks) if (!t.isAsynchronous()) t.cancel(); //async tasks work in the database
     }
 
-    static long ledgerChatTimer = System.currentTimeMillis();
-
     static void startTimers() {
-        getSyncScheduler().scheduleWithFixedDelay(
-                () -> {
-                    synchronized (npcs) {
-                        for (NPCguard npc : npcs)
-                            npc.tick();
-                    }
-                }, 100, 100, TimeUnit.MILLISECONDS);
-        getSyncScheduler().scheduleWithFixedDelay(
-                () -> {
-                    if (System.currentTimeMillis() - ledgerChatTimer > 15000) {
-                        LedgerManager.dumpChat();
-                        ledgerChatTimer = System.currentTimeMillis();
-                    }
-                }, 1, 1, TimeUnit.SECONDS);
-    }
-
-    /**
-     * returns the NPCguard index
-     */
-    public static Optional<NPCguard> getNPCfromLocation(Location<World> loc2) {
-        synchronized (npcs) {
-            for (int i = 0; i < npcs.size(); i++) {
-                Location<World> loc1 = npcs.get(i).getLoc();
-                if (loc1.getBlockPosition().equals(loc2.getBlockPosition()) && loc1.getExtent().equals(loc2.getExtent())) {
-                    return Optional.of(npcs.get(i));
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
-    public static Optional<NPCguard> getNPCfromShopUUID(UUID uid) {
-        synchronized (npcs) {
-            for (NPCguard shop : npcs) {
-                if (shop.getIdentifier().equals(uid))
-                    return Optional.of(shop);
-            }
-        }
-        return Optional.empty();
-    }
-
-    public static boolean isNPCused(Entity ent) {
-        synchronized (npcs) {
-            for (NPCguard npc : npcs) {
-                //if (ent.equals(npc.getLe()))
-                if (npc.getLe() != null && npc.getLe().isLoaded() && ent.getUniqueId().equals(npc.getLe().getUniqueId()))
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    public static void closeShopInventories() {
-        for (Entry<UUID, UUID> shop : Utilities.openShops.entrySet()) {
-            Sponge.getServer().getPlayer(shop.getKey())
-                    .ifPresent(Player::closeInventory);
-        }
-        Utilities.openShops.clear();
+        if (ConfigSettings.areShopsAnimated())
+            getSyncScheduler().scheduleWithFixedDelay(
+                    () -> {
+                        synchronized (shops) {
+                            for (ShopEntity npc : shops)
+                                npc.tick();
+                        }
+                    }, 100, 100, TimeUnit.MILLISECONDS);
+        getSyncScheduler().scheduleWithFixedDelay( LedgerManager::dumpChat, 15, 1, TimeUnit.SECONDS );
     }
 
     public static void closeShopInventories(UUID shopID) {
-        List<UUID> rem = new LinkedList<>();
+        List<UUID> remaining = new LinkedList<>();
         for (Entry<UUID, UUID> shop : Utilities.openShops.entrySet()) {
             if (shop.getValue().equals(shopID)) {
                 Player p = Sponge.getServer().getPlayer(shop.getKey()).orElse(null);
                 if (p != null) {
                     p.closeInventory();
-                    rem.add(shop.getKey());
+                    remaining.add(shop.getKey());
                 }
             }
         }
-        for (UUID r : rem) {
+        for (UUID r : remaining) {
             Utilities.openShops.remove(r);
             Utilities.actionUnstack.remove(r);
-        }
-    }
-
-    public static void closeShopInventory(UUID player) {
-        Player p = Sponge.getServer().getPlayer(player).orElse(null);
-        if (p != null) {
-            p.closeInventory();
-            Utilities.openShops.remove(player);
-            Utilities.actionUnstack.remove(player);
         }
     }
 }

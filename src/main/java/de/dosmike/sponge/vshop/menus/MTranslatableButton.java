@@ -18,7 +18,6 @@ import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -33,7 +32,7 @@ final public class MTranslatableButton extends IElementImpl implements IClickabl
     private List<String> loreLineTransaltions = new LinkedList<>();
 
     @Override
-    public OnClickListener getOnClickListener() {
+    public OnClickListener<MTranslatableButton> getOnClickListener() {
         return clickListener;
     }
 
@@ -99,7 +98,7 @@ final public class MTranslatableButton extends IElementImpl implements IClickabl
 
     //Region builder
     public static class Builder {
-        MTranslatableButton element = new MTranslatableButton();
+        final MTranslatableButton element = new MTranslatableButton();
         private Builder() {
         }
 
@@ -140,8 +139,7 @@ final public class MTranslatableButton extends IElementImpl implements IClickabl
         }
 
         public MTranslatableButton build() {
-            MTranslatableButton copy = element.copy();
-            return copy;
+            return element.copy();
         }
     }
 
@@ -161,14 +159,12 @@ final public class MTranslatableButton extends IElementImpl implements IClickabl
                 .build();
         if (lore.isEmpty()) {
             return Text.builder().append(display)
-            .onClick(TextActions.executeCallback((src)->{
-                RenderManager.getRenderFor((Player)src)
-                        .filter(r->(r instanceof TextMenuRenderer))
-                        .ifPresent(r->((TextMenuRenderer)r).delegateClickEvent(MTranslatableButton.this, (Player)src));
-            }))
+            .onClick(TextActions.executeCallback((src)-> RenderManager.getRenderFor((Player)src)
+                    .filter(r->(r instanceof TextMenuRenderer))
+                    .ifPresent(r->((TextMenuRenderer)r).delegateClickEvent(MTranslatableButton.this, (Player)src))))
             .build();
         } else {
-            List<Text> sublore = lore.size()>1 ? lore.subList(1,lore.size()) : Collections.EMPTY_LIST;
+            List<Text> sublore = lore.size()>1 ? lore.subList(1,lore.size()) : new LinkedList<>();
             return Text.builder().append(display).onHover(
                     icon != null
                     ? TextActions.showItem(ItemStack.builder().fromSnapshot(icon.render())
@@ -178,11 +174,9 @@ final public class MTranslatableButton extends IElementImpl implements IClickabl
                     : TextActions.showText(Text.of(
                             Text.joinWith(Text.of(Text.NEW_LINE), lore)
                     ))
-            ).onClick(TextActions.executeCallback((src)->{
-                RenderManager.getRenderFor((Player)src)
-                        .filter(r->(r instanceof TextMenuRenderer))
-                        .ifPresent(r->((TextMenuRenderer)r).delegateClickEvent(MTranslatableButton.this, (Player)src));
-            }))
+            ).onClick(TextActions.executeCallback((src)-> RenderManager.getRenderFor((Player)src)
+                    .filter(r->(r instanceof TextMenuRenderer))
+                    .ifPresent(r->((TextMenuRenderer)r).delegateClickEvent(MTranslatableButton.this, (Player)src))))
             .build();
         }
     }

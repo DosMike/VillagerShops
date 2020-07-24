@@ -16,7 +16,7 @@ import de.dosmike.sponge.vshop.ConfigSettings;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.shops.InteractionHandler;
-import de.dosmike.sponge.vshop.shops.NPCguard;
+import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.shops.StockItem;
 import de.dosmike.sponge.vshop.systems.PluginItemFilter;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +33,9 @@ import org.spongepowered.api.text.format.TextColors;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class InvPrep {
+
+/** This class is building and updating menus by holding a list of {@link StockItem}s */
+public class ShopMenuManager {
 
     public enum QuantityValues {
         FULL(1f), HALF(0.5f), QUARTER(0.25f), SINGLE(0f);
@@ -57,27 +59,27 @@ public class InvPrep {
         public int getStackSize(PluginItemFilter filter) {
             return Math.max(1, (int)Math.ceil(filter.getMaxStackSize()*multiplier));
         }
-    };
+    }
     public static final String MENU_REMOVEMODE = "removemode";
     public static final String MENU_REMOVESET = "removeindices";
 
     List<StockItem> items = new LinkedList<>();
 
-    public void addItem(StockItem si) {
-        items.add(si);
-        VillagerShops.getInstance().markNpcsDirty();
+    /** Don't forget to mark shops as modified */
+    public void addItem(StockItem stockitem) {
+        items.add(stockitem);
         updateMenu(true);
     }
 
-    public void removeIndex(int i) {
-        items.remove(i);
-        VillagerShops.getInstance().markNpcsDirty();
+    /** Don't forget to mark shops as modified */
+    public void removeIndex(int index) {
+        items.remove(index);
         updateMenu(true);
     }
 
-    public void setItem(int index, StockItem element) {
-        items.set(index, element);
-        VillagerShops.getInstance().markNpcsDirty();
+    /** Don't forget to mark shops as modified */
+    public void setItem(int index, StockItem stockitem) {
+        items.set(index, stockitem);
         updateMenu(true);
     }
 
@@ -95,13 +97,13 @@ public class InvPrep {
         return items.size();
     }
 
-    private IMenu menu = MegaMenus.createMenu();
+    private final IMenu menu = MegaMenus.createMenu();
     public IMenu getMenu() {
         return menu;
     }
 
-    public void updateMenu(boolean full) {
-        if (full) {
+    public void updateMenu(boolean fullRedraw) {
+        if (fullRedraw) {
             for (int i = menu.pages(); i>0; i--) menu.clearPage(i);
             int p=1, y=0, x=0;
             boolean itemsOnLastPage = false;
@@ -110,7 +112,7 @@ public class InvPrep {
                 itemsOnLastPage = true;
                 if (item.getBuyPrice() != null ||
                     item.getSellPrice() != null) {
-                    MShop button = new MShop(item, i);
+                    MShopSlot button = new MShopSlot(item, i);
                     button.setPosition(new SlotPos(x,y));
                     menu.add(p, button);
                 }
@@ -151,7 +153,7 @@ public class InvPrep {
         updateMenu(false);
     }
 
-    MSpinnerIndex spnQuantity = MSpinnerIndex.builder()
+    final MSpinnerIndex spnQuantity = MSpinnerIndex.builder()
             .setName("shop.quantity.name")
             .addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_BLOCK, 64)), "shop.quantity.items.full")
             .addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_INGOT, 32)), "shop.quantity.items.half")
@@ -160,7 +162,7 @@ public class InvPrep {
             .setOnChangeListener((oldValue, newValue, element, viewer) -> {
                 element.getParent()
                         .getPlayerState(viewer).set(
-                        MShop.MENU_SHOP_QUANTITY,
+                        MShopSlot.MENU_SHOP_QUANTITY,
                         QuantityValues.getNth(newValue));
                 //update button for all pages
                 for (int page = 1; page <= element.getParent().pages(); page++) {
@@ -173,7 +175,7 @@ public class InvPrep {
                 }
             })
             .build();
-    MTranslatableButton bnRemoveMode = MTranslatableButton.builder()
+    final MTranslatableButton bnRemoveMode = MTranslatableButton.builder()
             .setName("shop.removemode.name")
             .setLore(Arrays.asList("shop.removemode.lore1", "shop.removemode.lore2"))
             .setOnClickListener((element, player, button, shift) -> {
@@ -181,7 +183,7 @@ public class InvPrep {
                 IIcon newButtonIcon;
                 boolean inRemoveMode = menuState.getBoolean(MENU_REMOVEMODE).orElse(false);
                 if (inRemoveMode) {
-                    HashSet<Integer> indices = (HashSet<Integer>) menuState.get(MENU_REMOVESET).orElse(new HashSet<Integer>());
+                    HashSet<Integer> indices = menuState.<HashSet<Integer>>get(MENU_REMOVESET).orElse(new HashSet<>());
                     menuState.remove(MENU_REMOVEMODE);
                     menuState.remove(MENU_REMOVESET);
 
@@ -205,8 +207,8 @@ public class InvPrep {
                         VillagerShops.audit("%s", Utilities.toString(player) +
                                 " deleted " + sorted.size() +
                                 " items from shop " +
-                                VillagerShops.getNPCfromShopUUID(shopID)
-                                        .map(NPCguard::toString)
+                                VillagerShops.getShopFromShopId(shopID)
+                                        .map(ShopEntity::toString)
                                         .orElse("[" + shopID + "]") +
                                 ": " + indices.stream()
                                         .map(i -> getItem(i).toString())
@@ -215,12 +217,13 @@ public class InvPrep {
 
                         Iterator<Integer> ii = sorted.iterator();
                         ii.forEachRemaining(this::removeIndex);
+                        VillagerShops.getInstance().markShopsDirty(player.getWorld().getUniqueId()); //save changes
 
-                        Task.builder().name("Reopen Shop").delayTicks(2).execute(()->{
-                            VillagerShops.getNPCfromShopUUID(shopID).ifPresent(npcGuard -> {
-                                InteractionHandler.clickEntity(player, npcGuard.getLe());
-                            });
-                        }).submit(VillagerShops.getInstance());
+                        Task.builder().name("Reopen Shop").delayTicks(2).execute(()->
+                                VillagerShops.getShopFromShopId(shopID)
+                                        .flatMap(ShopEntity::getEntityUniqueID)
+                                        .ifPresent(npc -> InteractionHandler.clickEntity(player, npc))
+                        ).submit(VillagerShops.getInstance());
 
                         return;
                     }
@@ -257,7 +260,7 @@ public class InvPrep {
         SlotPos posBQ = new SlotPos(8,idealHeight-1); //buy quantity spinner
         SlotPos posRM = new SlotPos(0,idealHeight-1); //remove button
         int qsi = minstance.getPlayerState(source)
-                        .getOfClass(MShop.MENU_SHOP_QUANTITY, InvPrep.QuantityValues.class)
+                        .getOfClass(MShopSlot.MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
                         .orElse(ConfigSettings.getShopsDefaultStackSize()).ordinal();
         for (int i = 1; i <= minstance.pages(); i++) {
             MenuUtil.getElementAt(minstance, i, posBQ).ifPresent(e -> {
@@ -278,8 +281,8 @@ public class InvPrep {
                 Utilities._openShops_remove(viewer);
 
                 StateObject state = menu.getPlayerState(viewer);
-                state.remove(InvPrep.MENU_REMOVEMODE);
-                state.remove(InvPrep.MENU_REMOVESET);
+                state.remove(ShopMenuManager.MENU_REMOVEMODE);
+                state.remove(ShopMenuManager.MENU_REMOVESET);
                 return false;
             }
         });
