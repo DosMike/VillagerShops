@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 
 public class PluginItemServiceImpl implements PluginItemService {
 
-    private static Map<String, PluginItemFilter> registry = new HashMap<>();
-    private static Set<PluginItemFilter> enforcedFilters = new HashSet<>();
+    private static final Map<String, PluginItemFilter> registry = new HashMap<>();
+    private static final Set<PluginItemFilter> enforcedFilters = new HashSet<>();
 
     @Override
     public void registerItemFilter(String pluginItemId, PluginItemFilter filter) {

@@ -29,13 +29,15 @@ For every edit command but create, please look at the shop
 (The commands are written as Usage Messages, you can google docopt for more information)
 
 - `/vshop create [--at <World/X/Y/Z/Rotation>] <EntityType> [--skin <Skin>] [DisplayName]`
+- `/vshop import` (use an existing entity as shop)
 - `/vshop delete` (deletes shop)
+- `/vshop release` (delete shop, but keep entity in world)
 - `/vshop add [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] [-o <Index>] [--nbt <ignore_nbt|ignore_damage|oredict|normal>]`
 - `/vshop remove <Index>` (removes item from shop)
 - `/vshop link` (connect a playershop to a different chest)
 - `/vshop identify` or `/vshop id`
 - `/vshop save`
-- `/vshop reload` (reload settings.conf)
+- `/vshop reload [--translations]` (reload settings.conf, --translations forces an update to translation files)
 - `/vshop ledger [Player]` or `/vshop log [Player]` (display last 100 transactions the players shops made)
 - `/vshop list [Player]` (list all shops, offer invsee for player shops and tp)
 - `/vshop tphere <Shop ID>` moves a shop by id (`/vshop identify`) to your current location
@@ -44,6 +46,7 @@ Permissions
 -----
 - `vshop.edit.admin` edit any shop, create admin shops, `/vshop save`, `/vshop reload`, `/vshop list`, `/vshop tphere`
 - `vshop.edit.player` is required to create your player shop
+- `vshop.edit.import` is required to turn existing entities into shops with `/vshop import`, `/vshop release`
 - the add, remove and delete command are always available for shops you own
 - `vshop.create.<ENTITYTYPE>` is required for each entity type a player should be allowed to create, where colons are replaced with dots and dashed are taken out. so for example `minecraft:villager`s would require `vshop.create.minecraft.villager`
 - `vshop.edit.identify` for `/vshop identify`

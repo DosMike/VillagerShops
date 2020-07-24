@@ -15,10 +15,15 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+/**
+ * This looks like a doubling of sponge permissions. I can't exactly remember why this is here, but heywhateveriguess.
+ * I think I wanted to use these Objects to test permissions, so I don't have to type out the permission nodes every
+ * time. That'd at least make it less prone to typos.
+ */
 public class Permission {
     private String id;
-    private Text description=null;
-    private String group=null; //role
+    private Text description;
+    private String group; //role
     private Object key=null;
     public String getId() { return id; }
     public Text getDescription() { return description; }
@@ -73,7 +78,7 @@ public class Permission {
 
     public static class Registry {
 
-        static Map<Object, Permission> permissions = new HashMap<>();
+        static final Map<Object, Permission> permissions = new HashMap<>();
         private static final Object mutex = new Object();
 
         public static Permission register(Object key, String id) {
@@ -99,11 +104,10 @@ public class Permission {
         }
         public static void unregister(Permission permission) {
             synchronized (mutex) {
-                Object removeKey = permissions.entrySet().stream()
+                permissions.entrySet().stream()
                         .filter(e -> permission.equals(e.getValue()))
                         .map(Map.Entry::getKey)
-                        .findFirst().orElse(null);
-                if (removeKey != null) permissions.remove(removeKey);
+                        .findFirst().ifPresent(permissions::remove);
             }
         }
         public static void unregister(Object key) {

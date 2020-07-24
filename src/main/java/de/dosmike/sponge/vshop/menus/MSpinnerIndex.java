@@ -22,7 +22,6 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
 
 import java.awt.event.MouseEvent;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,7 +34,7 @@ final public class MSpinnerIndex extends IElementImpl implements IClickable<MSpi
     private OnClickListener<MSpinnerIndex> clickListener = null;
     private OnChangeListener<Integer, MSpinnerIndex> changeListener = null;
     private String nameKey = "unnamed";
-    private List<IIcon> defaultIcons = new LinkedList<>();
+    private final List<IIcon> defaultIcons = new LinkedList<>();
     private List<String> valueKeys = new LinkedList<>();
 
     @Override
@@ -60,7 +59,7 @@ final public class MSpinnerIndex extends IElementImpl implements IClickable<MSpi
         if (changeListener!=null)
             changeListener.onValueChange(oldValue, newValue, this, viewer);
     }
-    private OnClickListener<MSpinnerIndex> internalClickListener = (e, v, b, s) -> {
+    private final OnClickListener<MSpinnerIndex> internalClickListener = (e, v, b, s) -> {
         Integer oldValue = MSpinnerIndex.this.getValue();
         if (b == MouseEvent.BUTTON1) {
             int i = MSpinnerIndex.this.getSelectedIndex();
@@ -185,7 +184,7 @@ final public class MSpinnerIndex extends IElementImpl implements IClickable<MSpi
 
     //Region builder
     public static class Builder {
-        MSpinnerIndex element = new MSpinnerIndex();
+        final MSpinnerIndex element = new MSpinnerIndex();
         private Builder() {
         }
 
@@ -233,8 +232,7 @@ final public class MSpinnerIndex extends IElementImpl implements IClickable<MSpi
         }
 
         public MSpinnerIndex build() {
-            MSpinnerIndex copy = element.copy();
-            return copy;
+            return element.copy();
         }
     }
 
@@ -255,7 +253,7 @@ final public class MSpinnerIndex extends IElementImpl implements IClickable<MSpi
         if (lore.isEmpty()) {
             return display;
         } else {
-            List<Text> sublore = lore.size()>1 ? lore.subList(1,lore.size()) : Collections.EMPTY_LIST;
+            List<Text> sublore = lore.size()>1 ? lore.subList(1,lore.size()) : new LinkedList<>();
             return Text.builder().append(display).onHover(
                     icon != null
                         ? TextActions.showItem(ItemStack.builder().fromSnapshot(icon.render())
@@ -265,11 +263,9 @@ final public class MSpinnerIndex extends IElementImpl implements IClickable<MSpi
                         : TextActions.showText(Text.of(
                             Text.joinWith(Text.of(Text.NEW_LINE), getLore(viewer))
                     ))
-            ).onClick(TextActions.executeCallback((src)->{
-                RenderManager.getRenderFor((Player)src)
-                        .filter(r->(r instanceof TextMenuRenderer))
-                        .ifPresent(r->((TextMenuRenderer)r).delegateClickEvent(MSpinnerIndex.this, (Player)src));
-            }))
+            ).onClick(TextActions.executeCallback((src)-> RenderManager.getRenderFor((Player)src)
+                    .filter(r->(r instanceof TextMenuRenderer))
+                    .ifPresent(r->((TextMenuRenderer)r).delegateClickEvent(MSpinnerIndex.this, (Player)src))))
                     .build();
         }
     }

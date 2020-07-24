@@ -47,7 +47,8 @@ dependencies {
     compileOnly 'org.jetbrains:annotations:16.0.2'
     compileOnly 'org.spongepowered:spongeapi:7.2.0-SNAPSHOT'
     compileOnly 'com.github.DosMike:MegaMenus:master-SNAPSHOT'
-    compileOnly 'com.github.DosMike:LangSwitch:master-SNAPSHOT'
+    compileOnly 'com.github.DosMike:LangSwitch:development-SNAPSHOT'
+    compileOnly 'com.github.DosMike:TooMuchStock:master-SNAPSHOT'
     shadow 'com.github.DosMike:SpongePluginVersionChecker:master-SNAPSHOT'
 }
 
@@ -65,7 +66,9 @@ task removeOldVersions() {
                     it.file.name != baseArtifactName
         }
 }
+
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 task uberJar(type:ShadowJar, group:'_Plugin', dependsOn:removeOldVersions) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     exclude 'META-INF/**'
@@ -103,6 +106,26 @@ task rebuild(group:'_Plugin') {
     dependsOn clean
     mustRunAfter clean
     finalizedBy uberJar
+}
+task zPublish(type: Exec, group:'_Plugin', dependsOn:uberJar) {
+    def keyfile = file('..\\PluginPublisher\\.apikeys')
+    if (keyfile.exists()) {
+        keyfile.readLines().each() {
+            def (key, value) = it.tokenize('=')
+            environment key, value
+        }
+        def spp_git_slug = 'DosMike/VillagerShops'
+        def spp_discord_server = '342942444288999435'
+        def spp_discord_channel = '352760019873169408'
+        def spp_discord_mention = '<@&644225680833249320>'
+        def spp_discord_header = "${spp_discord_mention} Version ${version} released on Ore and GitHub"
+        def outputFile = "build\\libs\\${jar.archiveName}"
+        commandLine 'java', '-jar', '..\\PluginPublisher\\PluginPublisher.jar',
+                '--gk', 'gitkey', '--ok', 'orekey', '--dk', 'discordkey',
+                '--gs', spp_git_slug, '--gt', version, '--gn', "Release Build ${version}", '--ga', outputFile,
+                '--op', pluginid, '--oa', outputFile,
+                '--ds', spp_discord_server, '--dc', spp_discord_channel, '--dh', spp_discord_header
+    }
 }
 
 //for generating the jar

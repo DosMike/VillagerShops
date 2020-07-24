@@ -22,21 +22,21 @@ public class GameDictHelper {
 
     private static final Pattern entryPattern = Pattern.compile("[a-z]+(?:[A-Z][a-z]+)+");
     private static final Pattern wordPattern = Pattern.compile("((?:^|[A-Z])[a-z]+)");
-    private static SetSetMapping<String, GameDictionary.Entry> cache = new SetSetMapping<>();
+    private static final SetSetMapping<String, GameDictionary.Entry> cache = new SetSetMapping<>();
 
-    static GameDictionary dict = Sponge.getDictionary().orElse(null);
+    static final GameDictionary dict = Sponge.getDictionary().orElse(null);
     public static boolean hasGameDict() {
         return dict != null;
     }
     static {
-        if (hasGameDict()) {
-            for (Map.Entry<String, Collection<GameDictionary.Entry>> e : dict.getAll().asMap().entrySet()) {
+        if (dict != null) {
+            for (Map.Entry<String, Collection<GameDictionary.Entry>> entry : dict.getAll().asMap().entrySet()) {
                 //make words
                 Set<String> words = new HashSet<>();
-                String s = e.getKey();
-                words.add(s); //add key itself
-                if (entryPattern.matcher(s).matches()) {
-                    Matcher wordMatcher = wordPattern.matcher(s);
+                String oreDictName = entry.getKey();
+                words.add(oreDictName); //add key itself
+                if (entryPattern.matcher(oreDictName).matches()) {
+                    Matcher wordMatcher = wordPattern.matcher(oreDictName);
                     String part = "";
                     while (wordMatcher.find()) {
                         part += wordMatcher.group();
@@ -44,7 +44,7 @@ public class GameDictHelper {
                     }
                 }
                 // link all these words to this set of entries
-                cache.add(words, e.getValue());
+                cache.add(words, entry.getValue());
             }
         }
     }

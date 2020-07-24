@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
+import de.dosmike.sponge.langswitch.LangSwitch;
 import de.dosmike.sponge.vshop.ConfigSettings;
 import de.dosmike.sponge.vshop.VillagerShops;
 import org.spongepowered.api.Platform;
@@ -12,10 +13,13 @@ import org.spongepowered.api.config.ConfigRoot;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.text.format.TextStyles;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -99,7 +103,7 @@ public class TranslationLoader {
                         try {
                             out = new FileOutputStream(f);
                             in = dl.getInputStream();
-                            byte[] buffer = new byte[512]; int r = 0;
+                            byte[] buffer = new byte[512]; int r;
                             while ((r = in.read(buffer))>=0) {
                                 out.write(buffer,0,r);
                             }
@@ -115,11 +119,19 @@ public class TranslationLoader {
                     e.printStackTrace();
                 }
             }
+            LangSwitch.forceReloadTranslations();
             VillagerShops.l("Translation download finished");
-            VillagerShops.w("The translations will load after restarting the server");
-            Sponge.getServer().getBroadcastChannel().send(
-                Text.of(TextColors.YELLOW, "[vshop] The translations will load after restarting the server")
-            );
+            VillagerShops.w("If translations do not load automatically, reload LangSwitch or get support in my discord");
+            try {
+                Sponge.getServer().getBroadcastChannel().send(
+                        Text.of(TextColors.YELLOW, "[vshop] Translations should have reloaded. If not you can get support in my ",
+                                Text.builder("Discord")
+                                        .onClick(TextActions.openUrl(new URL("https://discord.gg/E592Gdu")))
+                                        .style(TextStyles.UNDERLINE)
+                                        .color(TextColors.BLUE)
+                                        .build())
+                );
+            } catch (MalformedURLException ignore) {}
             configRoot = null;
             UserAgent = null;
         }
@@ -136,8 +148,9 @@ public class TranslationLoader {
      * If there are no translations and downloads are not allowed, a periodic message
      * will be scheduled.<br/>
      * Otherwise nothing happens.
+     * @param forceDownload true, if <code>/vshop reload --translations</code> was called
      */
-    public static void fetchTranslations() {
+    public static void fetchTranslations(boolean forceDownload) {
         if (UserAgent == null) {
             ConfigRoot cfgRoot = Sponge.getConfigManager().getPluginConfig(VillagerShops.getInstance());
 
@@ -159,9 +172,9 @@ public class TranslationLoader {
 
         stopTranslationNotifications(); //in case it is still running
         File[] translations = configRoot.listFiles();
-        if (translations == null || translations.length == 0) {
+        if (translations == null || translations.length == 0 || forceDownload) {
             VillagerShops.w("There are currently no translations on the server");
-            if (ConfigSettings.isAutoDownloadingAllowed()) {
+            if (ConfigSettings.isAutoDownloadingAllowed() || forceDownload) {
                 VillagerShops.l("Starting download job...");
                 configRoot.mkdirs();
                 VillagerShops.getAsyncScheduler().execute(new FileFetcher());

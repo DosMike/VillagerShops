@@ -19,9 +19,9 @@ import java.util.function.Predicate;
  */
 public class SetSetMapping<K,V> {
 
-    private Map<K, Set<Integer>> keys = new HashMap<>(); //key -> indices mapping
-    private List<Set<K>> reverseKeySet = new LinkedList<>(); //index -> keys mapping
-    private List<V> values = new LinkedList<>(); //index -> value mapping
+    private final Map<K, Set<Integer>> keys = new HashMap<>(); //key -> indices mapping
+    private final List<Set<K>> reverseKeySet = new LinkedList<>(); //index -> keys mapping
+    private final List<V> values = new LinkedList<>(); //index -> value mapping
 
     public void add(Collection<K> keySet, Collection<V> valueSet) {
         if (keySet == null) throw new IllegalArgumentException("KeySet can't be null");
