@@ -52,6 +52,7 @@ public class cmdRemove extends Command {
                         localString("cmd.remove.invalidindex").orLiteral(player)));
             } else {
                 VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
+                VillagerShops.getInstance().markShopsDirty(shopEntity.get()); //save changes
                 String auditRemoved=shopEntity.get().getMenu().getItem(index-1).toString();
                 shopEntity.get().getMenu().removeIndex(index - 1);
 

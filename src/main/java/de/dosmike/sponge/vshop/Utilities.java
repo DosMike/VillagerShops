@@ -1,5 +1,7 @@
 package de.dosmike.sponge.vshop;
 
+import com.flowpowered.math.TrigMath;
+import com.flowpowered.math.vector.Vector3d;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.DataQuery;
@@ -11,6 +13,7 @@ import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.extent.Extent;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -72,6 +75,25 @@ public class Utilities {
 
     public static Locale playerLocale(CommandSource viewer) {
         return VillagerShops.getLangSwitch().getSelectedLocale(viewer);
+    }
+
+    public static <W extends Extent> Location<W> centerOnBlock(Location<W> at) {
+        //prevent "falling" though blocks because standing on a block is yanky
+        double y = at.getPosition().getY();
+        double mod = y-(int)y;
+        if (mod<0.2 || mod>=0.8) y=Math.floor(y+0.5);
+        //center on block
+        return (Location<W>)at.getExtent().getLocation(new Vector3d(at.getBlockX()+0.5,y,at.getBlockZ()+0.5));
+    }
+
+    public static Vector3d directiond(Vector3d rotation) {
+        double yaw = rotation.getY() * TrigMath.DEG_TO_RAD;
+        return new Vector3d(-TrigMath.sin(yaw),0,TrigMath.cos(yaw)); //yanky hack mate
+    }
+    public static double clampAngleDeg(double angle) {
+        while (angle<=-180) angle +=360;
+        while (angle>180) angle -=360;
+        return angle;
     }
 
     /** Custom toString name [id]<br>

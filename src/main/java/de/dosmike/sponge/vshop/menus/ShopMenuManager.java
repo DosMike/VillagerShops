@@ -65,21 +65,21 @@ public class ShopMenuManager {
 
     List<StockItem> items = new LinkedList<>();
 
+    /** Don't forget to mark shops as modified */
     public void addItem(StockItem stockitem) {
         items.add(stockitem);
-        VillagerShops.getInstance().markShopsDirty();
         updateMenu(true);
     }
 
+    /** Don't forget to mark shops as modified */
     public void removeIndex(int index) {
         items.remove(index);
-        VillagerShops.getInstance().markShopsDirty();
         updateMenu(true);
     }
 
+    /** Don't forget to mark shops as modified */
     public void setItem(int index, StockItem stockitem) {
         items.set(index, stockitem);
-        VillagerShops.getInstance().markShopsDirty();
         updateMenu(true);
     }
 
@@ -217,6 +217,7 @@ public class ShopMenuManager {
 
                         Iterator<Integer> ii = sorted.iterator();
                         ii.forEachRemaining(this::removeIndex);
+                        VillagerShops.getInstance().markShopsDirty(player.getWorld().getUniqueId()); //save changes
 
                         Task.builder().name("Reopen Shop").delayTicks(2).execute(()->
                                 VillagerShops.getShopFromShopId(shopID)

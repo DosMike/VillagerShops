@@ -203,6 +203,7 @@ public class cmdAdd extends Command {
                     limit, nbtfilter);
         }
         VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
+        VillagerShops.getInstance().markShopsDirty(shopEntity.get()); //save changes
         String auditOverwrite="";
         if (overwriteindex < 0) {
             menu.addItem(newItem);
@@ -261,6 +262,7 @@ public class cmdAdd extends Command {
         if (!shopEntity.isPresent()) return; //shop is gone
 
         VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
+        VillagerShops.getInstance().markShopsDirty(shopEntity.get()); //save changes
         ShopMenuManager menu = shopEntity.get().getMenu();
         String auditOverwrite="";
         if (position < 0) {

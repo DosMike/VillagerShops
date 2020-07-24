@@ -43,7 +43,10 @@ public interface PluginItemFilter {
      * @return a custom maximum stack quantity
      */
     default int getMaxStackSize() {
-        return supply(1,true).getType().getMaxStackQuantity();
+        ItemStack stack = supply(1, true);
+        int stackSize = stack.getType().getMaxStackQuantity();
+        consume(stack, true);
+        return stackSize;
     }
 
     /** This is a callback for your plugin in case you want to do something

@@ -49,7 +49,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -205,9 +204,13 @@ public class VillagerShops {
     //save on world if the npcs list is marked dirty
     //this flag should be set every time the npcs list is changed, or a property of a shop changes
     //or a item was added or removed from the shop
-    final AtomicBoolean shopsDirty = new AtomicBoolean(false);
-    public void markShopsDirty() {
-        shopsDirty.set(true);
+    Set<UUID> shopsDirty = new HashSet<>();
+    public void markShopsDirty(UUID inWorld) {
+        shopsDirty.add(inWorld);
+    }
+    public void markShopsDirty(ShopEntity fromShop) {
+        Location<World> loc = fromShop.getLocation();
+        if (loc != null) shopsDirty.add(loc.getExtent().getUniqueId());
     }
     private static final List<ShopEntity> shops = new LinkedList<>();
 
@@ -216,7 +219,7 @@ public class VillagerShops {
         synchronized (shops) {
             shops.add(shopEntity);
         }
-        instance.shopsDirty.set(true);
+        instance.markShopsDirty(shopEntity);
     }
 
     public static Collection<ShopEntity> getShops() {
@@ -229,7 +232,7 @@ public class VillagerShops {
         synchronized (shops) {
             shops.remove(shopEntity);
         }
-        instance.shopsDirty.set(true);
+        instance.markShopsDirty(shopEntity);
     }
 
     /** @return true if there is any shop at this location */
@@ -347,7 +350,7 @@ public class VillagerShops {
     private void updateShopConfigs() {
         //vshops.conf (more database than config)
         synchronized (shops) {
-            shopsDirty.set(false);
+            shopsDirty.clear();
             shops.clear();
 
             Path configFile = privateConfigDir.resolve("vshop.conf");
@@ -459,10 +462,15 @@ public class VillagerShops {
 
     void unloadWorldShops(UUID worldId) {
         synchronized (shops) {
+            if (shopsDirty.contains(worldId)) {
+                saveWorldShops(worldId);
+                shopsDirty.remove(worldId);
+            }
             Set<ShopEntity> toUnload = new HashSet<>();
             for (ShopEntity shopEntity : shops) {
-                if (shopEntity.getLocation().getExtent().getUniqueId().equals(worldId))
+                if (shopEntity.getLocation().getExtent().getUniqueId().equals(worldId)) {
                     toUnload.add(shopEntity);
+                }
             }
             shops.removeAll(toUnload);
             l(" > Shops for world %s unloaded", worldId.toString());
@@ -501,12 +509,15 @@ public class VillagerShops {
 
     void saveShops() {
         synchronized (shops) {
-            if (!shopsDirty.getAndSet(false)) {
-                return;
-            }
+            if (shopsDirty.isEmpty()) return;
             l("Saving VillagerShops...");
-            for (World world : Sponge.getServer().getWorlds()) {
-                saveWorldShops(world.getUniqueId());
+//            for (World world : Sponge.getServer().getWorlds()) {
+//                saveWorldShops(world.getUniqueId());
+//            }
+            while (!shopsDirty.isEmpty()) {
+                UUID world = shopsDirty.iterator().next();
+                saveWorldShops(world);
+                shopsDirty.remove(world);
             }
         }
     }

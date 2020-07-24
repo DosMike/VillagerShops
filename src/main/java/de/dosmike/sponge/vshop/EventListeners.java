@@ -30,7 +30,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-@SuppressWarnings("unused")
 public class EventListeners {
 
     @Listener(order= Order.EARLY) //as kind-of protection, run early

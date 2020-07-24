@@ -4,7 +4,6 @@ import de.dosmike.sponge.vshop.PermissionRegistra;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
-import de.dosmike.sponge.vshop.systems.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
