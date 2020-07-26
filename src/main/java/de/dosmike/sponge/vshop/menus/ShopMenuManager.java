@@ -64,6 +64,10 @@ public class ShopMenuManager {
     public static final String MENU_REMOVESET = "removeindices";
 
     List<StockItem> items = new LinkedList<>();
+    private final UUID shopRef;
+    public ShopMenuManager(UUID shopId) {
+        shopRef=shopId;
+    }
 
     /** Don't forget to mark shops as modified */
     public void addItem(StockItem stockitem) {
@@ -91,6 +95,7 @@ public class ShopMenuManager {
     }
     public void setAllItems(List<StockItem> items) {
         this.items = new LinkedList<>(items);
+        updateMenu(true);
     }
 
     public int size() {
@@ -112,7 +117,7 @@ public class ShopMenuManager {
                 itemsOnLastPage = true;
                 if (item.getBuyPrice() != null ||
                     item.getSellPrice() != null) {
-                    MShopSlot button = new MShopSlot(item, i);
+                    MShopSlot button = new MShopSlot(item, i, shopRef);
                     button.setPosition(new SlotPos(x,y));
                     menu.add(p, button);
                 }

@@ -21,6 +21,7 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
 import java.awt.event.MouseEvent;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,9 +34,11 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
     private static final IIcon removeMeIcon = IIcon.of(ItemTypes.BARRIER);
     private StockItem stockItem;
     private int myPosition;
-    public MShopSlot(StockItem stockItem, int listPosition) {
+    private UUID shopIdBackRef;
+    public MShopSlot(StockItem stockItem, int listPosition, UUID shopId) {
         this.stockItem = stockItem;
         myPosition = listPosition;
+        shopIdBackRef = shopId;
     }
 
     private final OnClickListener<MShopSlot> clickListener = (element, player, button, shift) -> {
@@ -62,9 +65,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
         } else if (button == MouseEvent.BUTTON2) {
             doBuy = false;
         } else return;
-        UUID shopID = Utilities.getOpenShopFor(player);
-        if (shopID == null) return;
-        ShopEntity shop = VillagerShops.getShopFromShopId(shopID).orElse(null);
+        ShopEntity shop = VillagerShops.getShopFromShopId(shopIdBackRef).orElse(null);
         if (shop == null) return;
 
         ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(player).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
@@ -102,7 +103,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
     @SuppressWarnings("unchecked")
     @Override
     public MShopSlot copy() {
-        MShopSlot copy = new MShopSlot(stockItem, myPosition);
+        MShopSlot copy = new MShopSlot(stockItem, myPosition, shopIdBackRef);
         copy.setPosition(getPosition());
         return copy;
     }
@@ -110,12 +111,9 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
     private ItemStack _getDisplayItem(Player viewer) {
         ItemStack displayItem = null; {
             if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
-                UUID shopID = Utilities.getOpenShopFor(viewer);
-                if (shopID != null) {
-                    ShopEntity shop = VillagerShops.getShopFromShopId(shopID).orElse(null);
-                    if (shop != null) {
-                        displayItem = stockItem.getItem(!shop.getShopOwner().isPresent());
-                    }
+                ShopEntity shop = VillagerShops.getShopFromShopId(shopIdBackRef).orElse(null);
+                if (shop != null) {
+                    displayItem = stockItem.getItem(!shop.getShopOwner().isPresent());
                 }
             }
             // fallback
@@ -183,6 +181,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
                     )
             );
         }
+        System.out.println("Generating lore for "+stockItem.toString());
         ItemStack item = _getDisplayItem(viewer);
         List<Text> lore = item.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
 
@@ -190,13 +189,23 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
         int quantity = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
                         .orElse(ConfigSettings.getShopsDefaultStackSize())
                         .getStackSize(item.getType());
+        ShopEntity shop = VillagerShops.getShopFromShopId(shopIdBackRef).get();
+        System.out.println(">  Within "+shop.toString());
+        boolean isOwner = shop.isShopOwner(viewer.getUniqueId());
         if (stockItem.getBuyPrice() != null) {
+            BigDecimal priceSingle = isOwner
+                    ? BigDecimal.valueOf(stockItem.getBuyPrice())
+                    : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item,1, BigDecimal.valueOf(stockItem.getBuyPrice()),viewer.getUniqueId(), shopIdBackRef);
+            System.out.println(">  BuyPrice 1x "+priceSingle);
             if (quantity > 1) {
-                double stackBuyPrice = quantity * stockItem.getBuyPrice();
+                BigDecimal priceStack = isOwner
+                        ? BigDecimal.valueOf(stockItem.getBuyPrice()*quantity)
+                        : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item, quantity, BigDecimal.valueOf(stockItem.getBuyPrice()),viewer.getUniqueId(), shopIdBackRef);
+                System.out.println(">  BuyPrice "+quantity+"x "+priceSingle);
                 lore.add(Text.of(TextColors.RED,
                         ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.buy.stack"))
-                                .replace("%price%", Utilities.nf(stackBuyPrice, Utilities.playerLocale(viewer)))
-                                .replace("%itemprice%", Utilities.nf(stockItem.getBuyPrice(), Utilities.playerLocale(viewer)))
+                                .replace("%price%", Utilities.nf(priceStack, Utilities.playerLocale(viewer)))
+                                .replace("%itemprice%", Utilities.nf(priceSingle, Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
                                 .setContextColor(TextColors.RED)
                                 .resolve(viewer).orElse(Text.of("shop.item.buy.stack"))
@@ -204,7 +213,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
             } else {
                 lore.add(Text.of(TextColors.RED,
                         ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.buy.one"))
-                                .replace("%price%", Utilities.nf(stockItem.getBuyPrice(), Utilities.playerLocale(viewer)))
+                                .replace("%price%", Utilities.nf(priceSingle, Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
                                 .setContextColor(TextColors.RED)
                                 .resolve(viewer).orElse(Text.of("shop.item.buy.one"))
@@ -212,12 +221,19 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
             }
         }
         if (stockItem.getSellPrice() != null) {
+            BigDecimal priceSingle = isOwner
+                    ? BigDecimal.valueOf(stockItem.getSellPrice())
+                    : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item, 1, BigDecimal.valueOf(stockItem.getSellPrice()), viewer.getUniqueId(), shopIdBackRef);
+            System.out.println(">  SellPrice 1x "+priceSingle);
             if (quantity > 1) {
-                double stackSellPrice = quantity * stockItem.getSellPrice();
+                BigDecimal priceStack = isOwner
+                        ? BigDecimal.valueOf(stockItem.getSellPrice()*quantity)
+                        : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item, quantity, BigDecimal.valueOf(stockItem.getSellPrice()), viewer.getUniqueId(), shopIdBackRef);
+                System.out.println(">  SellPrice "+quantity+"x "+priceSingle);
                 lore.add(Text.of(TextColors.GREEN,
                         ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.sell.stack"))
-                                .replace("%price%", Utilities.nf(stackSellPrice, Utilities.playerLocale(viewer)))
-                                .replace("%itemprice%", Utilities.nf(stockItem.getSellPrice(), Utilities.playerLocale(viewer)))
+                                .replace("%price%", Utilities.nf(priceStack, Utilities.playerLocale(viewer)))
+                                .replace("%itemprice%", Utilities.nf(priceSingle, Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
                                 .setContextColor(TextColors.GREEN)
                                 .resolve(viewer).orElse(Text.of("shop.item.sell.stack"))
@@ -225,7 +241,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
             } else {
                 lore.add(Text.of(TextColors.GREEN,
                         ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.sell.one"))
-                                .replace("%price%", Utilities.nf(stockItem.getSellPrice(), Utilities.playerLocale(viewer)))
+                                .replace("%price%", Utilities.nf(priceSingle, Utilities.playerLocale(viewer)))
                                 .replace("%currency%", currency)
                                 .setContextColor(TextColors.GREEN)
                                 .resolve(viewer).orElse(Text.of("shop.item.sell.one"))
