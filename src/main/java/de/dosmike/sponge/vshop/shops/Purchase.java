@@ -120,7 +120,7 @@ public class Purchase {
             return Result.CUSTOMER_LOW_BALANCE;
 
         //resize stack and price to 'fit' the balance
-        amount = balance.divide(BigDecimal.valueOf(stockItem.getBuyPrice()), RoundingMode.FLOOR).intValue();
+        amount = Math.min(amount, balance.divide(BigDecimal.valueOf(stockItem.getBuyPrice()), RoundingMode.FLOOR).intValue());
         if (amount < 1) return Result.CUSTOMER_LOW_BALANCE;
         price = new BigDecimal(amount * stockItem.getBuyPrice());
 
@@ -184,8 +184,8 @@ public class Purchase {
             if (limited.isPresent()) {
                 price = price.min(limited.get()); //get the max possibble income for today
 
-                //reduce stack to march max income
-                amount = price.divide(BigDecimal.valueOf(stockItem.getSellPrice()), RoundingMode.FLOOR).intValue();
+                //reduce stack to match max income
+                amount = Math.min(amount, price.divide(BigDecimal.valueOf(stockItem.getSellPrice()), RoundingMode.FLOOR).intValue());
                 if (amount < 1) return Result.CUSTOMER_INCOME_LIMIT;
                 //recalculate price for reduced stack
                 price = new BigDecimal(amount * stockItem.getSellPrice());
