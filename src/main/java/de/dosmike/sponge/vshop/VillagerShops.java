@@ -53,7 +53,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @SuppressWarnings("UnstableApiUsage")
-@Plugin(id = "vshop", name = "VillagerShops", version = "2.6")
+@Plugin(id = "vshop", name = "VillagerShops", version = "2.6.1")
 public class VillagerShops {
 
     public static void main(String[] args) { System.err.println("This plugin can not be run as executable!");
