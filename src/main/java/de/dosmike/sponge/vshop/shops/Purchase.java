@@ -114,8 +114,8 @@ public class Purchase {
                 amount, //using this amount here will reduce computation cost
                 BigDecimal.valueOf(stockItem.getBuyPrice()),
                 stockItem.getCurrency(),
-                player.getUniqueId(),
-                shop.getEntityUniqueID().orElse(null)
+                shop.getIdentifier(),
+                player.getUniqueId()
         );
 
         if (purchaseInformation.getLimitAccount() <= 0)
@@ -184,10 +184,10 @@ public class Purchase {
         Preview sellingInformation = VillagerShops.getPriceCalculator().getSellingInformation(
                 stockItem.getItem(shop.getShopOwner().isPresent()),
                 amount, //using this amount here will reduce computation cost
-                BigDecimal.valueOf(stockItem.getBuyPrice()),
+                BigDecimal.valueOf(stockItem.getSellPrice()),
                 stockItem.getCurrency(),
-                player.getUniqueId(),
-                shop.getEntityUniqueID().orElse(null)
+                shop.getIdentifier(),
+                player.getUniqueId()
         );
 
         if (sellingInformation.getLimitAccount() <= 0)

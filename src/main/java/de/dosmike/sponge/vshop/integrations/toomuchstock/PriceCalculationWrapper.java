@@ -1,6 +1,7 @@
 package de.dosmike.sponge.vshop.integrations.toomuchstock;
 
 import de.dosmike.sponge.toomuchstock.service.PriceCalculationService;
+import de.dosmike.sponge.vshop.VillagerShops;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.item.inventory.ItemStack;
@@ -15,6 +16,7 @@ public class PriceCalculationWrapper implements PriceCalculator {
     private final PriceCalculationService wrapped;
     PriceCalculationWrapper() {
         wrapped = Sponge.getServiceManager().provideUnchecked(PriceCalculationService.class);
+        VillagerShops.l("[Integration] TooMuchStock: dynamic pricing");
     }
 
     @Override

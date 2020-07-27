@@ -81,8 +81,8 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
         int change = InteractionHandler.shopItemClicked(player, shop, stockItem, doBuy, quantity);
         if (change > 0 && stockItem.getMaxStock()>0) {
             shop.getStockInventory().ifPresent(stockItem::updateStock);
-            invalidate();
         }
+        element.invalidate();
     };
 
     @Override
@@ -181,7 +181,6 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
                     )
             );
         }
-        System.out.println("Generating lore for "+stockItem.toString());
         ItemStack item = _getDisplayItem(viewer);
         List<Text> lore = item.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
 
@@ -190,18 +189,15 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
                         .orElse(ConfigSettings.getShopsDefaultStackSize())
                         .getStackSize(item.getType());
         ShopEntity shop = VillagerShops.getShopFromShopId(shopIdBackRef).get();
-        System.out.println(">  Within "+shop.toString());
         boolean isOwner = shop.isShopOwner(viewer.getUniqueId());
         if (stockItem.getBuyPrice() != null) {
             BigDecimal priceSingle = isOwner
                     ? BigDecimal.valueOf(stockItem.getBuyPrice())
-                    : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item,1, BigDecimal.valueOf(stockItem.getBuyPrice()),viewer.getUniqueId(), shopIdBackRef);
-            System.out.println(">  BuyPrice 1x "+priceSingle);
+                    : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item,1, BigDecimal.valueOf(stockItem.getBuyPrice()), shopIdBackRef, viewer.getUniqueId());
             if (quantity > 1) {
                 BigDecimal priceStack = isOwner
                         ? BigDecimal.valueOf(stockItem.getBuyPrice()*quantity)
-                        : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item, quantity, BigDecimal.valueOf(stockItem.getBuyPrice()),viewer.getUniqueId(), shopIdBackRef);
-                System.out.println(">  BuyPrice "+quantity+"x "+priceSingle);
+                        : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item, quantity, BigDecimal.valueOf(stockItem.getBuyPrice()), shopIdBackRef, viewer.getUniqueId());
                 lore.add(Text.of(TextColors.RED,
                         ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.buy.stack"))
                                 .replace("%price%", Utilities.nf(priceStack, Utilities.playerLocale(viewer)))
@@ -223,13 +219,11 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
         if (stockItem.getSellPrice() != null) {
             BigDecimal priceSingle = isOwner
                     ? BigDecimal.valueOf(stockItem.getSellPrice())
-                    : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item, 1, BigDecimal.valueOf(stockItem.getSellPrice()), viewer.getUniqueId(), shopIdBackRef);
-            System.out.println(">  SellPrice 1x "+priceSingle);
+                    : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item, 1, BigDecimal.valueOf(stockItem.getSellPrice()), shopIdBackRef, viewer.getUniqueId());
             if (quantity > 1) {
                 BigDecimal priceStack = isOwner
                         ? BigDecimal.valueOf(stockItem.getSellPrice()*quantity)
-                        : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item, quantity, BigDecimal.valueOf(stockItem.getSellPrice()), viewer.getUniqueId(), shopIdBackRef);
-                System.out.println(">  SellPrice "+quantity+"x "+priceSingle);
+                        : VillagerShops.getPriceCalculator().getCurrentPurchasePrice(item, quantity, BigDecimal.valueOf(stockItem.getSellPrice()), shopIdBackRef, viewer.getUniqueId());
                 lore.add(Text.of(TextColors.GREEN,
                         ((LocalizedText)VillagerShops.getTranslator().localText("shop.item.sell.stack"))
                                 .replace("%price%", Utilities.nf(priceStack, Utilities.playerLocale(viewer)))

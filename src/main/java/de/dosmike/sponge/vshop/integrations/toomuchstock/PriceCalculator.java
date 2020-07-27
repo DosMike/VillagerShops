@@ -1,5 +1,6 @@
 package de.dosmike.sponge.vshop.integrations.toomuchstock;
 
+import de.dosmike.sponge.vshop.VillagerShops;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
@@ -196,7 +197,7 @@ public interface PriceCalculator {
         try {
             Class.forName("de.dosmike.sponge.toomuchstock.service.PriceCalculationService");
             return new PriceCalculationWrapper();
-        } catch (ClassNotFoundException nce) {
+        } catch (Throwable dependencyError) {
             return new PriceCalculator() {};
         }
     }
