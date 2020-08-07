@@ -1,9 +1,10 @@
 package de.dosmike.sponge.vshop.integrations.toomuchstock;
 
-import de.dosmike.sponge.vshop.VillagerShops;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.api.GameState;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.economy.Currency;
@@ -185,15 +186,19 @@ public interface PriceCalculator {
     }
 
     /**
-     * Core to super optional dependency:
+     * Core to super optional dependency:<br>
      * Tries to get the PriceCalculator from the classloader.
      * On failure it creates a new Default provider.
-     *
+     * <br><br>
      * Doing it this way makes this class not quite know about the dependency.
      * And the ClassLoader will not attempt to look into the dependency unless the wrapper
      * is constructed for the first time.
+     * <br><br>
+     * This method should only be called once in {@link GameInitializationEvent}
      */
     static PriceCalculator get() {
+        assert Sponge.getGame().getState().ordinal() >= GameState.INITIALIZATION.ordinal()
+                : "The Service for TooMuchStock is not yet registered!";
         try {
             Class.forName("de.dosmike.sponge.toomuchstock.service.PriceCalculationService");
             return new PriceCalculationWrapper();
