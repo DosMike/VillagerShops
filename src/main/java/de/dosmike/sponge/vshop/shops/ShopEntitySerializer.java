@@ -53,8 +53,8 @@ public class ShopEntitySerializer implements TypeSerializer<ShopEntity> {
 
     @Override
     public ShopEntity deserialize(@NotNull TypeToken<?> arg0, ConfigurationNode cfg) throws ObjectMappingException {
-        ShopEntity npc = new ShopEntity(UUID.fromString(Objects.requireNonNull(cfg.getNode("uuid").getString())));
-        ShopMenuManager ip = new ShopMenuManager();
+        UUID shopId = UUID.fromString(Objects.requireNonNull(cfg.getNode("uuid").getString()));
+        ShopEntity npc = new ShopEntity(shopId);
 
         List<? extends ConfigurationNode> itemList = cfg.getNode("items").getChildrenList();
         List<StockItem> items = new ArrayList<>(itemList.size());
@@ -68,8 +68,7 @@ public class ShopEntitySerializer implements TypeSerializer<ShopEntity> {
                 VillagerShops.w("Trying to continue parsing the config...");
             }
         }
-        ip.setAllItems(items);
-        npc.setMenu(ip);
+        npc.getMenu().setAllItems(items);
         ConfigurationNode location = cfg.getNode("location");
         try {
             World w = Sponge.getServer().getWorld(UUID.fromString(location.getNode("WorldUuid").getString("??")))

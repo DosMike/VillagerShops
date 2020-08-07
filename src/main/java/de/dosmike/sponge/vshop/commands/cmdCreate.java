@@ -100,7 +100,6 @@ public class cmdCreate extends Command {
         Text displayName = TextSerializers.FORMATTING_CODE.deserialize(rawDisplayName);
 
         ShopEntity shopEntity = new ShopEntity(UUID.randomUUID());
-        ShopMenuManager menu = new ShopMenuManager();
         shopEntity.setNpcType((EntityType) args.getOne("EntityType").get()); // required argument
         if (shopEntity.getNpcType() == null) {
             throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
@@ -148,7 +147,6 @@ public class cmdCreate extends Command {
         }
 
         shopEntity.setDisplayName(displayName);
-        shopEntity.setMenu(menu);
         shopEntity.setLocation(createAt);
         shopEntity.setRotation(new Vector3d(0, rotateYaw, 0));
         boolean playershop = false;
