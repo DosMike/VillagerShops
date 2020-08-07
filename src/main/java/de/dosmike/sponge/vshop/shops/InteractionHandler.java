@@ -57,7 +57,6 @@ public class InteractionHandler {
 
         Currency currency = item.getCurrency();
         Purchase.Result result;
-        double finalPrice;
 
         ItemStack displayItem = item.getItem(!shop.getShopOwner().isPresent());
 
@@ -65,22 +64,21 @@ public class InteractionHandler {
             if (item.getBuyPrice() == null) return 0;
             result = item.buy(player, shop, amount);
             if (result.getTradedItems() > 0) {
-                finalPrice = item.getBuyPrice() * (double) result.getTradedItems() / (double) displayItem.getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.buy.message")
                         .replace("%balance%", Utilities.nf(customerAccount.get().getBalance(currency), Utilities.playerLocale(player)))
                         .replace("%currency%", currency.getSymbol())
-                        .replace("%payed%", Utilities.nf(finalPrice, Utilities.playerLocale(player)))
+                        .replace("%payed%", Utilities.nf(result.finalPrice, Utilities.playerLocale(player)))
                         .replace("%amount%", result.getTradedItems())
                         .replace("%item%", displayItem.get(Keys.DISPLAY_NAME).orElse(Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(player)))))
                         .resolve(player).orElse(Text.of("[items bought]")
                         ));
                 if (shop.getShopOwner().isPresent()) {
-                    LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), finalPrice, item.getCurrency(), displayItem.getType(), result.getTradedItems());
+                    LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), (result.finalPrice.doubleValue()), item.getCurrency(), displayItem.getType(), result.getTradedItems());
                     trans.toDatabase();
                     LedgerManager.backstuffChat(trans);
                 }
                 VillagerShops.audit("%s purchased %d %s for a total of %.2f %s",
-                        Utilities.toString(player), result.getTradedItems(), item.toString(), finalPrice, item.getCurrency().getSymbol().toPlain());
+                        Utilities.toString(player), result.getTradedItems(), item.toString(), result.finalPrice, item.getCurrency().getSymbol().toPlain());
             } else {
                 player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
                 VillagerShops.audit("%s failed to purchase the item %s: %s",
@@ -91,22 +89,21 @@ public class InteractionHandler {
             if (item.getSellPrice() == null) return 0;
             result = item.sell(player, shop, amount);
             if (result.getTradedItems() > 0) {
-                finalPrice = item.getSellPrice() * (double) result.getTradedItems() / (double) displayItem.getQuantity();
                 player.sendMessage(VillagerShops.getTranslator().localText("shop.sell.message")
                         .replace("%balance%", Utilities.nf(customerAccount.get().getBalance(currency), Utilities.playerLocale(player)))
                         .replace("%currency%", currency.getSymbol())
-                        .replace("%payed%", Utilities.nf(finalPrice, Utilities.playerLocale(player)))
+                        .replace("%payed%", Utilities.nf(result.finalPrice, Utilities.playerLocale(player)))
                         .replace("%amount%", result.getTradedItems())
                         .replace("%item%", displayItem.get(Keys.DISPLAY_NAME).orElse(Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(player)))))
                         .resolve(player).orElse(Text.of("[items sold]")
                         ));
                 if (shop.getShopOwner().isPresent()) {
-                    LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), -finalPrice, item.getCurrency(), displayItem.getType(), result.getTradedItems());
+                    LedgerManager.Transaction trans = new LedgerManager.Transaction(player.getUniqueId(), shop.getIdentifier(), -(result.finalPrice.doubleValue()), item.getCurrency(), displayItem.getType(), result.getTradedItems());
                     trans.toDatabase();
                     LedgerManager.backstuffChat(trans);
                 }
                 VillagerShops.audit("%s sold %d %s for a total of %.2f %s",
-                        Utilities.toString(player), result.getTradedItems(), item.toString(), finalPrice, item.getCurrency().getSymbol().toPlain());
+                        Utilities.toString(player), result.getTradedItems(), item.toString(), result.finalPrice, item.getCurrency().getSymbol().toPlain());
             } else {
                 player.sendMessage(Text.of(TextColors.RED, VillagerShops.getTranslator().local(result.getMessage()).resolve(player).orElse(result.getMessage())));
                 VillagerShops.audit("%s failed to sell the item %s: %s",

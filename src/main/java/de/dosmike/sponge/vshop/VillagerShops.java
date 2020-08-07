@@ -6,6 +6,7 @@ import de.dosmike.sponge.VersionChecker;
 import de.dosmike.sponge.languageservice.API.LanguageService;
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
 import de.dosmike.sponge.vshop.commands.CommandRegistra;
+import de.dosmike.sponge.vshop.integrations.toomuchstock.PriceCalculator;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.shops.ShopEntitySerializer;
 import de.dosmike.sponge.vshop.shops.StockItem;
@@ -53,7 +54,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @SuppressWarnings("UnstableApiUsage")
-@Plugin(id = "vshop", name = "VillagerShops", version = "2.6.1")
+@Plugin(id = "vshop", name = "VillagerShops", version = "2.7")
 public class VillagerShops {
 
     public static void main(String[] args) { System.err.println("This plugin can not be run as executable!");
@@ -76,6 +77,7 @@ public class VillagerShops {
     private SpongeExecutorService asyncScheduler = null;
     private SpongeExecutorService syncScheduler = null;
     private static PermissionService permissions = null;
+    private PriceCalculator priceCalculator = null;
 
     public static PluginTranslation getTranslator() {
         return instance.translator;
@@ -91,6 +93,9 @@ public class VillagerShops {
     }
     public static IncomeLimiterService getIncomeLimiter() {
         return instance.incomeLimiter;
+    }
+    public static PriceCalculator getPriceCalculator() {
+        return instance.priceCalculator;
     }
     public static SpongeExecutorService getAsyncScheduler() {
         return instance.asyncScheduler;
@@ -571,6 +576,8 @@ public class VillagerShops {
             userStorage = Sponge.getServiceManager().provide(UserStorageService.class).orElseThrow(()->new IllegalStateException("Could not find UserStorageService"));
         if (permissions == null)
             permissions = Sponge.getServiceManager().provide(PermissionService.class).orElseThrow(()->new IllegalStateException("Could not find PermissionService"));
+        if (priceCalculator == null)
+            priceCalculator = PriceCalculator.get();
 
         l("Registering commands...");
         CommandRegistra.register();

@@ -42,10 +42,12 @@ public class ShopEntity {
 
     public ShopEntity(UUID identifier) {
         shopUniqueId = identifier;
+        menu = new ShopMenuManager(shopUniqueId);
     }
     public ShopEntity(UUID identifier, UUID trackEntity) {
         shopUniqueId = identifier;
         lastEntity = trackEntity;
+        menu = new ShopMenuManager(shopUniqueId);
     }
 
     public UUID getIdentifier() {

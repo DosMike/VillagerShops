@@ -110,11 +110,9 @@ public class cmdImport extends Command {
         }
 
         ShopEntity shopEntity = new ShopEntity(UUID.randomUUID(), entity.getUniqueId());
-        ShopMenuManager menu = new ShopMenuManager();
         shopEntity.setNpcType(entity.getType());
         shopEntity.setVariant(skinVariant);
         shopEntity.setDisplayName(displayName);
-        shopEntity.setMenu(menu);
         shopEntity.setLocation(blockifiedAt);
         shopEntity.setRotation(new Vector3d(0, rotateYaw, 0));
         boolean playershop = false;

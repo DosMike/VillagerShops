@@ -24,11 +24,9 @@ public class API {
     public static ShopEntity create(EntityType type, String variant, Text displayName, Location<World> location, Double rotation) {
         if (VillagerShops.isLocationOccupied(location)) return null;
         ShopEntity shopEntity = new ShopEntity(UUID.randomUUID());
-        ShopMenuManager prep = new ShopMenuManager();
         shopEntity.setNpcType(type);
         shopEntity.setVariant(variant);
         shopEntity.setDisplayName(displayName);
-        shopEntity.setMenu(prep);
         shopEntity.setLocation(location);
         shopEntity.setRotation(new Vector3d(0, rotation, 0));
         VillagerShops.addShop(shopEntity, true);
