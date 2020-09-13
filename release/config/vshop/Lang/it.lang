@@ -1,25 +1,25 @@
 permission.missing:Non hai il permesso per farlo!
 option.invalidvalue:L'opzione '%option%' per il giocatore %player% o il suo gruppo di permessi non è numerico o negativo. Assicurati che sia un valore intero positivo. Se sei un giocatore segnalalo agli admin del Server.
 cmd.description.short:/vshop <comando> <opzioni>
-cmd.description.long:Guarda sempre al negozio che vuoi modificare! Opzioni per:\nCREATE : [--at <Position>] <EntityType> [--skin <Skin>] [Name]\n    Skin is supposed to be a valid skin for this Mob\n    Position is formatted like: world/x/y/z/rotation\nADD : [-o <Index>] [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] (Hold ItemStack)\n    - as Price will disable that option, one required\n    The l flag can limit the maximum stock of this item for player-shops\n	The o flag can be used to replace an item at the Index, start with 1\nREMOVE : <Index>\n    Count through items in shop inventory, start with 1\nDELETE : (No arguments)\nLINK : (No arguments)\n    Afterwards you need to open a chest to link a player-shop to it. Use again to cancel.\nIDENTIFY / ID : (No arguments)\nRELOAD : (No arguments)\n    Tries to reload skins for Sponge:Human entities\nLIST : [Player]\n    List all shops (for a player) with a teleport short-cut and invsee
-cmd.playeronly:This command can only be run by players
-cmd.missingargument:Please specify an argument
-cmd.common.notarget:There is no shop where you're looking!
-cmd.common.noshopforid:The specified UUID did not match any shop.
-cmd.create.invalidtype:Invalid EntityType (use tab to auto-complete)
-cmd.create.entitypermission:This EntityType requires permission %permission%
-cmd.create.invalidvariant:No such Style/Variant found for %variant% - Use NONE or 0 to get the default Style/Variant
-cmd.create.playershop.missingcontainer:You need to put a container below your playershop!
-cmd.create.invalidpos:The positions needs to be formatted like WORLD/X/Y/Z/ROTATION
-cmd.create.invalidworld:Such a world does not exist
-cmd.create.occupied:There is already a shop at this location
-cmd.create.playershop.success:Created a new player shop called %name%
-cmd.create.playershop.limit:You may not create more than %limit% shops
-cmd.create.success:Created a new admin shop called %name%
-cmd.import.notarget:There is not entity where you're looking!
-cmd.import.occupied:The entity is already a shop
-cmd.import.entitypermission:This Entity requires permission %permission%
-cmd.import.success:Imported entity as admin shop called %name%
+cmd.description.long:Guarda sempre al negozio che vuoi modificare! Opzioni per:\nCREATE : [--at <Position>] <EntityType> [--skin <Skin>] [Name]\n    Skin dovrebbe essere una skin valida per questo Mob\n    La posizione è formattata così: world/x/y/z/rotazione\nADD : [-o <Index>] [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] (Hold ItemStack)\n    - as Price will disable that option, one required\n    The l flag can limit the maximum stock of this item for player-shops\n	The o flag can be used to replace an item at the Index, start with 1\nREMOVE : <Index>\n    Count through items in shop inventory, start with 1\nDELETE : (No arguments)\nLINK : (No arguments)\n    Afterwards you need to open a chest to link a player-shop to it. Use again to cancel.\nIDENTIFY / ID : (No arguments)\nRELOAD : (No arguments)\n    Tries to reload skins for Sponge:Human entities\nLIST : [Player]\n    List all shops (for a player) with a teleport short-cut and invsee
+cmd.playeronly:Questo comando può essere eseguito solo da un giocatore
+cmd.missingargument:Specifica un argomento
+cmd.common.notarget:Non c'è nessun negozio dove stai guardando!
+cmd.common.noshopforid:L'UUID specificato non corrisponde a nessuno shop.
+cmd.create.invalidtype:EntityType non valido (usa tab per auto-completare)
+cmd.create.entitypermission:Questo EntityType richiede il permesso %permission%
+cmd.create.invalidvariant:Nessuno Stile/Variante trovata per %variant% - Usa NONE o 0 per avere lo Stile/Variante di default
+cmd.create.playershop.missingcontainer:Devi posizionare un contenitore sotto il playershop!
+cmd.create.invalidpos:Le posizioni devono essere formattate così MONDO/X/Y/Z/ROTAZIONE
+cmd.create.invalidworld:Quel mondo non esiste
+cmd.create.occupied:C'è già un negozio in quella posizione
+cmd.create.playershop.success:Crea un nuovo negozio utente chiamato %name%
+cmd.create.playershop.limit:Non puoi creare più di %limit% negozi
+cmd.create.success:Creato un nuovo negozio admin chiamato %name%
+cmd.import.notarget:Non c'è un entità dove stai guardando!
+cmd.import.occupied:L'entità è già un negozio
+cmd.import.entitypermission:Questa entità richiede il permesso %permission%
+cmd.import.success:Importata entità come negozio admin chiamato %name%
 cmd.import.playershop.success:Imported entity as player shop called %name%
 cmd.add.limit.adminshop:You can't add stock limits to an admin-shop
 cmd.add.overwrite.index:There is no item on the specified position
