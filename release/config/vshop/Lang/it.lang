@@ -21,7 +21,7 @@ cmd.import.occupied:L'entità è già un negozio
 cmd.import.entitypermission:Questa entità richiede il permesso %permission%
 cmd.import.success:Importata entità come negozio admin chiamato %name%
 cmd.import.playershop.success:Entità importata come negozio utente chiamato %name%
-cmd.add.limit.adminshop:Non puoi aggiungere limiti di stock ad uno shop admin
+cmd.add.limit.adminshop:Non puoi aggiungere limiti di stock ad un negozio admin
 cmd.add.overwrite.index:Non ci sono oggetti alla posizione specificata
 cmd.add.filter.nooredict:Questo server non supporta OreDict
 cmd.add.filter.oredictchoice: L'oggetto che stai inserendo ha diverse voci OreDict. Scegline una:
@@ -39,8 +39,7 @@ cmd.add.replaced:L'oggetto alla posizione %pos% è stato rimpiazzato con %item%
 cmd.remove.invalidindex:Non ci sono oggetti alla posizione specificata
 cmd.remove.success:Oggetto alla posizione %pos% rimosso dallo shop
 cmd.identify.adminshop:il Server
-cmd.identify.response:
-Il %type% %name% [%id%] è un %entity%, variante %skin%.\nQuesto shop appartiene a %owner%
+cmd.identify.response:Il %type% %name% [%id%] è un %entity%, variante %skin%.\nQuesto negozio appartiene a %owner%
 cmd.identify.shiftclick:Fai Shift-click per copiare l'id in chat
 cmd.link.cancelled:Linking cancelled
 cmd.link.adminshop:You can't link an admin-shop to a chest 
@@ -56,8 +55,8 @@ cmd.saved:Shop salvati!
 cmd.reloaded:Riavvio completo!
 cmd.ledger.invalid:Non puoi usare -t con un Target
 shop.title:[vShop] %name%
-shop.type.admin:Adminshop
-shop.type.player:Playershop
+shop.type.admin:Negozio Admin
+shop.type.player:Negozio Utente
 shop.item.buy.one:Compra per:§f %currency%%price%
 shop.item.buy.stack:Compra per:§f %currency%%price% (á %currency%%itemprice%)
 shop.item.sell.one:Vendi per:§f %currency%%price%
@@ -75,20 +74,20 @@ shop.shopowner.highbalance:L'account del proprietario dello shop ha raggiunto il
 shop.customer.lowbalance:Non hai abbastanza soldi
 shop.shopowner.lowbalance:Il proprietario dello shop è rimasto senza soldi
 shop.customer.missingitems:Non hai abbastanza oggetti
-shop.shopowner.missingitems:The items is currently out of stock
-shop.customer.inventoryfull:You can not carry any more items
-shop.shopowner.inventoryfull:The shop can not stock more items
-shop.customer.incomelimit:You have hit your income limit from admin shops for the day.
-shop.customer.spendinglimit:The amount you can spend a day is limited. Try again tomorrow.
+shop.shopowner.missingitems:Gli articoli sono attualmente esauriti
+shop.customer.inventoryfull:Non puoi portare altri oggetti
+shop.shopowner.inventoryfull:Il negozio non può immagazzinare altri articoli
+shop.customer.incomelimit:Hai raggiunto il limite giornliero di guadagno dagli shop admin.
+shop.customer.spendinglimit:L'ammontare che puoi spendere in un giorno è limitato. Riprova domani.
 shop.chat.transaction.base:Your shop %shop% sold %items%. In total %money%.
 shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item%\n  %timestamp%
 shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item%\n  %timestamp%
 shop.quantity.name:Shop Quantity
-shop.quantity.items.single:Single Items
-shop.quantity.items.quarter:Quarter Stacks
-shop.quantity.items.half:Half Stacks
-shop.quantity.items.full:Full Stacks
-shop.removemode.name:Remove Items
-shop.removemode.lore1:Click here to remove items. Select the
-shop.removemode.lore2:items and click again to confirm removal.
-shop.item.markedforremoval:This item will be removed
+shop.quantity.items.single:Oggetti Singoli
+shop.quantity.items.quarter:Un Quarto di Stack
+shop.quantity.items.half:Mezzo Stack
+shop.quantity.items.full:Stack Intero
+shop.removemode.name:Rimuovi Articoli
+shop.removemode.lore1:Clicca qui per rimuovere articoli. Seleziona gli
+shop.removemode.lore2:articoli e clicca di nuovo per confermare la rimozione.
+shop.item.markedforremoval:Questo articolo sarà rimosso
