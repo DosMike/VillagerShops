@@ -9,7 +9,7 @@ cmd.common.noshopforid:L'UUID specificato non corrisponde a nessuno shop.
 cmd.create.invalidtype:EntityType non valido (usa tab per auto-completare)
 cmd.create.entitypermission:Questo EntityType richiede il permesso %permission%
 cmd.create.invalidvariant:Nessuno Stile/Variante trovata per %variant% - Usa NONE o 0 per avere lo Stile/Variante di default
-cmd.create.playershop.missingcontainer:Devi posizionare un contenitore sotto il playershop!
+cmd.create.playershop.missingcontainer:Devi posizionare un contenitore sotto il negozio utente!
 cmd.create.invalidpos:Le posizioni devono essere formattate così MONDO/X/Y/Z/ROTAZIONE
 cmd.create.invalidworld:Quel mondo non esiste
 cmd.create.occupied:C'è già un negozio in quella posizione
@@ -26,8 +26,8 @@ cmd.add.overwrite.index:Non ci sono oggetti alla posizione specificata
 cmd.add.filter.nooredict:Questo server non supporta OreDict
 cmd.add.filter.oredictchoice: L'oggetto che stai inserendo ha diverse voci OreDict. Scegline una:
 cmd.add.filter.missing:Impossibile trovare filtri per %filter%.
-cmd.add.filter.adminonly:Solo gli shop admin possono commerciare questo oggetto.
-cmd.add.filter.playeronly:Solo gli shop utente possono commerciare questo oggetto.
+cmd.add.filter.adminonly:Solo i negozi admin possono commerciare questo oggetto.
+cmd.add.filter.playeronly:Solo i negozi utente possono commerciare questo oggetto.
 cmd.add.filter.incomaptible:Questo oggetto non corrisponde al filtro.
 cmd.add.buyprice:The BuyPrice was not '~' or a decimal
 cmd.add.sellprice:The SellPrice was not '~ or a decimal
@@ -37,7 +37,7 @@ cmd.add.itemisair:Tieni in mano l'esatto oggetto che vuoi vendere
 cmd.add.success: %item% aggiunto al negozio alla posizione %pos%
 cmd.add.replaced:L'oggetto alla posizione %pos% è stato rimpiazzato con %item%
 cmd.remove.invalidindex:Non ci sono oggetti alla posizione specificata
-cmd.remove.success:Oggetto alla posizione %pos% rimosso dallo shop
+cmd.remove.success:Oggetto alla posizione %pos% rimosso dal negozio
 cmd.identify.adminshop:il Server
 cmd.identify.response:Il %type% %name% [%id%] è un %entity%, variante %skin%.\nQuesto negozio appartiene a %owner%
 cmd.identify.shiftclick:Fai Shift-click per copiare l'id in chat
@@ -77,12 +77,12 @@ shop.customer.missingitems:Non hai abbastanza oggetti
 shop.shopowner.missingitems:Gli articoli sono attualmente esauriti
 shop.customer.inventoryfull:Non puoi portare altri oggetti
 shop.shopowner.inventoryfull:Il negozio non può immagazzinare altri articoli
-shop.customer.incomelimit:Hai raggiunto il limite giornliero di guadagno dagli shop admin.
+shop.customer.incomelimit:Hai raggiunto il limite giornliero di guadagno dai negozi admin.
 shop.customer.spendinglimit:L'ammontare che puoi spendere in un giorno è limitato. Riprova domani.
-shop.chat.transaction.base:Your shop %shop% sold %items%. In total %money%.
+shop.chat.transaction.base:Il tuo negozio %shop% ha venduto %items%. In totale %money%.
 shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item%\n  %timestamp%
 shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item%\n  %timestamp%
-shop.quantity.name:Shop Quantity
+shop.quantity.name:Quantità Negozio
 shop.quantity.items.single:Oggetti Singoli
 shop.quantity.items.quarter:Un Quarto di Stack
 shop.quantity.items.half:Mezzo Stack
