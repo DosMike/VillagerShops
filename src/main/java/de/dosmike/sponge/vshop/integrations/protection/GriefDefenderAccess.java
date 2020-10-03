@@ -17,7 +17,7 @@ import java.util.UUID;
 /**
  * https://github.com/bloodmc/GriefDefender/blob/0819a53e7126aae9df8a510e11a53cad0038ad8f/sponge/src/main/java/com/griefdefender/permission/GDPermissionManager.java#L224
  */
-public class GriefDefenderAccess implements ClaimAccess {
+public class GriefDefenderAccess implements AreaProtection {
 
     public GriefDefenderAccess() {
         VillagerShops.l("[Integration] Protection Plugin: GriefDefender");
@@ -25,15 +25,15 @@ public class GriefDefenderAccess implements ClaimAccess {
 
     @Override
     public boolean canCreateEntity(Player trigger, Location<World> location, Entity entity) {
-        if (!ConfigSettings.isClaimsEnabled()) return true;
+        if (!ConfigSettings.isProtectionEnabled()) return true;
 
         Claim claim = GriefDefender.getCore()
                 .getClaimManager(location.getExtent().getUniqueId())
                 .getClaimAt(location.getBlockPosition());
         boolean allowed = (claim.isWilderness())
-                ? ConfigSettings.claimsInWilderness()
+                ? ConfigSettings.protectionAllowWilderness()
                 : getClaimAccessLevel(claim, trigger.getUniqueId())
-                .compareTo(ConfigSettings.requiredClaimAccessLevel()) >= 0;
+                .compareTo(ConfigSettings.requiredProtectionAccessLevel()) >= 0;
         return allowed && claim.getActiveFlagPermissionValue(
                 Flags.ENTITY_SPAWN,
                 GriefDefender.getCore().getUser(trigger.getUniqueId()),
@@ -47,15 +47,15 @@ public class GriefDefenderAccess implements ClaimAccess {
 
     @Override
     public boolean canMoveEntityTo(Player trigger, Location<World> location, Entity entity) {
-        if (!ConfigSettings.isClaimsEnabled()) return true;
+        if (!ConfigSettings.isProtectionEnabled()) return true;
 
         Claim claim = GriefDefender.getCore()
                 .getClaimManager(location.getExtent().getUniqueId())
                 .getClaimAt(location.getBlockPosition());
         boolean allowed = (claim.isWilderness())
-                ? ConfigSettings.claimsInWilderness()
+                ? ConfigSettings.protectionAllowWilderness()
                 : getClaimAccessLevel(claim, trigger.getUniqueId())
-                .compareTo(ConfigSettings.requiredClaimAccessLevel()) >= 0;
+                .compareTo(ConfigSettings.requiredProtectionAccessLevel()) >= 0;
         return allowed && claim.getActiveFlagPermissionValue(
                 Flags.ENTITY_TELEPORT_TO,
                 GriefDefender.getCore().getUser(trigger.getUniqueId()),
@@ -69,15 +69,15 @@ public class GriefDefenderAccess implements ClaimAccess {
 
     @Override
     public boolean canAccessContainer(Player trigger, Location<World> location) {
-        if (!ConfigSettings.isClaimsEnabled()) return true;
+        if (!ConfigSettings.isProtectionEnabled()) return true;
 
         Claim claim = GriefDefender.getCore()
                 .getClaimManager(location.getExtent().getUniqueId())
                 .getClaimAt(location.getBlockPosition());
         boolean allowed = (claim.isWilderness())
-                ? ConfigSettings.claimsInWilderness()
+                ? ConfigSettings.protectionAllowWilderness()
                 : getClaimAccessLevel(claim, trigger.getUniqueId())
-                    .compareTo(ConfigSettings.requiredClaimAccessLevel()) >= 0;
+                    .compareTo(ConfigSettings.requiredProtectionAccessLevel()) >= 0;
         return allowed && claim.getActiveFlagPermissionValue(
                 Flags.INTERACT_INVENTORY,
                 GriefDefender.getCore().getUser(trigger.getUniqueId()),
@@ -86,10 +86,10 @@ public class GriefDefenderAccess implements ClaimAccess {
         ).asBoolean();
     }
 
-    private ClaimAccessLevel getClaimAccessLevel(Claim claim, UUID playerID) {
-        if (claim.isUserTrusted(playerID, TrustTypes.MANAGER)) return ClaimAccessLevel.OWNER;
-        if (claim.isUserTrusted(playerID, TrustTypes.BUILDER)) return ClaimAccessLevel.BUILDER;
-        if (claim.isUserTrusted(playerID, TrustTypes.CONTAINER)) return ClaimAccessLevel.CONTAINER;
-        return ClaimAccessLevel.IGNORED;
+    private ProtectionAccessLevel getClaimAccessLevel(Claim claim, UUID playerID) {
+        if (claim.isUserTrusted(playerID, TrustTypes.MANAGER)) return ProtectionAccessLevel.MODERATIVE;
+        if (claim.isUserTrusted(playerID, TrustTypes.BUILDER)) return ProtectionAccessLevel.MEMBER;
+        if (claim.isUserTrusted(playerID, TrustTypes.CONTAINER)) return ProtectionAccessLevel.CONTAINER;
+        return ProtectionAccessLevel.IGNORED;
     }
 }

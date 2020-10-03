@@ -6,7 +6,7 @@ import de.dosmike.sponge.VersionChecker;
 import de.dosmike.sponge.languageservice.API.LanguageService;
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
 import de.dosmike.sponge.vshop.commands.CommandRegistra;
-import de.dosmike.sponge.vshop.integrations.protection.ClaimAccess;
+import de.dosmike.sponge.vshop.integrations.protection.AreaProtection;
 import de.dosmike.sponge.vshop.integrations.toomuchstock.PriceCalculator;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.shops.ShopEntitySerializer;
@@ -79,7 +79,7 @@ public class VillagerShops {
     private SpongeExecutorService syncScheduler = null;
     private static PermissionService permissions = null;
     private PriceCalculator priceCalculator = null;
-    private ClaimAccess claimAccess = null;
+    private AreaProtection claimAccess = null;
 
     public static PluginTranslation getTranslator() {
         return instance.translator;
@@ -99,7 +99,7 @@ public class VillagerShops {
     public static PriceCalculator getPriceCalculator() {
         return instance.priceCalculator;
     }
-    public static ClaimAccess getClaimAccess() {
+    public static AreaProtection getClaimAccess() {
         return instance.claimAccess;
     }
     public static SpongeExecutorService getAsyncScheduler() {
@@ -584,7 +584,7 @@ public class VillagerShops {
         if (priceCalculator == null)
             priceCalculator = PriceCalculator.get();
         if (claimAccess == null)
-            claimAccess = ClaimAccess.get();
+            claimAccess = AreaProtection.get();
 
         l("Registering commands...");
         CommandRegistra.register();
