@@ -60,6 +60,15 @@ public interface ClaimAccess {
             VillagerShops.w("Claim Access Integration failed: Could not load handler for GriefDefender");
         }
         //endregion
+        //region UniverseGuard
+        try {
+            if (Sponge.getPluginManager().getPlugin("universeguard").isPresent()) {
+                return new UniverseGuardAccess();
+            }
+        } catch (Throwable dependencyError) {
+            VillagerShops.w("Claim Access Integration failed: Could not load handler for UniverseGuard");
+        }
+        //endregion
 
         return DEFAULT_CLAIMACCESS;
     }
