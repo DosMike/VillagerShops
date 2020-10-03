@@ -30,9 +30,9 @@ public class GriefDefenderAccess implements ClaimAccess {
         Claim claim = GriefDefender.getCore()
                 .getClaimManager(location.getExtent().getUniqueId())
                 .getClaimAt(location.getBlockPosition());
-        if (claim.isWilderness())
-            return ConfigSettings.claimsInWilderness();
-        boolean allowed = getClaimAccessLevel(claim, trigger.getUniqueId())
+        boolean allowed = (claim.isWilderness())
+                ? ConfigSettings.claimsInWilderness()
+                : getClaimAccessLevel(claim, trigger.getUniqueId())
                 .compareTo(ConfigSettings.requiredClaimAccessLevel()) >= 0;
         return allowed && claim.getActiveFlagPermissionValue(
                 Flags.ENTITY_SPAWN,
@@ -52,9 +52,9 @@ public class GriefDefenderAccess implements ClaimAccess {
         Claim claim = GriefDefender.getCore()
                 .getClaimManager(location.getExtent().getUniqueId())
                 .getClaimAt(location.getBlockPosition());
-        if (claim.isWilderness())
-            return ConfigSettings.claimsInWilderness();
-        boolean allowed = getClaimAccessLevel(claim, trigger.getUniqueId())
+        boolean allowed = (claim.isWilderness())
+                ? ConfigSettings.claimsInWilderness()
+                : getClaimAccessLevel(claim, trigger.getUniqueId())
                 .compareTo(ConfigSettings.requiredClaimAccessLevel()) >= 0;
         return allowed && claim.getActiveFlagPermissionValue(
                 Flags.ENTITY_TELEPORT_TO,
@@ -74,10 +74,10 @@ public class GriefDefenderAccess implements ClaimAccess {
         Claim claim = GriefDefender.getCore()
                 .getClaimManager(location.getExtent().getUniqueId())
                 .getClaimAt(location.getBlockPosition());
-        if (claim.isWilderness())
-            return ConfigSettings.claimsInWilderness();
-        boolean allowed = getClaimAccessLevel(claim, trigger.getUniqueId())
-                .compareTo(ConfigSettings.requiredClaimAccessLevel()) >= 0;
+        boolean allowed = (claim.isWilderness())
+                ? ConfigSettings.claimsInWilderness()
+                : getClaimAccessLevel(claim, trigger.getUniqueId())
+                    .compareTo(ConfigSettings.requiredClaimAccessLevel()) >= 0;
         return allowed && claim.getActiveFlagPermissionValue(
                 Flags.INTERACT_INVENTORY,
                 GriefDefender.getCore().getUser(trigger.getUniqueId()),
