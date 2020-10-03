@@ -16,6 +16,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
+import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
@@ -159,6 +160,14 @@ public class cmdCreate extends Command {
                         localString("cmd.create.playershop.missingcontainer").orLiteral(player)));
             }
         }
+
+        Entity testEntity = shopEntity.spawn();
+        if (!VillagerShops.getClaimAccess().canCreateEntity(player, player.getLocation(), testEntity) ||
+            (playershop && !VillagerShops.getClaimAccess().canAccessContainer(player, shopEntity.getStockContainer().get()))) {
+            throw new CommandException(Text.of(TextColors.RED,
+                    localString("permission.missing").orLiteral(player)));
+        }
+
         VillagerShops.addShop(shopEntity, true);
 
         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",

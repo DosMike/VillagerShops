@@ -275,8 +275,8 @@ final public class MSpinnerIndex extends IElementImpl implements IClickable<MSpi
     public MSpinnerIndex copy() {
         MSpinnerIndex copy = new MSpinnerIndex();
         copy.defaultIcons.addAll(defaultIcons);
-        copy.setPosition(getPosition());
         copy.setParent(getParent());
+        copy.setPosition(getPosition());
         copy.nameKey = nameKey;
         copy.valueKeys = new LinkedList<>(valueKeys);
         copy.clickListener = clickListener;

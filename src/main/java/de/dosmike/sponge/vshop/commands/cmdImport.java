@@ -125,6 +125,11 @@ public class cmdImport extends Command {
                         localString("cmd.create.playershop.missingcontainer").orLiteral(player)));
             }
         }
+        if (playershop && !VillagerShops.getClaimAccess().canAccessContainer(player, shopEntity.getStockContainer().get())) {
+            throw new CommandException(Text.of(TextColors.RED,
+                    localString("permission.missing").orLiteral(player)));
+        }
+
         entity.offer(Keys.AI_ENABLED, false);
         entity.offer(Keys.IS_SILENT, true);
         entity.offer(Keys.INVULNERABLE, true);
