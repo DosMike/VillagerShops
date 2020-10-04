@@ -1,0 +1,93 @@
+permission.missing:Non hai il permesso per farlo!
+option.invalidvalue:L'opzione '%option%' per il giocatore %player% o il suo gruppo di permessi non è numerico o negativo. Assicurati che sia un valore intero positivo. Se sei un giocatore segnalalo agli admin del Server.
+cmd.description.short:/vshop <comando> <opzioni>
+cmd.description.long:Guarda sempre al negozio che vuoi modificare! Opzioni per:\nCREATE : [--at <Posizione>] <TipoEntità> [--skin <Skin>] [Nome]\n    Skin dovrebbe essere una skin valida per questo Mob\n    La posizione è formattata così: world/x/y/z/rotazione\nADD : [-o <Index>] [-l <Limite>] <~|BuyPrice> <~|SellPrice> [Valuta] (Hold ItemStack)\n    '-' come prezzo disabilita quell'opzione, uno richiesto\n    L'opzione 'l' può limitare lo stock massimo di questo oggetto per i negozi utente\n	L'opzione 'o' può essere usata per rimpiazzare un oggetto all'Index, partendo da 1\nREMOVE : <Index>\n    Conta gli oggetti nell'inventario del negozio, partendo da 1\nDELETE : (Nessuna opzione)\nLINK : (Nessuna opzione)\n    Successivamente devi aprire una cassa per collegarci il negozio utente. Usa di nuovo per cancellare.\nIDENTIFY / ID : (Nessuna opzione)\nRELOAD : (Nessuna opzione)\n    Cerca di riavviare le skin per le entità Sponge:Human\nLIST : [Giocatore]\n    Elenca tutti i negozi (per un giocatore) con una scelta rapida per il teleport e invsee
+cmd.playeronly:Questo comando può essere eseguito solo da un giocatore
+cmd.missingargument:Specifica un argomento
+cmd.common.notarget:Non c'è nessun negozio dove stai guardando!
+cmd.common.noshopforid:L'UUID specificato non corrisponde a nessuno shop.
+cmd.create.invalidtype:EntityType non valido (usa tab per auto-completare)
+cmd.create.entitypermission:Questo EntityType richiede il permesso %permission%
+cmd.create.invalidvariant:Nessuno Stile/Variante trovata per %variant% - Usa NONE o 0 per avere lo Stile/Variante di default
+cmd.create.playershop.missingcontainer:Devi posizionare un contenitore sotto il negozio utente!
+cmd.create.invalidpos:Le posizioni devono essere formattate così MONDO/X/Y/Z/ROTAZIONE
+cmd.create.invalidworld:Quel mondo non esiste
+cmd.create.occupied:C'è già un negozio in quella posizione
+cmd.create.playershop.success:Crea un nuovo negozio utente chiamato %name%
+cmd.create.playershop.limit:Non puoi creare più di %limit% negozi
+cmd.create.success:Creato un nuovo negozio admin chiamato %name%
+cmd.import.notarget:Non c'è un entità dove stai guardando!
+cmd.import.occupied:L'entità è già un negozio
+cmd.import.entitypermission:Questa entità richiede il permesso %permission%
+cmd.import.success:Importata entità come negozio admin chiamato %name%
+cmd.import.playershop.success:Entità importata come negozio utente chiamato %name%
+cmd.add.limit.adminshop:Non puoi aggiungere limiti di stock ad un negozio admin
+cmd.add.overwrite.index:Non ci sono oggetti alla posizione specificata
+cmd.add.filter.nooredict:Questo server non supporta OreDict
+cmd.add.filter.oredictchoice: L'oggetto che stai inserendo ha diverse voci OreDict. Scegline una:
+cmd.add.filter.missing:Impossibile trovare filtri per %filter%.
+cmd.add.filter.adminonly:Solo i negozi admin possono commerciare questo oggetto.
+cmd.add.filter.playeronly:Solo i negozi utente possono commerciare questo oggetto.
+cmd.add.filter.incomaptible:Questo oggetto non corrisponde al filtro.
+cmd.add.buyprice:Il BuyPrice non era '~' o un decimale
+cmd.add.sellprice:Il SellPrice non era '~ o un decimale
+cmd.add.noprice:Devi specificare almeno un BuyPrice o SellPrice
+cmd.add.negativeprice:Il prezzo non può essere negativo
+cmd.add.itemisair:Tieni in mano l'esatto oggetto che vuoi vendere
+cmd.add.success: %item% aggiunto al negozio alla posizione %pos%
+cmd.add.replaced:L'oggetto alla posizione %pos% è stato rimpiazzato con %item%
+cmd.remove.invalidindex:Non ci sono oggetti alla posizione specificata
+cmd.remove.success:Oggetto alla posizione %pos% rimosso dal negozio
+cmd.identify.adminshop:il Server
+cmd.identify.response:Il %type% %name% [%id%] è un %entity%, variante %skin%.\nQuesto negozio appartiene a %owner%
+cmd.identify.shiftclick:Fai Shift-click per copiare l'id in chat
+cmd.link.cancelled:Link cancellato
+cmd.link.adminshop:Non puoi collegare un negozio admin ad una cassa 
+cmd.link.notyourshop:Puoi ricollegare solo contenitori per i negozi che possiedi
+cmd.link.hitachest:Apri la cassa che vuoi collegsare a questo negozio. Usa di nuovo '/vshop link' per cancellare
+cmd.link.nochest:Puoi collegare solo a cassa standard
+cmd.link.missingshop:Impossibile trovare il negozio a cui collegare questa cassa
+cmd.link.distance:Sei troppo lontano! La distanza dal contenitore non deve essere più di %distance% blocchi.
+cmd.link.success:Questa cassa è ora collegata al negozio. Il vecchio contenitore non è più protetto!
+cmd.deleted:Shop cancellato!
+cmd.released:L'entità è stata liberata!
+cmd.saved:Shop salvati!
+cmd.reloaded:Riavvio completo!
+cmd.ledger.invalid:Non puoi usare -t con un Target
+shop.title:[vShop] %name%
+shop.type.admin:Negozio Admin
+shop.type.player:Negozio Utente
+shop.item.buy.one:Compra per:§f %currency%%price%
+shop.item.buy.stack:Compra per:§f %currency%%price% (á %currency%%itemprice%)
+shop.item.sell.one:Vendi per:§f %currency%%price%
+shop.item.sell.stack:Vendi per:§f %currency%%price% (á %currency%%itemprice%)
+shop.item.stock:In Stock: %amount%/%max%
+shop.item.filter.damage:Compra oggetti danneggiati
+shop.item.filter.nbt:Compra oggetti con qualsiasi dato (NBT)
+shop.item.filter.oredict:Compra qualsiasi OreDict %oredict%
+shop.buy.message:§6%currency%%balance%§r (§c-%currency%%payed%§r): Stai comprando §e%amount%§rx %item%
+shop.sell.message:§6%currency%%balance%§r (§a+%currency%%payed%§r): Stai vendendo §e%amount%§rx %item%
+shop.generic.transactionfailure:Errore nella transazione! - Per favore riportalo allo sviluppatore
+shop.generic.incompatibletype:Questo oggetto non può essere commerciato da questo tipo di negozio
+shop.customer.highbalance:Il tuo account non può contenere altri soldi
+shop.shopowner.highbalance:L'account del proprietario dello shop ha raggiunto il suo limite
+shop.customer.lowbalance:Non hai abbastanza soldi
+shop.shopowner.lowbalance:Il proprietario dello shop è rimasto senza soldi
+shop.customer.missingitems:Non hai abbastanza oggetti
+shop.shopowner.missingitems:Gli articoli sono attualmente esauriti
+shop.customer.inventoryfull:Non puoi portare altri oggetti
+shop.shopowner.inventoryfull:Il negozio non può immagazzinare altri articoli
+shop.customer.incomelimit:Hai raggiunto il limite giornliero di guadagno dai negozi admin.
+shop.customer.spendinglimit:L'ammontare che puoi spendere in un giorno è limitato. Riprova domani.
+shop.chat.transaction.base:Il tuo negozio %shop% ha venduto %items%. In totale %money%.
+shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item%\n  %timestamp%
+shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item%\n  %timestamp%
+shop.quantity.name:Quantità Negozio
+shop.quantity.items.single:Oggetti Singoli
+shop.quantity.items.quarter:Un Quarto di Stack
+shop.quantity.items.half:Mezzo Stack
+shop.quantity.items.full:Stack Intero
+shop.removemode.name:Rimuovi Articoli
+shop.removemode.lore1:Clicca qui per rimuovere articoli. Seleziona gli
+shop.removemode.lore2:articoli e clicca di nuovo per confermare la rimozione.
+shop.item.markedforremoval:Questo articolo sarà rimosso
