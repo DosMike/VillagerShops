@@ -68,7 +68,7 @@ public class cmdTPHere extends Command {
                         .orLiteral(player));
 
             if (shopEntity.getShopOwner().isPresent() && //player shop
-                !VillagerShops.getClaimAccess().canMoveEntityTo(player, player.getLocation(), optionalShopEntity.get().getEntity().orElse(null))) { //not checking for owner allows admins to move shops for you
+                !VillagerShops.getProtection().hasAccess(player, player.getLocation())) { //not checking for owner allows admins to move shops for you
                 throw new CommandException(Text.of(TextColors.RED,
                         localString("permission.missing").orLiteral(player)));
             }

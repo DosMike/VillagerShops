@@ -3,37 +3,22 @@ package de.dosmike.sponge.vshop.integrations.protection;
 import br.net.fabiozumbi12.RedProtect.Sponge.RedProtect;
 import br.net.fabiozumbi12.RedProtect.Sponge.Region;
 import de.dosmike.sponge.vshop.ConfigSettings;
-import org.spongepowered.api.entity.Entity;
+import de.dosmike.sponge.vshop.PermissionRegistra;
+import de.dosmike.sponge.vshop.VillagerShops;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 public class RedProtectAccess implements AreaProtection {
 
-    @Override
-    public boolean canCreateEntity(Player trigger, Location<World> location, Entity entity) {
-        Region region = RedProtect.get().getAPI().getRegion(location);
-        if (region == null) { //global
-            return ConfigSettings.protectionAllowWilderness();
-        }
-        return getRegionAccessLevel(region, trigger)
-                .compareTo(ConfigSettings.requiredProtectionAccessLevel()) >= 0;
-        //can't check for specific entity types with rp, only categories -> use permissions
+    public RedProtectAccess() {
+        VillagerShops.l("[Integration] Protection Plugin: RedProtect");
     }
 
     @Override
-    public boolean canMoveEntityTo(Player trigger, Location<World> location, Entity entity) {
-        Region region = RedProtect.get().getAPI().getRegion(location);
-        if (region == null) { //global
-            return ConfigSettings.protectionAllowWilderness();
-        }
-        return getRegionAccessLevel(region, trigger)
-                .compareTo(ConfigSettings.requiredProtectionAccessLevel()) >= 0;
-        //can't check for specific entity types with rp, only categories -> use permissions
-    }
+    public boolean hasAccess(Player trigger, Location<World> location) {
+        if (!ConfigSettings.isProtectionEnabled() || PermissionRegistra.ADMIN.hasPermission(trigger)) return true;
 
-    @Override
-    public boolean canAccessContainer(Player trigger, Location<World> location) {
         Region region = RedProtect.get().getAPI().getRegion(location);
         if (region == null) { //global
             return ConfigSettings.protectionAllowWilderness();

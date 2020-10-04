@@ -35,14 +35,12 @@ repositories {
     jcenter()
     maven { url "https://jitpack.io" }
     maven { url "https://files.minecraftforge.net/maven" }
-    maven { url 'https://raw.githubusercontent.com/FabioZumbi12/RedProtect/mvn-repo/' }
+    maven { url "https://repo.spongepowered.org/maven" }
 }
 configurations {
     //don't get dependencies of these dependencies, would bloat uber jar
     shadow.transitive false
 }
-
-
 
 dependencies {
     compileOnly 'org.jetbrains:annotations:16.0.2'
@@ -54,8 +52,7 @@ dependencies {
     compileOnly 'com.github.DosMike:TooMuchStock:master-SNAPSHOT'
     compileOnly 'com.github.bloodmc:GriefDefenderAPI:master-SNAPSHOT'
     compileOnly 'com.github.JimiIT92:UniverseGuardAPI7:master-SNAPSHOT'
-    compileOnly 'br.net.fabiozumbi12.RedProtect:RedProtect-Core:+'
-    compileOnly 'br.net.fabiozumbi12.RedProtect:RedProtect-Sponge-7:+'
+    compileOnly fileTree(dir: 'libs', include: ['RedProtect-*-Universal.jar'])
 
     shadow 'com.github.DosMike:SpongePluginVersionChecker:master-SNAPSHOT'
 }

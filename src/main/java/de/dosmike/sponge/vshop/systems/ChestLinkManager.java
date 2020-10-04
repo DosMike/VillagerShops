@@ -8,7 +8,6 @@ import de.dosmike.sponge.vshop.commands.Command;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
-import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
@@ -66,7 +65,7 @@ public class ChestLinkManager {
                         lang.local("cmd.link.missingshop").resolve(player).orElse("[where's the shop?]")));
             } else {
                 if (npc.get().getShopOwner().isPresent() && //player shop
-                    !VillagerShops.getClaimAccess().canAccessContainer(player, carrier.getLocation())) { //not checking for owner access allows admins to link shops for you
+                    !VillagerShops.getProtection().hasAccess(player, carrier.getLocation())) { //not checking for owner access allows admins to link shops for you
                     player.sendMessage(Text.of(TextColors.RED,
                             lang.local("permission.missing").orLiteral(player)));
                     return true;

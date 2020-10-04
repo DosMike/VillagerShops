@@ -18,13 +18,7 @@ import org.spongepowered.api.world.World;
  */
 public interface AreaProtection {
 
-    default boolean canCreateEntity(Player trigger, Location<World> location, Entity entity) {
-        return true;
-    }
-    default boolean canMoveEntityTo(Player trigger, Location<World> location, Entity entity) {
-        return true;
-    }
-    default boolean canAccessContainer(Player trigger, Location<World> location) {
+    default boolean hasAccess(Player trigger, Location<World> location) {
         return true;
     }
 

@@ -5,6 +5,7 @@ import com.griefdefender.api.claim.Claim;
 import com.griefdefender.api.claim.TrustTypes;
 import com.griefdefender.api.permission.flag.Flags;
 import de.dosmike.sponge.vshop.ConfigSettings;
+import de.dosmike.sponge.vshop.PermissionRegistra;
 import de.dosmike.sponge.vshop.VillagerShops;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
@@ -24,52 +25,8 @@ public class GriefDefenderAccess implements AreaProtection {
     }
 
     @Override
-    public boolean canCreateEntity(Player trigger, Location<World> location, Entity entity) {
-        if (!ConfigSettings.isProtectionEnabled()) return true;
-
-        Claim claim = GriefDefender.getCore()
-                .getClaimManager(location.getExtent().getUniqueId())
-                .getClaimAt(location.getBlockPosition());
-        boolean allowed = (claim.isWilderness())
-                ? ConfigSettings.protectionAllowWilderness()
-                : getClaimAccessLevel(claim, trigger.getUniqueId())
-                .compareTo(ConfigSettings.requiredProtectionAccessLevel()) >= 0;
-        return allowed && claim.getActiveFlagPermissionValue(
-                Flags.ENTITY_SPAWN,
-                GriefDefender.getCore().getUser(trigger.getUniqueId()),
-                null,
-                //from what i can see DG only checks type, but requires an entity as target for ENTITY_SPAWN
-                entity,
-                //I don't know wth GD wants/requires as context here
-                new HashSet<>()
-        ).asBoolean();
-    }
-
-    @Override
-    public boolean canMoveEntityTo(Player trigger, Location<World> location, Entity entity) {
-        if (!ConfigSettings.isProtectionEnabled()) return true;
-
-        Claim claim = GriefDefender.getCore()
-                .getClaimManager(location.getExtent().getUniqueId())
-                .getClaimAt(location.getBlockPosition());
-        boolean allowed = (claim.isWilderness())
-                ? ConfigSettings.protectionAllowWilderness()
-                : getClaimAccessLevel(claim, trigger.getUniqueId())
-                .compareTo(ConfigSettings.requiredProtectionAccessLevel()) >= 0;
-        return allowed && claim.getActiveFlagPermissionValue(
-                Flags.ENTITY_TELEPORT_TO,
-                GriefDefender.getCore().getUser(trigger.getUniqueId()),
-                null,
-                //from what i can see DG only checks type, but requires an entity as target for ENTITY_SPAWN
-                entity,
-                //I don't know wth GD wants/requires as context here
-                new HashSet<>()
-        ).asBoolean();
-    }
-
-    @Override
-    public boolean canAccessContainer(Player trigger, Location<World> location) {
-        if (!ConfigSettings.isProtectionEnabled()) return true;
+    public boolean hasAccess(Player trigger, Location<World> location) {
+        if (!ConfigSettings.isProtectionEnabled() || PermissionRegistra.ADMIN.hasPermission(trigger)) return true;
 
         Claim claim = GriefDefender.getCore()
                 .getClaimManager(location.getExtent().getUniqueId())
@@ -78,12 +35,7 @@ public class GriefDefenderAccess implements AreaProtection {
                 ? ConfigSettings.protectionAllowWilderness()
                 : getClaimAccessLevel(claim, trigger.getUniqueId())
                     .compareTo(ConfigSettings.requiredProtectionAccessLevel()) >= 0;
-        return allowed && claim.getActiveFlagPermissionValue(
-                Flags.INTERACT_INVENTORY,
-                GriefDefender.getCore().getUser(trigger.getUniqueId()),
-                //I don't know wth GD wants/requires as context here
-                new HashSet<>()
-        ).asBoolean();
+        return allowed;
     }
 
     private ProtectionAccessLevel getClaimAccessLevel(Claim claim, UUID playerID) {

@@ -79,7 +79,7 @@ public class VillagerShops {
     private SpongeExecutorService syncScheduler = null;
     private static PermissionService permissions = null;
     private PriceCalculator priceCalculator = null;
-    private AreaProtection claimAccess = null;
+    private AreaProtection protection = null;
 
     public static PluginTranslation getTranslator() {
         return instance.translator;
@@ -99,8 +99,8 @@ public class VillagerShops {
     public static PriceCalculator getPriceCalculator() {
         return instance.priceCalculator;
     }
-    public static AreaProtection getClaimAccess() {
-        return instance.claimAccess;
+    public static AreaProtection getProtection() {
+        return instance.protection;
     }
     public static SpongeExecutorService getAsyncScheduler() {
         return instance.asyncScheduler;
@@ -304,16 +304,9 @@ public class VillagerShops {
                 .build();
         try {
             CommentedConfigurationNode root = loader.load(ConfigurationOptions.defaults());
-            if (root.getNode("DefaultStackSize").isVirtual() ||
-                    root.getNode("SmartClick").isVirtual() ||
-                    root.getNode("AuditLogs").isVirtual() ||
-                    root.getNode("NBTblacklist").isVirtual() ||
-                    root.getNode("AnimateShops").isVirtual()) {
-                HoconConfigurationLoader defaultLoader = HoconConfigurationLoader.builder()
-                        .setURL(Sponge.getAssetManager().getAsset(this, "default_settings.conf").get().getUrl())
-                        .build();
-                root.mergeValuesFrom(defaultLoader.load());
+            if (ConfigSettings.injectNewOptions(root)) {
                 loader.save(root);
+                w("New config options were detected - You might want to review settings.conf");
             }
             VersionChecker.setVersionCheckingEnabled(getContainer().getId(), root.getNode("VersionChecking").getBoolean(false));
             ConfigSettings.loadFromConfig(root);
@@ -583,8 +576,8 @@ public class VillagerShops {
             permissions = Sponge.getServiceManager().provide(PermissionService.class).orElseThrow(()->new IllegalStateException("Could not find PermissionService"));
         if (priceCalculator == null)
             priceCalculator = PriceCalculator.get();
-        if (claimAccess == null)
-            claimAccess = AreaProtection.get();
+        if (protection == null)
+            protection = AreaProtection.get();
 
         l("Registering commands...");
         CommandRegistra.register();

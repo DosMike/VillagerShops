@@ -4,7 +4,14 @@ import de.dosmike.sponge.vshop.integrations.protection.ProtectionAccessLevel;
 import de.dosmike.sponge.vshop.menus.ShopMenuManager;
 import de.dosmike.sponge.vshop.systems.ItemNBTCleaner;
 import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.util.TypeTokens;
+
+import java.io.IOException;
+import java.util.Map;
 
 /** intermediate class to store config values more accessible */
 public class ConfigSettings {
@@ -48,6 +55,27 @@ public class ConfigSettings {
         } catch (Exception e) {
             VillagerShops.w("Could not read NBT blacklist: %s", e.getMessage());
         }
+    }
+
+    /** @return true if new options were detected and merged from the default config */
+    static boolean injectNewOptions(CommentedConfigurationNode node) throws IOException {
+        boolean changed = false;
+
+        HoconConfigurationLoader defaultLoader = HoconConfigurationLoader.builder()
+                .setURL(Sponge.getAssetManager().getAsset(VillagerShops.getInstance(), "default_settings.conf").get().getUrl())
+                .build();
+
+        CommentedConfigurationNode defaults = defaultLoader.load(ConfigurationOptions.defaults());
+
+        for (Map.Entry<Object, ? extends CommentedConfigurationNode> defaultEntry : defaults.getChildrenMap().entrySet()) {
+            CommentedConfigurationNode entry = node.getNode(defaultEntry.getKey());
+            if (entry.isVirtual()) {
+                entry.mergeValuesFrom(defaultEntry.getValue());
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 
 }

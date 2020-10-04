@@ -5,7 +5,6 @@ import de.dosmike.sponge.vshop.DependingSuggestionElement;
 import de.dosmike.sponge.vshop.PermissionRegistra;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
-import de.dosmike.sponge.vshop.menus.ShopMenuManager;
 import de.dosmike.sponge.vshop.shops.FieldResolver;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +15,6 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
-import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
@@ -161,9 +159,10 @@ public class cmdCreate extends Command {
             }
         }
 
-        Entity testEntity = shopEntity.spawn();
-        if (!VillagerShops.getClaimAccess().canCreateEntity(player, player.getLocation(), testEntity) ||
-            (playershop && !VillagerShops.getClaimAccess().canAccessContainer(player, shopEntity.getStockContainer().get()))) {
+        if (playershop && (
+                !VillagerShops.getProtection().hasAccess(player, player.getLocation()) ||
+                !VillagerShops.getProtection().hasAccess(player, shopEntity.getStockContainer().get())
+        )) {
             throw new CommandException(Text.of(TextColors.RED,
                     localString("permission.missing").orLiteral(player)));
         }

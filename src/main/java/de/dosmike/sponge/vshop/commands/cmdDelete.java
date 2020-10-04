@@ -43,7 +43,7 @@ public class cmdDelete extends Command {
                     localString("cmd.common.notarget").orLiteral(player)));
         } else {
             if (!PermissionRegistra.ADMIN.hasPermission(player) &&
-                    !shopEntity.get().isShopOwner(player.getUniqueId())) {
+                !shopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
                         localString("permission.missing").orLiteral(player)));
             }
