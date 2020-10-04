@@ -1,7 +1,7 @@
 permission.missing:Non hai il permesso per farlo!
 option.invalidvalue:L'opzione '%option%' per il giocatore %player% o il suo gruppo di permessi non è numerico o negativo. Assicurati che sia un valore intero positivo. Se sei un giocatore segnalalo agli admin del Server.
 cmd.description.short:/vshop <comando> <opzioni>
-cmd.description.long:Guarda sempre al negozio che vuoi modificare! Opzioni per:\nCREATE : [--at <Position>] <EntityType> [--skin <Skin>] [Name]\n    Skin dovrebbe essere una skin valida per questo Mob\n    La posizione è formattata così: world/x/y/z/rotazione\nADD : [-o <Index>] [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] (Hold ItemStack)\n    - as Price will disable that option, one required\n    The l flag can limit the maximum stock of this item for player-shops\n	The o flag can be used to replace an item at the Index, start with 1\nREMOVE : <Index>\n    Count through items in shop inventory, start with 1\nDELETE : (No arguments)\nLINK : (No arguments)\n    Afterwards you need to open a chest to link a player-shop to it. Use again to cancel.\nIDENTIFY / ID : (No arguments)\nRELOAD : (No arguments)\n    Tries to reload skins for Sponge:Human entities\nLIST : [Player]\n    List all shops (for a player) with a teleport short-cut and invsee
+cmd.description.long:Guarda sempre al negozio che vuoi modificare! Opzioni per:\nCREATE : [--at <Posizione>] <TipoEntità> [--skin <Skin>] [Nome]\n    Skin dovrebbe essere una skin valida per questo Mob\n    La posizione è formattata così: world/x/y/z/rotazione\nADD : [-o <Index>] [-l <Limite>] <~|BuyPrice> <~|SellPrice> [Valuta] (Hold ItemStack)\n    '-' come prezzo disabilita quell'opzione, uno richiesto\n    L'opzione 'l' può limitare lo stock massimo di questo oggetto per i negozi utente\n	L'opzione 'o' può essere usata per rimpiazzare un oggetto all'Index, partendo da 1\nREMOVE : <Index>\n    Conta gli oggetti nell'inventario del negozio, partendo da 1\nDELETE : (Nessuna opzione)\nLINK : (Nessuna opzione)\n    Successivamente devi aprire una cassa per collegarci il negozio utente. Usa di nuovo per cancellare.\nIDENTIFY / ID : (Nessuna opzione)\nRELOAD : (Nessuna opzione)\n    Cerca di riavviare le skin per le entità Sponge:Human\nLIST : [Giocatore]\n    Elenca tutti i negozi (per un giocatore) con una scelta rapida per il teleport e invsee
 cmd.playeronly:Questo comando può essere eseguito solo da un giocatore
 cmd.missingargument:Specifica un argomento
 cmd.common.notarget:Non c'è nessun negozio dove stai guardando!
@@ -29,8 +29,8 @@ cmd.add.filter.missing:Impossibile trovare filtri per %filter%.
 cmd.add.filter.adminonly:Solo i negozi admin possono commerciare questo oggetto.
 cmd.add.filter.playeronly:Solo i negozi utente possono commerciare questo oggetto.
 cmd.add.filter.incomaptible:Questo oggetto non corrisponde al filtro.
-cmd.add.buyprice:The BuyPrice was not '~' or a decimal
-cmd.add.sellprice:The SellPrice was not '~ or a decimal
+cmd.add.buyprice:Il BuyPrice non era '~' o un decimale
+cmd.add.sellprice:Il SellPrice non era '~ o un decimale
 cmd.add.noprice:Devi specificare almeno un BuyPrice o SellPrice
 cmd.add.negativeprice:Il prezzo non può essere negativo
 cmd.add.itemisair:Tieni in mano l'esatto oggetto che vuoi vendere
@@ -41,14 +41,14 @@ cmd.remove.success:Oggetto alla posizione %pos% rimosso dal negozio
 cmd.identify.adminshop:il Server
 cmd.identify.response:Il %type% %name% [%id%] è un %entity%, variante %skin%.\nQuesto negozio appartiene a %owner%
 cmd.identify.shiftclick:Fai Shift-click per copiare l'id in chat
-cmd.link.cancelled:Linking cancelled
-cmd.link.adminshop:You can't link an admin-shop to a chest 
-cmd.link.notyourshop:You may only relink containers for shops you own
-cmd.link.hitachest:Open the chest you want to link to this shop. Use '/vshop link' again to cancel
-cmd.link.nochest:You can only link to standard chests
-cmd.link.missingshop:Couldn't find the shop supposed to link this chest to
-cmd.link.distance:You are too far away! The distance to the container may not exceed %distance% blocks.
-cmd.link.success:This chest is now linked to the shop. The old container is no longer protected!
+cmd.link.cancelled:Link cancellato
+cmd.link.adminshop:Non puoi collegare un negozio admin ad una cassa 
+cmd.link.notyourshop:Puoi ricollegare solo contenitori per i negozi che possiedi
+cmd.link.hitachest:Apri la cassa che vuoi collegsare a questo negozio. Usa di nuovo '/vshop link' per cancellare
+cmd.link.nochest:Puoi collegare solo a cassa standard
+cmd.link.missingshop:Impossibile trovare il negozio a cui collegare questa cassa
+cmd.link.distance:Sei troppo lontano! La distanza dal contenitore non deve essere più di %distance% blocchi.
+cmd.link.success:Questa cassa è ora collegata al negozio. Il vecchio contenitore non è più protetto!
 cmd.deleted:Shop cancellato!
 cmd.released:L'entità è stata liberata!
 cmd.saved:Shop salvati!
