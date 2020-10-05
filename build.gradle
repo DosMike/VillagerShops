@@ -122,7 +122,7 @@ task zPublish(type: Exec, group:'_Plugin', dependsOn:uberJar) {
         def spp_discord_channel = '352760019873169408'
         def spp_discord_mention = '<@&644225680833249320>'
         def spp_discord_header = "${spp_discord_mention} Version ${version} released on Ore and GitHub"
-        def outputFile = "build\\libs\\${jar.archiveName}"
+        def outputFile = "build\\libs\\${jar.archiveFileName}"
         commandLine 'java', '-jar', '..\\PluginPublisher\\PluginPublisher.jar',
                 '--gk', 'gitkey', '--ok', 'orekey', '--dk', 'discordkey',
                 '--gs', spp_git_slug, '--gt', version, '--gn', "Release Build ${version}", '--ga', outputFile,
