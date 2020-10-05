@@ -10,6 +10,7 @@ import de.dosmike.sponge.vshop.systems.GameDictHelper;
 import de.dosmike.sponge.vshop.systems.PluginItemFilter;
 import de.dosmike.sponge.vshop.systems.PluginItemServiceImpl;
 import org.jetbrains.annotations.NotNull;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;

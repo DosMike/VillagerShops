@@ -5,7 +5,6 @@ import de.dosmike.sponge.vshop.DependingSuggestionElement;
 import de.dosmike.sponge.vshop.PermissionRegistra;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
-import de.dosmike.sponge.vshop.menus.ShopMenuManager;
 import de.dosmike.sponge.vshop.shops.FieldResolver;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import org.jetbrains.annotations.NotNull;
@@ -159,6 +158,15 @@ public class cmdCreate extends Command {
                         localString("cmd.create.playershop.missingcontainer").orLiteral(player)));
             }
         }
+
+        if (playershop && (
+                !VillagerShops.getProtection().hasAccess(player, player.getLocation()) ||
+                !VillagerShops.getProtection().hasAccess(player, shopEntity.getStockContainer().get())
+        )) {
+            throw new CommandException(Text.of(TextColors.RED,
+                    localString("permission.missing").orLiteral(player)));
+        }
+
         VillagerShops.addShop(shopEntity, true);
 
         src.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
