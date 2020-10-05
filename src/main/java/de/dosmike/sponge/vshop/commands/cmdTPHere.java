@@ -44,7 +44,7 @@ public class cmdTPHere extends Command {
             src.sendMessage(localText("cmd.common.noshopforid").orLiteral(src));
         } else {
             if (!PermissionRegistra.ADMIN.hasPermission(player) &&
-                    !optionalShopEntity.get().isShopOwner(player.getUniqueId())) {
+                !optionalShopEntity.get().isShopOwner(player.getUniqueId())) {
                 throw new CommandException(Text.of(TextColors.RED,
                         localString("permission.missing").orLiteral(player)));
             }
@@ -61,11 +61,17 @@ public class cmdTPHere extends Command {
             ShopEntity shopEntity = optionalShopEntity.get();
             Location<World> destination = player.getLocation();
             if (distance.isPresent() && shopEntity.getStockContainer().isPresent() && (
-                    !destination.getExtent().equals(shopEntity.getStockContainer().get().getExtent()) ||
-                            destination.getPosition().distance(shopEntity.getStockContainer().get().getPosition()) > distance.get()))
+                !destination.getExtent().equals(shopEntity.getStockContainer().get().getExtent()) ||
+                destination.getPosition().distance(shopEntity.getStockContainer().get().getPosition()) > distance.get()))
                 throw new CommandException(localText("cmd.link.distance")
                         .replace("%distance%", distance.get())
                         .orLiteral(player));
+
+            if (shopEntity.getShopOwner().isPresent() && //player shop
+                !VillagerShops.getProtection().hasAccess(player, player.getLocation())) { //not checking for owner allows admins to move shops for you
+                throw new CommandException(Text.of(TextColors.RED,
+                        localString("permission.missing").orLiteral(player)));
+            }
 
             VillagerShops.audit("%s relocated shop %s to %s°%.2f, %d blocks",
                     Utilities.toString(src), shopEntity.toString(),

@@ -14,6 +14,7 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.*;
+import org.spongepowered.api.item.inventory.query.QueryOperation;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.service.economy.Currency;
 
@@ -21,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 public class StockItem {
     private ItemStack item;
@@ -247,7 +249,6 @@ public class StockItem {
     private static final DataQuery dqDamageMeta = DataQuery.of("UnsafeDamage"); //used for variants up to mc 1.12.2
     /** filter some inventory for the items represented by this StockItem */
     public Inventory filterInventory(Inventory inv) {
-        long count = 0L;
         Inventory filtered;
         final ItemStack TEMPLATE = ItemNBTCleaner.filter(item);
         switch (nbtfilter) {
@@ -297,6 +298,44 @@ public class StockItem {
             }
         }
         return filtered;
+    }
+
+    /** allows you to check whether some item is represented through this stock item
+     * @param other the ItemStack to test
+     * @return true if this stock item would trade the given stack
+     */
+    public boolean test(ItemStack other) {
+        final ItemStack TEMPLATE = ItemNBTCleaner.filter(item);
+        switch (nbtfilter) {
+            case IGNORE_NBT: {
+                return other.getType().equals(TEMPLATE.getType());
+            }
+            case IGNORE_DAMAGE: {
+                DataContainer j = TEMPLATE.toContainer()
+                        .remove(dqDamageMeta)
+                        .remove(dqStackSize);
+                return ItemNBTCleaner.filter(other.toContainer())
+                                .remove(dqDamageMeta)
+                                .remove(dqStackSize)
+                                .equals(j);
+            }
+            case OREDICT: {
+                return oreDictEntries.stream().anyMatch(e -> e.matches(other));
+            }
+            case PLUGIN: {
+                return pluginFilter.isItem(ItemNBTCleaner.filter(other));
+            }
+            case TYPE_ONLY: {
+                ItemType type = item.getType();
+                int meta = (TEMPLATE.supports(Keys.ITEM_DURABILITY) ? 0 : TEMPLATE.toContainer().getInt(dqDamageMeta).orElse(0));
+                if (!other.getType().equals(type)) return false;
+                int othermeta = (other.supports(Keys.ITEM_DURABILITY) ? 0 : TEMPLATE.toContainer().getInt(dqDamageMeta).orElse(0));
+                return meta == othermeta;
+            }
+            default: {
+                return ItemStackComparators.IGNORE_SIZE.compare(ItemNBTCleaner.filter(other), TEMPLATE) == 0;
+            }
+        }
     }
 
     /**

@@ -6,6 +6,7 @@ import de.dosmike.sponge.VersionChecker;
 import de.dosmike.sponge.languageservice.API.LanguageService;
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
 import de.dosmike.sponge.vshop.commands.CommandRegistra;
+import de.dosmike.sponge.vshop.integrations.protection.AreaProtection;
 import de.dosmike.sponge.vshop.integrations.toomuchstock.PriceCalculator;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.shops.ShopEntitySerializer;
@@ -54,7 +55,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @SuppressWarnings("UnstableApiUsage")
-@Plugin(id = "vshop", name = "VillagerShops", version = "2.7")
+@Plugin(id = "vshop", name = "VillagerShops", version = "2.8")
 public class VillagerShops {
 
     public static void main(String[] args) { System.err.println("This plugin can not be run as executable!");
@@ -78,6 +79,7 @@ public class VillagerShops {
     private SpongeExecutorService syncScheduler = null;
     private static PermissionService permissions = null;
     private PriceCalculator priceCalculator = null;
+    private AreaProtection protection = null;
 
     public static PluginTranslation getTranslator() {
         return instance.translator;
@@ -96,6 +98,9 @@ public class VillagerShops {
     }
     public static PriceCalculator getPriceCalculator() {
         return instance.priceCalculator;
+    }
+    public static AreaProtection getProtection() {
+        return instance.protection;
     }
     public static SpongeExecutorService getAsyncScheduler() {
         return instance.asyncScheduler;
@@ -299,16 +304,9 @@ public class VillagerShops {
                 .build();
         try {
             CommentedConfigurationNode root = loader.load(ConfigurationOptions.defaults());
-            if (root.getNode("DefaultStackSize").isVirtual() ||
-                    root.getNode("SmartClick").isVirtual() ||
-                    root.getNode("AuditLogs").isVirtual() ||
-                    root.getNode("NBTblacklist").isVirtual() ||
-                    root.getNode("AnimateShops").isVirtual()) {
-                HoconConfigurationLoader defaultLoader = HoconConfigurationLoader.builder()
-                        .setURL(Sponge.getAssetManager().getAsset(this, "default_settings.conf").get().getUrl())
-                        .build();
-                root.mergeValuesFrom(defaultLoader.load());
+            if (ConfigSettings.injectNewOptions(root)) {
                 loader.save(root);
+                w("New config options were detected - You might want to review settings.conf");
             }
             VersionChecker.setVersionCheckingEnabled(getContainer().getId(), root.getNode("VersionChecking").getBoolean(false));
             ConfigSettings.loadFromConfig(root);
@@ -578,6 +576,8 @@ public class VillagerShops {
             permissions = Sponge.getServiceManager().provide(PermissionService.class).orElseThrow(()->new IllegalStateException("Could not find PermissionService"));
         if (priceCalculator == null)
             priceCalculator = PriceCalculator.get();
+        if (protection == null)
+            protection = AreaProtection.get();
 
         l("Registering commands...");
         CommandRegistra.register();

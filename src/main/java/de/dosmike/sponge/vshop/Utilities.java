@@ -2,7 +2,15 @@ package de.dosmike.sponge.vshop;
 
 import com.flowpowered.math.TrigMath;
 import com.flowpowered.math.vector.Vector3d;
+import de.dosmike.sponge.megamenus.MegaMenus;
+import de.dosmike.sponge.megamenus.api.MenuRenderer;
+import de.dosmike.sponge.megamenus.impl.GuiRenderer;
+import de.dosmike.sponge.megamenus.impl.RenderManager;
+import de.dosmike.sponge.vshop.shops.ShopEntity;
+import de.dosmike.sponge.vshop.shops.StockItem;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
@@ -41,6 +49,32 @@ public class Utilities {
     }
     public static void _openShops_add(Player player, UUID shopID) {
         openShops.put(player.getUniqueId(), shopID);
+    }
+    public static void redrawAllShopMenus(@NotNull ItemStack withItem) {
+        //get all shops that have the specified item in their listing
+        // Im doing this first, because shops can be opened by multiple players
+        // and I don't want to test shops twice for performance
+        Set<UUID> prefilteredShops = openShops.values().stream()
+                .unordered().distinct()
+                .filter(uuid-> VillagerShops.getShopFromShopId(uuid)
+                        .map(se->se.getMenu().getAllItems().stream().anyMatch(si->si.test(withItem)))
+                        .isPresent())
+                .collect(Collectors.toSet());
+        openShops.entrySet().stream()
+                .filter(e->prefilteredShops.contains(e.getValue()))
+                //get the render for that player
+                .map(Map.Entry::getKey)
+                .map(player->Sponge.getServer().getPlayer(player).get())
+                .map(RenderManager::getRenderFor)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                //don't update a renderer twice
+                .unordered().distinct()
+                //redraw
+                .forEach(render->{
+                    render.invalidate();
+                    render.revalidate();
+                });
     }
 
     public static Currency CurrencyByName(String name) {

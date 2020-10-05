@@ -35,24 +35,27 @@ repositories {
     jcenter()
     maven { url "https://jitpack.io" }
     maven { url "https://files.minecraftforge.net/maven" }
+    maven { url "https://repo.spongepowered.org/maven" }
 }
 configurations {
     //don't get dependencies of these dependencies, would bloat uber jar
     shadow.transitive false
 }
 
-
-
 dependencies {
     compileOnly 'org.jetbrains:annotations:16.0.2'
-    compileOnly 'org.spongepowered:spongeapi:7.2.0-SNAPSHOT'
-    compileOnly 'com.github.DosMike:MegaMenus:master-SNAPSHOT'
+    // required deps
+    compileOnly 'org.spongepowered:spongeapi:7.3.0-SNAPSHOT'
+    compileOnly 'com.github.DosMike:MegaMenus:develop-SNAPSHOT'
     compileOnly 'com.github.DosMike:LangSwitch:development-SNAPSHOT'
+    // optional deps
     compileOnly 'com.github.DosMike:TooMuchStock:master-SNAPSHOT'
+    compileOnly 'com.github.bloodmc:GriefDefenderAPI:master-SNAPSHOT'
+    compileOnly 'com.github.JimiIT92:UniverseGuardAPI7:master-SNAPSHOT'
+    compileOnly fileTree(dir: 'libs', include: ['RedProtect-*-Universal.jar'])
+
     shadow 'com.github.DosMike:SpongePluginVersionChecker:master-SNAPSHOT'
 }
-
-
 
 task removeOldVersions() {
     def artifactNamePattern = ~"${rootProject.name}-[0-9]+[\\.0-9]*\\.jar"
@@ -119,7 +122,7 @@ task zPublish(type: Exec, group:'_Plugin', dependsOn:uberJar) {
         def spp_discord_channel = '352760019873169408'
         def spp_discord_mention = '<@&644225680833249320>'
         def spp_discord_header = "${spp_discord_mention} Version ${version} released on Ore and GitHub"
-        def outputFile = "build\\libs\\${jar.archiveName}"
+        def outputFile = "build\\libs\\${jar.archiveFileName}"
         commandLine 'java', '-jar', '..\\PluginPublisher\\PluginPublisher.jar',
                 '--gk', 'gitkey', '--ok', 'orekey', '--dk', 'discordkey',
                 '--gs', spp_git_slug, '--gt', version, '--gn', "Release Build ${version}", '--ga', outputFile,
