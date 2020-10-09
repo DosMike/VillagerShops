@@ -1,7 +1,7 @@
 permission.missing:You do not have permission to do this!
 option.invalidvalue:The option '%option%' for the player %player% or their permission group is not numeric or negative. Please ensure a positive integer value. If you're a Player please report this to your responsible Server admins.
 cmd.description.short:/vshop <command> <options>
-cmd.description.long:Always look at the shop you want to edit! Options for:\nCREATE : [--at <Position>] <EntityType> [--skin <Skin>] [Name]\n    Skin is supposed to be a valid skin for this Mob\n    Position is formatted like: world/x/y/z/rotation\nADD : [-o <Index>] [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] (Hold ItemStack)\n    - as Price will disable that option, one required\n    The l flag can limit the maximum stock of this item for player-shops\n	The o flag can be used to replace an item at the Index, start with 1\nREMOVE : <Index>\n    Count through items in shop inventory, start with 1\nDELETE : (No arguments)\nLINK : (No arguments)\n    Afterwards you need to open a chest to link a player-shop to it. Use again to cancel.\nIDENTIFY / ID : (No arguments)\nRELOAD : (No arguments)\n    Tries to reload skins for Sponge:Human entities\nLIST : [Player]\n    List all shops (for a player) with a teleport short-cut and invsee
+cmd.description.long:Always look at the shop you want to edit! Options for:\nCREATE : [--at <Position>] <EntityType> [--skin <Skin>] [Name]\n    Skin is supposed to be a valid skin for this Mob\n    Position is formatted like: world/x/y/z/rotation\nADD : [-o <Index>] [-l <Limit>] <~|BuyPrice> <~|SellPrice> [Currency] (Hold ItemStack)\n    - as Price will disable that option, one required\n    The l flag can limit the maximum stock of this item for player-shops\n    The o flag can be used to replace an item at the Index, start with 1\nREMOVE : <Index>\n    Count through items in shop inventory, start with 1\nDELETE : (No arguments)\nLINK : (No arguments)\n    Afterwards you need to open a chest to link a player-shop to it. Use again to cancel.\nIDENTIFY / ID : (No arguments)\nRELOAD : (No arguments)\n    Tries to reload skins for Sponge:Human entities\nLIST : [Player]\n    List all shops (for a player) with a teleport short-cut and invsee
 cmd.playeronly:This command can only be run by players
 cmd.missingargument:Please specify an argument
 cmd.common.notarget:There is no shop where you're looking!
@@ -30,7 +30,7 @@ cmd.add.filter.adminonly:Only admin-shops can trade this item.
 cmd.add.filter.playeronly:Only player-shops can trade this item.
 cmd.add.filter.incomaptible:This item does not match the filter.
 cmd.add.buyprice:The BuyPrice was not '~' or a decimal
-cmd.add.sellprice:The SellPrice was not '~ or a decimal
+cmd.add.sellprice:The SellPrice was not '~' or a decimal
 cmd.add.noprice:You need to specify at least one of BuyPrice and SellPrice
 cmd.add.negativeprice:Prices may not be negative
 cmd.add.itemisair:Please hold the exact item you want to sell in your hand
