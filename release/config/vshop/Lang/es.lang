@@ -1,0 +1,93 @@
+permission.missing:¡No tienes permiso para hacer esto!
+option.invalidvalue:La opción '%option%' para el jugador %player% o su grupo de permisos no es numérica ni negativa. Asegúrese de un valor entero positivo. Si eres un jugador, infórmalo a los administradores del servidor responsables.
+cmd.description.short:/vshop <comando> <opciones>
+cmd.description.long:¡Mire siempre la tienda que desea editar! Opciones para:\nCREATE: [--at <position>] <Tipo de entidad> [--skin <Skin>] [nombre]\n    Se supone que el skin es un skin válido para este Mob\n    La posición tiene el formato: mundo/x/y/z/rotación\nADD: [-o <Índice>] [-l <Límite>] <~ | BuyPrice> <~ | SellPrice> [Currency] (Hold ItemStack)\n    - dado que Price desactivará esa opción, se requiere una\n    La bandera l puede limitar el stock máximo de este artículo para las tiendas de los jugadores\n    La bandera o se puede usar para reemplazar un artículo en el índice, comience con 1\nREMOVE: <Index>\n    Cuente los artículos en el inventario de la tienda, comience con 1\nDELETE: (Sin argumentos)\nLINK: (Sin argumentos)\n    A continuación, debe abrir un cofre para vincular una tienda de jugadores. Úselo de nuevo para cancelar.\nIDENTIFICAR/ID: (Sin argumentos)\nRELOAD: (Sin argumentos)\n    Intenta recargar máscaras para Sponge: entidades humanas\nLIST: [Player]\n    Lista todas las tiendas (para un solo jugador) con un acceso directo de teletransportación e invsee
+cmd.playeronly:Este comando solo puede ser ejecutado por jugadores
+cmd.missingargument:Especifica un argumento
+cmd.common.notarget:¡No hay ninguna tienda donde estés mirando!
+cmd.common.noshopforid:El UUID especificado no coincide con ninguna tienda.
+cmd.create.invalidtype:Tipo de entidad no válido (use la pestaña para autocompletar)
+cmd.create.entitypermission:Este Tipo de entidad requiere permiso %permission%
+cmd.create.invalidvariant:No se encontró tal estilo/variante para %variant%: use NINGUNO o 0 para obtener el estilo/variante predeterminado
+cmd.create.playershop.missingcontainer:¡Debes poner un contenedor debajo de tu tienda de jugadores!
+cmd.create.invalidpos:Las posiciones deben formatearse como WORLD/X/Y/Z/ROTATION
+cmd.create.invalidworld:Tal mundo no existe
+cmd.create.occupied:Ya hay una tienda en esta ubicación
+cmd.create.playershop.success:Creó una nueva tienda de jugadores llamada %name%
+cmd.create.playershop.limit:No puede crear más de %limit% tiendas
+cmd.create.success:Creó una nueva tienda de administración llamada %name%
+cmd.import.notarget:¡No hay entidad donde estás mirando! 
+cmd.import.occupied:La entidad ya es tienda 
+cmd.import.entitypermission:Esta entidad requiere permiso %permission%
+cmd.import.success:Entidad importada como tienda de administración llamada %name%
+cmd.import.playershop.success:Entidad importada como tienda de jugadores llamada %name%
+cmd.add.limit.adminshop:No puede agregar límites de stock a una tienda de administración
+cmd.add.overwrite.index:No hay ningún artículo en la posición especificada
+cmd.add.filter.nooredict:Este servidor no es compatible con OreDict
+cmd.add.filter.oredictchoice:El elemento que está a punto de agregar tiene varias entradas de OreDict. Por favor elige uno:
+cmd.add.filter.missing:No se pudo encontrar ningún filter para %filter%.
+cmd.add.filter.adminonly:Solo las tiendas administrativas pueden intercambiar este artículo.
+cmd.add.filter.playeronly:Solo las tiendas de jugadores pueden intercambiar este artículo.
+cmd.add.filter.incomaptible:Este artículo no coincide con el filtro.
+cmd.add.buyprice:El precio de compra no era '~' ni un decimal
+cmd.add.sellprice:El precio de venta no era '~' o un decimal 
+cmd.add.noprice:Debe especificar al menos uno de Precio de compra y Precio de venta
+cmd.add.negativeprice:Los precios pueden no ser negativos
+cmd.add.itemisair:Mantenga el artículo exacto que desea vender en su mano
+cmd.add.success:Se agregó %item% a la tienda en la position %pos%
+cmd.add.replaced:El artículo en la posición %pos% se reemplazó con el %item%
+cmd.remove.invalidindex:No hay ningún artículo en la posición especificada
+cmd.remove.success:Artículo eliminado en la posición %pos% de la tienda 
+cmd.identify.adminshop:el servidor
+cmd.identify.response:El %type% %name%[%id%]es una %entity%,variante %skin%.\nEsta tienda es propiedad de %owner%
+cmd.identify.shiftclick:Mayús-clic para copiar la identificación en el chat
+cmd.link.cancelled:Enlace cancelado
+cmd.link.adminshop:No puedes vincular una tienda de administración a un cofre
+cmd.link.notyourshop:Solo puede volver a vincular los contenedores de las tiendas de su propiedad
+cmd.link.hitachest:Abra el cofre que desea vincular a esta tienda. Use '/vshop link' nuevamente para cancelar
+cmd.link.nochest:Solo puedes vincular a cofres estándar
+cmd.link.missingshop:No se pudo encontrar la tienda que se supone que vincula este cofre
+cmd.link.distance:¡Estás muy lejos! La distancia al contenedor no puede exceder el %distance% bloques.
+cmd.link.success:Este cofre ahora está vinculado a la tienda. ¡El contenedor viejo ya no está protegido!
+cmd.deleted:¡Tienda eliminada!
+cmd.released:¡La entidad fue liberada!
+cmd.saved:¡Tiendas guardadas!
+cmd.reloaded:¡Recarga completa!
+cmd.ledger.invalid:No puedes usar -t con un objetivo
+shop.title:[vShop] %name%
+shop.type.admin:Adminshop
+shop.type.player:Playershop
+shop.item.buy.one:Compre por:§f %currency%%price%
+shop.item.buy.stack:Compre por:§f %currency%%price% (á %currency%%itemprice%)
+shop.item.sell.one:Vender por:§f %currency%%price%
+shop.item.sell.stack:Vender por:§f %currency%%price% (á %currency%%itemprice%)
+shop.item.stock:In Stock: %amount%/%max%
+shop.item.filter.damage:Compra artículos dañados
+shop.item.filter.nbt:Compra artículos con cualquier dato (NBT)
+shop.item.filter.oredict:Compra cualquier OreDict %oredict%
+shop.buy.message:§6%currency%%balance%§r (§c-%currency%%payed%§r): Comprando §e%amount%§rx %item%
+shop.sell.message:§6%currency%%balance%§r (§a+%currency%%payed%§r): Vendiendo §e%amount%§rx %item%
+shop.generic.transactionfailure:¡Error en la transacción! - Informe al desarrollador
+shop.generic.incompatibletype:Este artículo no puede ser comercializado por este tipo de tienda.
+shop.customer.highbalance:Tu cuenta no puede contener más dinero
+shop.shopowner.highbalance:La cuenta del propietario de la tienda alcanzó su límite
+shop.customer.lowbalance:no tienes suficiente dinero
+shop.shopowner.lowbalance:El dueño de la tienda se quedó sin dinero
+shop.customer.missingitems:No tienes suficientes artículos
+shop.shopowner.missingitems:Los artículos están actualmente agotados
+shop.customer.inventoryfull:No puedes llevar más artículos.
+shop.shopowner.inventoryfull:La tienda no puede almacenar más artículos.
+shop.customer.incomelimit:Ha alcanzado su límite de ingresos de las tiendas de administración del día.
+shop.customer.spendinglimit:La cantidad que puede gastar al día es limitada. Trata de nuevo mañana.
+shop.chat.transaction.base:Su tienda %shop% sold %items%. En total %money%.
+shop.ledger.entry.gain:%customer% > %vendor%\n  §2+%currency%%price%§r %amount%x %item%\n  %timestamp%
+shop.ledger.entry.loss:%customer% < %vendor%\n  §4-%currency%%price%§r %amount%x %item%\n  %timestamp%
+shop.quantity.name:Cantidad de la tienda
+shop.quantity.items.single:Artículos individuales
+shop.quantity.items.quarter:Pilas de un cuarto
+shop.quantity.items.half:Medias pilas
+shop.quantity.items.full:Full Pilas completas
+shop.removemode.name:Eliminar elementos
+shop.removemode.lore1:Haga clic aquí para eliminar elementos. Seleccionalo
+shop.removemode.lore2:elementos y haga clic de nuevo para confirmar la eliminación.
+shop.item.markedforremoval:Este artículo será eliminado
