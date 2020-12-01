@@ -2,10 +2,7 @@ package de.dosmike.sponge.vshop.shops;
 
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
-import de.dosmike.sponge.vshop.systems.GameDictHelper;
-import de.dosmike.sponge.vshop.systems.ItemNBTCleaner;
-import de.dosmike.sponge.vshop.systems.PluginItemFilter;
-import de.dosmike.sponge.vshop.systems.PluginItemServiceImpl;
+import de.dosmike.sponge.vshop.systems.*;
 import org.spongepowered.api.GameDictionary;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
@@ -25,7 +22,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 public class StockItem {
-    private ItemStack item;
+    private ItemStackSnapshot item;
 
     public enum FilterOptions {
         /** All item NBT has to match */
@@ -77,17 +74,17 @@ public class StockItem {
         return oreDictEntries;
     }
 
-    public StockItem(ItemStack itemstack, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
+    public StockItem(ItemStackSnapshot itemstack, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
         item = itemstack.copy();
         //legacy load
         double quantity = itemstack.getQuantity();
-        this.item.setQuantity(1);
+        this.item = ItemStack.builder().fromSnapshot(this.item).quantity(1).build().createSnapshot();
         if (sellfor != null && sellfor >= 0) this.sellprice = sellfor/quantity;
         if (buyfor != null && buyfor >= 0) this.buyprice = buyfor/quantity;
         this.currency = currency;
         this.maxStock = stockLimit;
     }
-    public StockItem(ItemStack itemstack, Double sellfor, Double buyfor, Currency currency, int stockLimit, FilterOptions nbtfilter) {
+    public StockItem(ItemStackSnapshot itemstack, Double sellfor, Double buyfor, Currency currency, int stockLimit, FilterOptions nbtfilter) {
         this(itemstack, sellfor, buyfor, currency, stockLimit);
         this.nbtfilter = nbtfilter;
     }
@@ -98,7 +95,7 @@ public class StockItem {
         if (oreDictEntries.isEmpty()) throw new IllegalArgumentException("No Game Dictionary entry for "+oreDictEntry);
 
         this.filterNameExtra = oreDictEntry;
-        item = oreDictEntries.get(0).getTemplate().createStack();
+        item = oreDictEntries.get(0).getTemplate().copy();
         if (sellfor != null && sellfor >= 0) this.sellprice = sellfor;
         if (buyfor != null && buyfor >= 0) this.buyprice = buyfor;
         this.currency = currency;
@@ -108,12 +105,12 @@ public class StockItem {
     /**
      * forces filterOption to PLUGIN
      */
-    public StockItem(ItemStack itemstack, PluginItemFilter pluginItemFilter, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
+    public StockItem(ItemStackSnapshot itemstack, PluginItemFilter pluginItemFilter, Double sellfor, Double buyfor, Currency currency, int stockLimit) {
         this.pluginFilter = pluginItemFilter;
 
         this.filterNameExtra = PluginItemServiceImpl.getFilterID(pluginItemFilter).get();
 
-        item = itemstack; // item in this case is a fallback
+        item = itemstack.copy(); // item in this case is a fallback
         if (sellfor != null && sellfor >= 0) this.sellprice = sellfor;
         if (buyfor != null && buyfor >= 0) this.buyprice = buyfor;
         this.currency = currency;
@@ -121,26 +118,29 @@ public class StockItem {
         this.nbtfilter = FilterOptions.OREDICT;
     }
 
-    /** @return itemstack for display and value extraction. To actually create items for the user, use createItem() */
-    public ItemStack getItem(boolean pluginItemAdminFlag) {
+    /**
+     * Calls getDisplayItem on the pluginFilter if exists
+     *  @return itemstack for display and value extraction. To actually create items for the user, use createItem()
+     */
+    public ItemStackSnapshot getItem(ShopType shopType) {
         if (pluginFilter != null) {
-            return pluginFilter.getDisplayItem(pluginItemAdminFlag).map(ItemStackSnapshot::createStack).orElseGet(()->item.copy());
+            return pluginFilter.getDisplayItem(shopType).orElseGet(()->item);
         } else {
-            return item.copy();
+            return item;
         }
     }
     /**
      * @param amount the exact amount of items this stack shall have
-     * @param pluginItemAdminFlag carry information on whether this item is listed in an admin shop
+     * @param shopType carry information on whether this item is listed in an admin shop
      * @return a brand new item stack for the player with up to amount items
      */
-    public ItemStack createItem(int amount, boolean pluginItemAdminFlag) {
+    public ItemStack createItem(int amount, ShopType shopType) {
         if (pluginFilter == null) {
-            ItemStack amountCopy = item.copy();
+            ItemStack amountCopy = item.createStack();
             amountCopy.setQuantity(amount);
             return amountCopy;
         } else {
-            ItemStack amountCopy = pluginFilter.supply(amount, pluginItemAdminFlag);
+            ItemStack amountCopy = pluginFilter.supply(amount, shopType);
             if (amountCopy == null) {
                 VillagerShops.audit("The item %s did not hand any items to the player! ", filterNameExtra);
                 VillagerShops.critical("The item %s did not hand any items to the player! ", filterNameExtra);
@@ -227,7 +227,7 @@ public class StockItem {
     }
 
     public Purchase.Result buy(Player player, ShopEntity shop, int amount) {
-        if (getPluginFilter().map(pif->pif.supportShopType(!shop.getShopOwner().isPresent())).orElse(false))
+        if (getPluginFilter().map(pif->pif.supportShopType(ShopType.fromInstance(shop))).orElse(false))
             return Purchase.Result.INCOMPATIBLE_SHOPTYPE;
         try {
             return new Purchase(this, player, shop).buy(amount);
@@ -236,7 +236,7 @@ public class StockItem {
         }
     }
     public Purchase.Result sell(Player player, ShopEntity shop, int amount) {
-        if (getPluginFilter().map(pif->pif.supportShopType(!shop.getShopOwner().isPresent())).orElse(false))
+        if (getPluginFilter().map(pif->pif.supportShopType(ShopType.fromInstance(shop))).orElse(false))
             return Purchase.Result.INCOMPATIBLE_SHOPTYPE;
         try {
             return new Purchase(this, player, shop).sell(amount);
@@ -250,7 +250,7 @@ public class StockItem {
     /** filter some inventory for the items represented by this StockItem */
     public Inventory filterInventory(Inventory inv) {
         Inventory filtered;
-        final ItemStack TEMPLATE = ItemNBTCleaner.filter(item);
+        final ItemStack TEMPLATE = ItemNBTCleaner.filter(item.createStack());
         switch (nbtfilter) {
             case IGNORE_NBT: {
                 filtered = inv.query(QueryOperationTypes.ITEM_TYPE.of(TEMPLATE.getType()));
@@ -305,7 +305,7 @@ public class StockItem {
      * @return true if this stock item would trade the given stack
      */
     public boolean test(ItemStack other) {
-        final ItemStack TEMPLATE = ItemNBTCleaner.filter(item);
+        final ItemStack TEMPLATE = ItemNBTCleaner.filter(item.createStack());
         switch (nbtfilter) {
             case IGNORE_NBT: {
                 return other.getType().equals(TEMPLATE.getType());
@@ -345,7 +345,7 @@ public class StockItem {
      * count for each slot, how many of the item it could accept
      */
     public int invSpace(Inventory inventory) {
-        int maxStack = getPluginFilter().map(PluginItemFilter::getMaxStackSize).orElse(item.getMaxStackQuantity());
+        int maxStack = getPluginFilter().map(PluginItemFilter::getMaxStackSize).orElse(item.createStack().getMaxStackQuantity());
         int space = 0, c;
         Inventory result = filterInventory(inventory);
         for (Inventory s : result.slots()) {

@@ -1,13 +1,19 @@
 package de.dosmike.sponge.vshop.commands;
 
+import com.flowpowered.math.imaginary.Quaterniond;
 import com.flowpowered.math.vector.Vector3d;
 import de.dosmike.sponge.languageservice.API.Localized;
 import de.dosmike.sponge.vshop.VillagerShops;
 import org.spongepowered.api.command.spec.CommandExecutor;
+import org.spongepowered.api.data.manipulator.mutable.entity.SizeData;
+import org.spongepowered.api.data.property.AbstractProperty;
+import org.spongepowered.api.data.property.entity.EyeLocationProperty;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.AABB;
+import org.spongepowered.api.util.Tuple;
 
 import java.util.*;
 
@@ -21,11 +27,44 @@ public abstract class Command implements CommandExecutor {
         return VillagerShops.getTranslator().local(key);
     }
 
+    public static Optional<Entity> getEntityLookingAt(Living source, Double maxRange) {
+        Collection<Entity> nearbyEntities = source.getNearbyEntities(maxRange);
+        //facing vector, previously used Math, but Quaternion is more readable
+        Vector3d direction = source.getHeadRotation();
+        direction = Quaterniond.fromAxesAnglesDeg(direction.getX(), direction.getY(), direction.getZ()).getDirection();
+        //source eye position (assuming source is player)
+        Vector3d src = source.getProperty(EyeLocationProperty.class)
+                .map(AbstractProperty::getValue)
+                .orElseGet(()->source.getLocation().getPosition().add(0.0,1.62,0.0));
+
+        final Vector3d finalDir = direction;
+
+        double entDist = Double.POSITIVE_INFINITY;
+        Entity closest = null;
+        for (Entity ent : nearbyEntities) {
+            Optional<Tuple<Vector3d,Vector3d>> hit = ent.getBoundingBox().orElseGet(()-> {
+                Vector3d pos = ent.getLocation().getPosition();
+                return new AABB(pos.sub(.5,.5,.5), pos.add(.5,.5,.5));
+            }).intersects(src, finalDir);
+
+            if (hit.isPresent()) {
+                //store entity with closes hit
+                double dist = src.distanceSquared(hit.get().getFirst());
+                if (dist < entDist) {
+                    entDist = dist;
+                    closest = ent;
+                }
+            }
+        }
+
+        return Optional.ofNullable(closest);
+    }
+
     /**
      * EntityRay :D
      * Don't ask too closely how this works, I wrote this years ago...
      */
-    public static Optional<Entity> getEntityLookingAt(Living source, Double maxRange) {
+    public static Optional<Entity> getEntityLookingAtOld(Living source, Double maxRange) {
         Collection<Entity> nearbyEntities = source.getNearbyEntities(maxRange); // get all entities in interaction range
         //we need a facing vector for the source
         Vector3d rotation = source.getHeadRotation().mul(Math.PI / 180.0); //to radians

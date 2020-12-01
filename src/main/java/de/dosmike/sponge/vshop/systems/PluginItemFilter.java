@@ -23,29 +23,29 @@ public interface PluginItemFilter {
 
     /** If you want to block this item from being resold by players or admin shops you can use this
      * to prevent the item from being added to a shop (or sold, if you change this later)
-     * @param pluginItemAdminFlag will be true if this item is currently listed in an admin shop, false if it's listed in a player shop
+     * @param shopType the type of shop this item is currently listed in
      * @return true if the item can be added to this shop
      */
-    @SuppressWarnings({"BooleanMethodIsAlwaysInverted", "SameReturnValue"})
-    default boolean supportShopType(boolean pluginItemAdminFlag) { return true; }
+    @SuppressWarnings({"SameReturnValue"})
+    default boolean supportShopType(ShopType shopType) { return true; }
 
     /** VillagerShops will try to give this {@link ItemStack} to the player.
      * While it does not increase the stack size it may reduce the stack size
      * to accommodate to player inventory space and balance.
      * This should not be less, because by the time this is called, the player balance was already touched!
      * @param amount the amount of items requested by the purchase transaction (is checked).
-     * @param pluginItemAdminFlag will be true if this item is currently listed in an admin shop, false if it's listed in a player shop
+     * @param shopType the type of shop this item is currently listed in
      * @return the ItemStack that the user will buy */
-    ItemStack supply(int amount, boolean pluginItemAdminFlag);
+    ItemStack supply(int amount, ShopType shopType);
 
     /** can override the maximum amount of items that can be bought at once.
      * default is evaluated using <code>supply(1).getType().getMaxStackQuantity()</code>
      * @return a custom maximum stack quantity
      */
     default int getMaxStackSize() {
-        ItemStack stack = supply(1, true);
+        ItemStack stack = supply(1, ShopType.AdminShop);
         int stackSize = stack.getType().getMaxStackQuantity();
-        consume(stack, true);
+        consume(stack, ShopType.AdminShop);
         return stackSize;
     }
 
@@ -55,14 +55,14 @@ public interface PluginItemFilter {
      * By the time this method is called you might assume the item was already
      * removed from the player inventory.
      * @param item the ItemStack the user just sold.
-     * @param pluginItemAdminFlag will be true if this item is currently listed in an admin shop, false if it's listed in a player shop
+     * @param shopType the type of shop this item is currently listed in
      */
-    default void consume(ItemStack item, boolean pluginItemAdminFlag) {}
+    default void consume(ItemStack item, ShopType shopType) {}
 
     /** In case you want to manipulate the item displayed (custom lore, add enchantments for glow, etc., ...)
      * you can do so here. VillagerShops will use this Item if possible.
-     * @param pluginItemAdminFlag will be true if this item is currently listed in an admin shop, false if it's listed in a player shop
+     * @param shopType the type of shop this item is currently listed in
      * @return The display override or empty() if the default should be used. */
-    Optional<ItemStackSnapshot> getDisplayItem(boolean pluginItemAdminFlag);
+    Optional<ItemStackSnapshot> getDisplayItem(ShopType shopType);
 
 }

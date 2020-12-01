@@ -9,6 +9,7 @@ import de.dosmike.sponge.vshop.shops.StockItem;
 import de.dosmike.sponge.vshop.systems.GameDictHelper;
 import de.dosmike.sponge.vshop.systems.PluginItemFilter;
 import de.dosmike.sponge.vshop.systems.PluginItemServiceImpl;
+import de.dosmike.sponge.vshop.systems.ShopType;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
@@ -22,6 +23,7 @@ import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.text.BookView;
 import org.spongepowered.api.text.Text;
@@ -165,7 +167,7 @@ public class cmdAdd extends Command {
 
         StockItem newItem;
         if (nbtfilter.equals(StockItem.FilterOptions.PLUGIN)) {
-            if (!pluginItemFilter.supportShopType(!shopEntity.get().getShopOwner().isPresent()))
+            if (!pluginItemFilter.supportShopType(ShopType.fromInstance(shopEntity.get())))
                 throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                         localString(shopEntity.get().getShopOwner().isPresent() // is player-shop && denied
                                 ? "cmd.add.filter.adminonly"
@@ -175,7 +177,7 @@ public class cmdAdd extends Command {
                 throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
                         localString("cmd.add.filter.incomaptible").orLiteral(player)));
 
-            newItem = new StockItem(item.get(), pluginItemFilter, sellFor, buyFor,
+            newItem = new StockItem(item.get().createSnapshot(), pluginItemFilter, sellFor, buyFor,
                     Utilities.CurrencyByName((String) args.getOne("Currency").orElse(null)),
                     limit);
         } else if (nbtfilter.equals(StockItem.FilterOptions.OREDICT)) {
@@ -188,7 +190,7 @@ public class cmdAdd extends Command {
 
                 return CommandResult.success(); //displaying the book for selection is a successful command execution
             } else if (keys.isEmpty()) { //no filter, since no oredict
-                newItem = new StockItem(item.get(), sellFor, buyFor,
+                newItem = new StockItem(item.get().createSnapshot(), sellFor, buyFor,
                         Utilities.CurrencyByName((String) args.getOne("Currency").orElse(null)),
                         limit);
             } else {
@@ -199,7 +201,7 @@ public class cmdAdd extends Command {
         } else {
             ItemStack single = item.get().copy();
             single.setQuantity(1);
-            newItem = new StockItem(single, sellFor, buyFor,
+            newItem = new StockItem(single.createSnapshot(), sellFor, buyFor,
                     Utilities.CurrencyByName((String) args.getOne("Currency").orElse(null)),
                     limit, nbtfilter);
         }
@@ -272,7 +274,7 @@ public class cmdAdd extends Command {
             auditOverwrite = menu.getItem(position).toString();
             menu.setItem(position, item);
         }
-        ItemStack displayItem = item.getItem(!shopEntity.get().getShopOwner().isPresent());
+        ItemStackSnapshot displayItem = item.getItem(ShopType.fromInstance(shopEntity.get()));
         player.sendMessage(Text.of(
                 TextColors.GREEN, "[vShop] ",
                 localText(position < 0 ? "cmd.add.success" : "cmd.add.replaced")

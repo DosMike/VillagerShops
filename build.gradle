@@ -53,6 +53,7 @@ dependencies {
     compileOnly 'com.github.bloodmc:GriefDefenderAPI:master-SNAPSHOT'
     compileOnly 'com.github.JimiIT92:UniverseGuardAPI7:master-SNAPSHOT'
     compileOnly fileTree(dir: 'libs', include: ['RedProtect-*-Universal.jar'])
+    compileOnly fileTree(dir: 'libs', include: ['HuskyCrates-*.jar'])
 
     shadow 'com.github.DosMike:SpongePluginVersionChecker:master-SNAPSHOT'
 }

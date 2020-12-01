@@ -5,10 +5,12 @@ import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.menus.MShopSlot;
 import de.dosmike.sponge.vshop.systems.LedgerManager;
+import de.dosmike.sponge.vshop.systems.ShopType;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.economy.account.UniqueAccount;
 import org.spongepowered.api.text.Text;
@@ -58,7 +60,7 @@ public class InteractionHandler {
         Currency currency = item.getCurrency();
         Purchase.Result result;
 
-        ItemStack displayItem = item.getItem(!shop.getShopOwner().isPresent());
+        ItemStackSnapshot displayItem = item.getItem(ShopType.fromInstance(shop)); //calls getDisplayItems
 
         if (doBuy) {
             if (item.getBuyPrice() == null) return 0;

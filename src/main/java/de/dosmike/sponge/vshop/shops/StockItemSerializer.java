@@ -3,11 +3,13 @@ package de.dosmike.sponge.vshop.shops;
 import com.google.common.reflect.TypeToken;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.systems.PluginItemServiceImpl;
+import de.dosmike.sponge.vshop.systems.ShopType;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 
 @SuppressWarnings("UnstableApiUsage")
 public class StockItemSerializer implements TypeSerializer<StockItem> {
@@ -23,9 +25,9 @@ public class StockItemSerializer implements TypeSerializer<StockItem> {
             value.getNode("oredict").setValue(item.getFilterNameExtra().get());
         } else if (item.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
             value.getNode("pluginitem").setValue(item.getFilterNameExtra().get());
-            value.getNode("itemstack").setValue(TypeToken.of(ItemStack.class), item.getItem(true));
+            value.getNode("itemstack").setValue(TypeToken.of(ItemStackSnapshot.class), item.getItem(ShopType.AdminShop));
         } else {
-            value.getNode("itemstack").setValue(TypeToken.of(ItemStack.class), item.getItem(true));
+            value.getNode("itemstack").setValue(TypeToken.of(ItemStackSnapshot.class), item.getItem(ShopType.AdminShop));
         }
     }
 
@@ -47,7 +49,7 @@ public class StockItemSerializer implements TypeSerializer<StockItem> {
         } else if (filter.equals(StockItem.FilterOptions.PLUGIN)) {
             try {
                 return new StockItem(
-                        ii.getNode("itemstack").getValue(TypeToken.of(ItemStack.class)),
+                        ii.getNode("itemstack").getValue(TypeToken.of(ItemStackSnapshot.class)),
                         PluginItemServiceImpl.getItemFilter(ii.getNode("pluginitem").getString())
                             .orElseThrow(()->new ObjectMappingException("Plugin filter no longer provided")),
                         ii.getNode("sellprice").getDouble(-1),
@@ -60,7 +62,7 @@ public class StockItemSerializer implements TypeSerializer<StockItem> {
             }
         } else {
             return new StockItem(
-                    ii.getNode("itemstack").getValue(TypeToken.of(ItemStack.class)),
+                    ii.getNode("itemstack").getValue(TypeToken.of(ItemStackSnapshot.class)),
                     ii.getNode("sellprice").getDouble(-1),
                     ii.getNode("buyprice").getDouble(-1),
                     Utilities.CurrencyByName(ii.getNode("currency").getString(null)),

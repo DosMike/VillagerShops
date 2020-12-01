@@ -6,6 +6,7 @@ import de.dosmike.sponge.VersionChecker;
 import de.dosmike.sponge.languageservice.API.LanguageService;
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
 import de.dosmike.sponge.vshop.commands.CommandRegistra;
+import de.dosmike.sponge.vshop.integrations.crateplugins.KeysFilterProvider;
 import de.dosmike.sponge.vshop.integrations.protection.AreaProtection;
 import de.dosmike.sponge.vshop.integrations.toomuchstock.PriceCalculator;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
@@ -80,6 +81,7 @@ public class VillagerShops {
     private static PermissionService permissions = null;
     private PriceCalculator priceCalculator = null;
     private AreaProtection protection = null;
+    private PluginItemService pluginItemService = null;
 
     public static PluginTranslation getTranslator() {
         return instance.translator;
@@ -101,6 +103,9 @@ public class VillagerShops {
     }
     public static AreaProtection getProtection() {
         return instance.protection;
+    }
+    public static PluginItemService getPluginItemService() {
+        return instance.pluginItemService;
     }
     public static SpongeExecutorService getAsyncScheduler() {
         return instance.asyncScheduler;
@@ -130,6 +135,11 @@ public class VillagerShops {
         } else if (event.getService().equals(PermissionService.class)) {
             l("Found Permission Service");
             permissions = (PermissionService)event.getNewProvider();
+        } else if (event.getService().equals(PluginItemService.class)) {
+            l("Found PluginItem Service");
+            pluginItemService = (PluginItemService) event.getNewProvider();
+            l("Registering default PluginItem compatibility");
+            KeysFilterProvider.get().registerFilters(pluginItemService);
         }
     }
 

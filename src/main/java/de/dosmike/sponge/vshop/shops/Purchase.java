@@ -4,6 +4,7 @@ import com.google.inject.internal.cglib.core.$DuplicatesPredicate;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.integrations.toomuchstock.Preview;
+import de.dosmike.sponge.vshop.systems.ShopType;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.EntityTypes;
@@ -42,6 +43,7 @@ public class Purchase {
     private final StockItem stockItem;
     private final Player player;
     private final ShopEntity shop;
+    private final ShopType shopType;
 
     private final UniqueAccount playerAccount;
     private final UniqueAccount shopAccount;
@@ -49,6 +51,7 @@ public class Purchase {
         this.stockItem = item;
         this.player = player;
         this.shop = shop;
+        this.shopType = ShopType.fromInstance(shop);
 
         playerAccount = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId())
                 .orElseThrow(()->new FailedPreconditionException(Result.GENERIC_FAILURE));
@@ -110,7 +113,7 @@ public class Purchase {
 
         // From the items that can be traded, get the price information
         Preview purchaseInformation = VillagerShops.getPriceCalculator().getPurchaseInformation(
-                stockItem.getItem(shop.getShopOwner().isPresent()),
+                stockItem.getItem(shopType),
                 amount, //using this amount here will reduce computation cost
                 BigDecimal.valueOf(stockItem.getBuyPrice()),
                 stockItem.getCurrency(),
@@ -129,7 +132,7 @@ public class Purchase {
         BigDecimal price = purchaseInformation.getCumulativeValueFor(amount);
 
         TransactionResult res;
-        if (stock.isPresent())
+        if (shopType == ShopType.PlayerShop)
             res = playerAccount.transfer(shopAccount, stockItem.getCurrency(), price, Sponge.getCauseStackManager().getCurrentCause());
         else
             res = playerAccount.withdraw(stockItem.getCurrency(), price, Sponge.getCauseStackManager().getCurrentCause());
@@ -154,7 +157,7 @@ public class Purchase {
                 });
             });
         else
-            playerInv.offer(stockItem.createItem(amount, !shop.getShopOwner().isPresent()));
+            playerInv.offer(stockItem.createItem(amount, shopType));
 
         return Result.OK(amount, price);
     }
@@ -182,7 +185,7 @@ public class Purchase {
 
         // From the items that can be traded, get the price information
         Preview sellingInformation = VillagerShops.getPriceCalculator().getSellingInformation(
-                stockItem.getItem(shop.getShopOwner().isPresent()),
+                stockItem.getItem(shopType),
                 amount, //using this amount here will reduce computation cost
                 BigDecimal.valueOf(stockItem.getSellPrice()),
                 stockItem.getCurrency(),
@@ -201,7 +204,7 @@ public class Purchase {
         BigDecimal price = sellingInformation.getCumulativeValueFor(amount);
 
         TransactionResult res;
-        if (stock.isPresent())
+        if (shopType == ShopType.PlayerShop)
             res = shopAccount.transfer(playerAccount, stockItem.getCurrency(), price, Sponge.getCauseStackManager().getCurrentCause());
         else
             res = playerAccount.deposit(stockItem.getCurrency(), price, Sponge.getCauseStackManager().getCurrentCause());
@@ -229,7 +232,7 @@ public class Purchase {
         } else {
             Set<ItemStack> removed = getFrom(playerInv, amount);
             //notify the plugin, that these items are now gone
-            stockItem.getPluginFilter().ifPresent(pif -> removed.forEach(item -> pif.consume(item, !shop.getShopOwner().isPresent())));
+            stockItem.getPluginFilter().ifPresent(pif -> removed.forEach(item -> pif.consume(item, shopType)));
         }
 
         return Result.OK(amount, price);

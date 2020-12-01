@@ -12,11 +12,13 @@ import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.shops.InteractionHandler;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.shops.StockItem;
+import de.dosmike.sponge.vshop.systems.ShopType;
 import org.apache.commons.lang3.NotImplementedException;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
@@ -71,11 +73,12 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
         ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(player).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
                         .orElse(ConfigSettings.getShopsDefaultStackSize());
         int quantity;
+        ShopType shopType = ShopType.fromInstance(shop);
         if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
             quantity = stockItem.getPluginFilter().map(quantityValues::getStackSize)
-                    .orElseGet(() -> quantityValues.getStackSize(stockItem.getItem(!shop.getShopOwner().isPresent()).getType()));
+                    .orElseGet(() -> quantityValues.getStackSize(stockItem.getItem(shopType).getType()));
         } else {
-            quantity = quantityValues.getStackSize(stockItem.getItem(!shop.getShopOwner().isPresent()).getType());
+            quantity = quantityValues.getStackSize(stockItem.getItem(shopType).getType());
         }
 
         int change = InteractionHandler.shopItemClicked(player, shop, stockItem, doBuy, quantity);
@@ -108,17 +111,17 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
         return copy;
     }
 
-    private ItemStack _getDisplayItem(Player viewer) {
-        ItemStack displayItem = null; {
+    private ItemStackSnapshot _getDisplayItem(Player viewer) {
+        ItemStackSnapshot displayItem = null; {
             if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
                 ShopEntity shop = VillagerShops.getShopFromShopId(shopIdBackRef).orElse(null);
                 if (shop != null) {
-                    displayItem = stockItem.getItem(!shop.getShopOwner().isPresent());
+                    displayItem = stockItem.getItem(ShopType.fromInstance(shop));
                 }
             }
             // fallback
             if (displayItem == null)
-                displayItem = stockItem.getItem(true);
+                displayItem = stockItem.getItem(ShopType.AdminShop);
         }
         return displayItem;
     }
@@ -129,7 +132,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
         if (markedForRemoval)
             return removeMeIcon;
 
-        ItemStack displayItem = _getDisplayItem(viewer);
+        ItemStack displayItem = _getDisplayItem(viewer).createStack();
 
         ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
                 .orElse(ConfigSettings.getShopsDefaultStackSize());
@@ -162,7 +165,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
     public Text getName(Player viewer) {
         //marked for removal replaces the icon with barrier, this we need to supply a custom name to not display "Barrier"
         if (markedForRemoval) {
-            ItemStack displayItem = _getDisplayItem(viewer);
+            ItemStackSnapshot displayItem = _getDisplayItem(viewer);
             return displayItem.get(Keys.DISPLAY_NAME).orElse(
                     Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(viewer)))
             );
@@ -181,7 +184,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
                     )
             );
         }
-        ItemStack item = _getDisplayItem(viewer);
+        ItemStackSnapshot item = _getDisplayItem(viewer);
         List<Text> lore = item.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
 
         Text currency = stockItem.getCurrency().getSymbol();

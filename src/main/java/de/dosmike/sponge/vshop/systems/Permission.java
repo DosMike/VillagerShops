@@ -21,9 +21,9 @@ import java.util.Objects;
  * time. That'd at least make it less prone to typos.
  */
 public class Permission {
-    private String id;
-    private Text description;
-    private String group; //role
+    private final String id;
+    private final Text description;
+    private final String group; //role
     private Object key=null;
     public String getId() { return id; }
     public Text getDescription() { return description; }
