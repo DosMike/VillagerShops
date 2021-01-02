@@ -1,4 +1,6 @@
 /release/**
+# This will break jitpack builds, because file deps are used
+/libs
 
 ## Gradle
 .gradle
