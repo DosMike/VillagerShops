@@ -1,10 +1,17 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import de.dosmike.sponge.pluginpublisher.tasks.DiscordBotConfiguration
+import de.dosmike.sponge.pluginpublisher.tasks.GitConfiguration
+import de.dosmike.sponge.pluginpublisher.tasks.OreConfiguration
+import de.dosmike.sponge.pluginpublisher.tasks.TaskFunctors
+
 plugins {
     id 'java'
     id 'maven'
+    id 'idea'
     id 'org.spongepowered.plugin' version '0.9.0'
     id 'com.github.johnrengelman.shadow' version '5.1.0'
+    id 'com.github.dosmike.PluginPublisher' version '1.2.1'
 }
-
 group = 'com.github.dosmike'
 
 //auto fetch version from McMod.info
@@ -18,14 +25,7 @@ if (version == 'unspecified') {
 assert (pluginid instanceof String) && !((String)pluginid).isEmpty()
 println rootProject.name + ' (' + pluginid + ') version ' + version
 
-//might be static an ugly, but works and is not expected to change
-def baseArtifactName = rootProject.name+'-'+version+'.jar'
-def baseArtifactFile = file("./build/libs/${baseArtifactName}").toString()
-def fileNamePattern = ~'(?i)^(?!(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.[^.]*)?$)[^<>:\"/\\\\|?*\\x00-\\x1F]*[^<>:\"/\\\\|?*\\x00-\\x1F\\ .]$'
-assert baseArtifactName ==~ fileNamePattern
-
 def serverDir = 'G:/Sonstige/VanillaSponge/server'
-def gnupgDir = 'G:/Sonstige/VanillaSponge/GnuPG'
 
 sourceCompatibility = 1.8 // java 8
 targetCompatibility = 1.8
@@ -58,22 +58,25 @@ dependencies {
     shadow 'com.github.DosMike:SpongePluginVersionChecker:master-SNAPSHOT'
 }
 
-task removeOldVersions() {
-    def artifactNamePattern = ~"${rootProject.name}-[0-9]+[\\.0-9]*\\.jar"
-    delete fileTree('./build/libs').include {
-        it.file.name ==~ artifactNamePattern &&
-                it.file.name != baseArtifactName
+task removeOldVersions(type: Delete) {
+
+    def files = fileTree('./build/libs', {
+        include "**/${jar.archiveBaseName.get()}-*.jar"
+        exclude { jar.outputs }
+    }) + fileTree('./distributions', {
+        exclude { zReleaseZip.outputs }
+    }) + fileTree("${serverDir}/mods", {
+        include "**/${jar.archiveBaseName.get()}-*.jar"
+        exclude "**/"+jar.archiveFileName.get()
+    })
+    outputs.upToDateWhen {
+        files.empty
     }
-    if (new File(serverDir).exists())
-        delete fileTree("${serverDir}/mods").include {
-            it.file.name ==~ artifactNamePattern &&
-                    it.file.name != baseArtifactName
-        }
+    delete files
+
 }
 
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
-task uberJar(type:ShadowJar, group:'_Plugin', dependsOn:removeOldVersions) {
+task uberJar(type: ShadowJar, group:'_Plugin', dependsOn:removeOldVersions) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     exclude 'META-INF/**'
     manifest {
@@ -90,13 +93,12 @@ task uberJar(type:ShadowJar, group:'_Plugin', dependsOn:removeOldVersions) {
     }
     from(sourceSets.main.resources)
     from(sourceSets.main.output)
-    classifier = null
+    archiveClassifier.set( null )
 }
 task pushToServer(type: Copy, group:'_Plugin', dependsOn:uberJar) {
     if (new File(serverDir).exists()) {
-        from './build/libs'
+        from uberJar.outputs.files
         into file("${serverDir}/mods")
-        include baseArtifactName
     }
 }
 task _runServer(type: Exec,group:'_Plugin', dependsOn:pushToServer) {
@@ -111,24 +113,65 @@ task rebuild(group:'_Plugin') {
     mustRunAfter clean
     finalizedBy uberJar
 }
-task zPublish(type: Exec, group:'_Plugin', dependsOn:uberJar) {
+
+task zReleaseZip(type: Zip, group:'_Plugin', dependsOn: uberJar) {
+    onlyIf { file('release').exists() }
+    archiveBaseName.set( jar.archiveBaseName.getOrNull() )
+    archiveAppendix.set( jar.archiveAppendix.getOrNull() )
+    archiveVersion.set( jar.archiveVersion.getOrNull() )
+    archiveClassifier.set( jar.archiveClassifier.getOrNull() )
+    archiveExtension.set( 'zip' )
+
+    from ('release') {
+        exclude '**/*.zip'
+        exclude '**/.gitignore'
+    }
+    from (jar.outputs.files) {
+        into 'mods'
+    }
+}
+
+task zPublish(group:'_Plugin', dependsOn:zReleaseZip) {
     def keyfile = file('..\\PluginPublisher\\.apikeys')
-    if (keyfile.exists()) {
-        keyfile.readLines().each() {
-            def (key, value) = it.tokenize('=')
-            environment key, value
+    onlyIf { keyfile.exists() }
+    def props, versionDesc
+    doFirst {
+        props = new Properties()
+        file('..\\PluginPublisher\\.apikeys').withInputStream {
+            props.load(it)
         }
-        def spp_git_slug = 'DosMike/VillagerShops'
-        def spp_discord_server = '342942444288999435'
-        def spp_discord_channel = '352760019873169408'
-        def spp_discord_mention = '<@&644225680833249320>'
-        def spp_discord_header = "${spp_discord_mention} Version ${version} released on Ore and GitHub"
-        def outputFile = "build\\libs\\${jar.archiveFileName}"
-        commandLine 'java', '-jar', '..\\PluginPublisher\\PluginPublisher.jar',
-                '--gk', 'gitkey', '--ok', 'orekey', '--dk', 'discordkey',
-                '--gs', spp_git_slug, '--gt', version, '--gn', "Release Build ${version}", '--ga', outputFile,
-                '--op', pluginid, '--oa', outputFile,
-                '--ds', spp_discord_server, '--dc', spp_discord_channel, '--dh', spp_discord_header
+        //show an input prompt
+        versionDesc = TaskFunctors.validateReleaseDescription(null, false);
+    }
+    doLast {
+        TaskFunctors.runGitTask(new GitConfiguration(
+                apiKey: props.getProperty('gitkey'),
+                slug: 'DosMike/VillagerShops',
+                tag: version,
+                tagFull: "Release Build ${version}",
+                assets: zReleaseZip.outputs.files,
+                description: versionDesc
+        ), { -> files(it).files } )
+    }
+
+    doLast {
+        TaskFunctors.runOreTask(new OreConfiguration(
+                apiKey: props.getProperty('orekey'),
+                project: 'DosMike/VillagerShops',
+                asset: uberJar.outputs.files,
+                description: versionDesc
+        ), { -> files(it).files } )
+    }
+
+    doLast {
+        TaskFunctors.runDiscordTask(new DiscordBotConfiguration(
+                apiKey: props.getProperty('discordkey'),
+                server: '342942444288999435',
+                channel: '352760019873169408',
+                header: "<@&644225680833249320> Version ${version} released on Ore and GitHub",
+                description: versionDesc
+        ))
+        TaskFunctors.terminateJDA()
     }
 }
 
@@ -140,29 +183,14 @@ jar {
     }
 }
 
-//i tried the singing plugin but the config described on the gradle page did not work
-//so here's the easy way of signing a plugin without having to get the keyId
-task signing(type:Exec, group:'_Plugin', dependsOn:uberJar) {
-    if (new File(gnupgDir).exists()) {
-        workingDir file(gnupgDir)
-        commandLine 'cmd', '/c', 'gpg2', '--output', "${baseArtifactFile}.sig", '--detach-sig', baseArtifactFile
-        //store the output instead of printing to the console:
-        standardOutput = new ByteArrayOutputStream()
-        //extension method stopTomcat.output() can be used to obtain the output:
-        ext.output = {
-            return standardOutput.toString()
-        }
-    }
-}
-
 //Rest is here in order to use this project as dependency (taken from jitpack example)
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    archiveClassifier.set( 'sources' )
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier.set( 'javadoc' )
     from javadoc.destinationDir
 }
 
@@ -188,6 +216,6 @@ install {
 }
 
 wrapper {
-    gradleVersion = "5.2.1"
+    gradleVersion = "6.7.1"
     distributionType = Wrapper.DistributionType.ALL
 }
