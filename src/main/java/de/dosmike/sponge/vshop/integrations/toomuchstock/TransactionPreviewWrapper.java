@@ -7,48 +7,49 @@ import java.math.BigDecimal;
 
 public class TransactionPreviewWrapper implements Preview {
 
-    private final TransactionPreview wrapped;
-    TransactionPreviewWrapper(TransactionPreview preview) {
-        wrapped=preview;
-    }
+	private final TransactionPreview wrapped;
 
-    @Override
-    public void update() {
-        wrapped.update();
-    }
+	TransactionPreviewWrapper(TransactionPreview preview) {
+		wrapped = preview;
+	}
 
-    @Override
-    public ImmutableList<BigDecimal> getCumulativeValueForItems() {
-        return wrapped.getCumulativeValueForItems();
-    }
+	@Override
+	public void update() {
+		wrapped.update();
+	}
 
-    @Override
-    public BigDecimal getCumulativeValueFor(int nItems) {
-        return wrapped.getCumulativeValueFor(nItems);
-    }
+	@Override
+	public ImmutableList<BigDecimal> getCumulativeValueForItems() {
+		return wrapped.getCumulativeValueForItems();
+	}
 
-    @Override
-    public int getAffordableAmount() {
-        return wrapped.getAffordableAmount();
-    }
+	@Override
+	public BigDecimal getCumulativeValueFor(int nItems) {
+		return wrapped.getCumulativeValueFor(nItems);
+	}
 
-    @Override
-    public void confirm(int amount) {
-        wrapped.confirm(amount);
-    }
+	@Override
+	public int getAffordableAmount() {
+		return wrapped.getAffordableAmount();
+	}
 
-    @Override
-    public int getLimitAccount() {
-        return wrapped.getLimitAccount();
-    }
+	@Override
+	public void confirm(int amount) {
+		wrapped.confirm(amount);
+	}
 
-    @Override
-    public int getLimitItemTransactions() {
-        return wrapped.getLimitItemTransactions();
-    }
+	@Override
+	public int getLimitAccount() {
+		return wrapped.getLimitAccount();
+	}
 
-    @Override
-    public int getLimitCurrencyTransactions() {
-        return wrapped.getLimitCurrencyTransactions();
-    }
+	@Override
+	public int getLimitItemTransactions() {
+		return wrapped.getLimitItemTransactions();
+	}
+
+	@Override
+	public int getLimitCurrencyTransactions() {
+		return wrapped.getLimitCurrencyTransactions();
+	}
 }

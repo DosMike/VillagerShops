@@ -15,25 +15,25 @@ import org.spongepowered.api.text.Text;
 
 public class cmdReload extends Command {
 
-    static CommandSpec getCommandSpec() {
-        return CommandSpec.builder()
-                .permission(PermissionRegistra.ADMIN.getId())
-                .arguments(
-                        GenericArguments.flags().flag("-translations").buildWith(
-                                GenericArguments.none()
-                        )
-                ).executor(new cmdReload()).build();
-    }
+	static CommandSpec getCommandSpec() {
+		return CommandSpec.builder()
+				.permission(PermissionRegistra.ADMIN.getId())
+				.arguments(
+						GenericArguments.flags().flag("-translations").buildWith(
+								GenericArguments.none()
+						)
+				).executor(new cmdReload()).build();
+	}
 
-    @NotNull
-    @Override
-    public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
-        VillagerShops.getInstance().loadConfigs();
-        VillagerShops.updateCratePlugins();
-        TranslationLoader.fetchTranslations(args.hasAny("translations"));
-        src.sendMessage(Text.of("Reload complete"));
-        VillagerShops.audit("%s reloaded the settings", Utilities.toString(src));
-        return CommandResult.success();
-    }
+	@NotNull
+	@Override
+	public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
+		VillagerShops.getInstance().loadConfigs();
+		VillagerShops.updateCratePlugins();
+		TranslationLoader.fetchTranslations(args.hasAny("translations"));
+		src.sendMessage(Text.of("Reload complete"));
+		VillagerShops.audit("%s reloaded the settings", Utilities.toString(src));
+		return CommandResult.success();
+	}
 
 }
