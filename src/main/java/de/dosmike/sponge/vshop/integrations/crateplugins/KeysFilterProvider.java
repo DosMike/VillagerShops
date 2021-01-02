@@ -1,18 +1,17 @@
 package de.dosmike.sponge.vshop.integrations.crateplugins;
 
-import de.dosmike.sponge.vshop.ConfigSettings;
-import de.dosmike.sponge.vshop.VillagerShops;
-import de.dosmike.sponge.vshop.integrations.protection.GriefDefenderAccess;
-import de.dosmike.sponge.vshop.integrations.toomuchstock.PriceCalculationWrapper;
-import de.dosmike.sponge.vshop.integrations.toomuchstock.PriceCalculator;
 import de.dosmike.sponge.vshop.systems.PluginItemService;
 import org.spongepowered.api.GameState;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 public interface KeysFilterProvider {
 
-    default void registerFilters(PluginItemService pis) {
+    default void updateFilters(PluginItemService pis) {
 
     }
 
@@ -27,16 +26,20 @@ public interface KeysFilterProvider {
      * <br><br>
      * This method should only be called once in {@link GameInitializationEvent}
      */
-    static KeysFilterProvider get() {
+    static Collection<KeysFilterProvider> scan() {
         assert Sponge.getGame().getState().ordinal() >= GameState.INITIALIZATION.ordinal()
                 : "Dependent services might not be registered yet!";
 
-        try {
-            Class.forName("de.dosmike.sponge.toomuchstock.service.PriceCalculationService");
-            return new HuskyCrateKeys();
-        } catch (Throwable dependencyError) {
-            return new KeysFilterProvider() {};
-        }
+        Set<KeysFilterProvider> kfp = new HashSet<>();
+
+//        try {
+//            Class.forName("Husky Crates main class");
+//            kfp.add(new HuskyCrateKeys());
+//        } catch (Throwable dependencyError) {
+//
+//        }
+
+        return kfp;
     }
 
 }

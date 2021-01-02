@@ -34,7 +34,7 @@ public class ChestLinkManager {
         } else if (!shop.getShopOwner().isPresent()) {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     lang.local("cmd.link.adminshop").resolve(player).orElse("[admin shop]")));
-        } else if (shop.isShopOwner(player.getUniqueId()) && !PermissionRegistra.ADMIN.hasPermission(player)) {
+        } else if (!shop.isShopOwner(player.getUniqueId()) && !PermissionRegistra.ADMIN.hasPermission(player)) {
             player.sendMessage(Text.of(TextColors.RED, "[vShop] ",
                     lang.local("cmd.link.notyourshop").resolve(player).orElse("[not your shop]")));
         } else {

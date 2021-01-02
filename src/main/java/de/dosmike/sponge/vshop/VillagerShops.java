@@ -56,7 +56,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @SuppressWarnings("UnstableApiUsage")
-@Plugin(id = "vshop", name = "VillagerShops", version = "2.8")
+@Plugin(id = "vshop", name = "VillagerShops", version = "2.8.1")
 public class VillagerShops {
 
     public static void main(String[] args) { System.err.println("This plugin can not be run as executable!");
@@ -82,6 +82,7 @@ public class VillagerShops {
     private PriceCalculator priceCalculator = null;
     private AreaProtection protection = null;
     private PluginItemService pluginItemService = null;
+    private Collection<KeysFilterProvider> keyFilterProviders = new HashSet<>();
 
     public static PluginTranslation getTranslator() {
         return instance.translator;
@@ -139,7 +140,8 @@ public class VillagerShops {
             l("Found PluginItem Service");
             pluginItemService = (PluginItemService) event.getNewProvider();
             l("Registering default PluginItem compatibility");
-            KeysFilterProvider.get().registerFilters(pluginItemService);
+            keyFilterProviders = KeysFilterProvider.scan();
+            updateCratePlugins();
         }
     }
 
@@ -654,5 +656,9 @@ public class VillagerShops {
             Utilities.openShops.remove(r);
             Utilities.actionUnstack.remove(r);
         }
+    }
+
+    public static void updateCratePlugins() {
+        instance.keyFilterProviders.forEach(keys->keys.updateFilters(instance.pluginItemService));
     }
 }

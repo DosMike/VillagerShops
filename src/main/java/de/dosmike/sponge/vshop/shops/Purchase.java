@@ -156,8 +156,11 @@ public class Purchase {
                     player.getLocation().getExtent().spawnEntity(drop);
                 });
             });
-        else
-            playerInv.offer(stockItem.createItem(amount, shopType));
+        else {
+            ItemStack result = stockItem.createItem(amount, shopType);
+            if (result.isEmpty()) return Result.GENERIC_FAILURE;
+            playerInv.offer(result);
+        }
 
         return Result.OK(amount, price);
     }

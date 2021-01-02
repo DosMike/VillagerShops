@@ -29,6 +29,7 @@ public class cmdReload extends Command {
     @Override
     public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
         VillagerShops.getInstance().loadConfigs();
+        VillagerShops.updateCratePlugins();
         TranslationLoader.fetchTranslations(args.hasAny("translations"));
         src.sendMessage(Text.of("Reload complete"));
         VillagerShops.audit("%s reloaded the settings", Utilities.toString(src));
