@@ -20,52 +20,52 @@ import java.util.Optional;
 
 public class cmdRemove extends Command {
 
-    static CommandSpec getCommandSpec() {
-        return CommandSpec.builder()
-                .arguments(
-                        GenericArguments.integer(Text.of("Index"))
-                ).executor(new cmdRemove()).build();
-    }
+	static CommandSpec getCommandSpec() {
+		return CommandSpec.builder()
+				.arguments(
+						GenericArguments.integer(Text.of("Index"))
+				).executor(new cmdRemove()).build();
+	}
 
-    @NotNull
-    @Override
-    public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
-        if (!(src instanceof Player)) {
-            throw new CommandException(localText("cmd.playeronly").orLiteral(src));
-        }
-        Player player = (Player) src;
+	@NotNull
+	@Override
+	public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
+		if (!(src instanceof Player)) {
+			throw new CommandException(localText("cmd.playeronly").orLiteral(src));
+		}
+		Player player = (Player) src;
 
-        Optional<Entity> lookingAt = getEntityLookingAt(player, 5.0);
-        Optional<ShopEntity> shopEntity = lookingAt.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
-        if (!shopEntity.isPresent()) {
-            throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                    localString("cmd.common.notarget").orLiteral(player)));
-        } else {
-            if (!PermissionRegistra.ADMIN.hasPermission(player) &&
-                    !shopEntity.get().isShopOwner(player.getUniqueId())) {
-                throw new CommandException(Text.of(TextColors.RED,
-                        localString("permission.missing").orLiteral(player)));
-            }
-            int index = (Integer) args.getOne("Index").get();
-            if (index < 1 || index > shopEntity.get().getMenu().size()) {
-                throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
-                        localString("cmd.remove.invalidindex").orLiteral(player)));
-            } else {
-                VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
-                VillagerShops.getInstance().markShopsDirty(shopEntity.get()); //save changes
-                String auditRemoved=shopEntity.get().getMenu().getItem(index-1).toString();
-                shopEntity.get().getMenu().removeIndex(index - 1);
+		Optional<Entity> lookingAt = getEntityLookingAt(player, 5.0);
+		Optional<ShopEntity> shopEntity = lookingAt.map(Entity::getUniqueId).flatMap(VillagerShops::getShopFromEntityId);
+		if (!shopEntity.isPresent()) {
+			throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
+					localString("cmd.common.notarget").orLiteral(player)));
+		} else {
+			if (!PermissionRegistra.ADMIN.hasPermission(player) &&
+					!shopEntity.get().isShopOwner(player.getUniqueId())) {
+				throw new CommandException(Text.of(TextColors.RED,
+						localString("permission.missing").orLiteral(player)));
+			}
+			int index = (Integer) args.getOne("Index").get();
+			if (index < 1 || index > shopEntity.get().getMenu().size()) {
+				throw new CommandException(Text.of(TextColors.RED, "[vShop] ",
+						localString("cmd.remove.invalidindex").orLiteral(player)));
+			} else {
+				VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
+				VillagerShops.getInstance().markShopsDirty(shopEntity.get()); //save changes
+				String auditRemoved = shopEntity.get().getMenu().getItem(index - 1).toString();
+				shopEntity.get().getMenu().removeIndex(index - 1);
 
-                player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
-                        localString("cmd.remove.success")
-                                .replace("%pos%", index)
-                                .orLiteral(player)));
+				player.sendMessage(Text.of(TextColors.GREEN, "[vShop] ",
+						localString("cmd.remove.success")
+								.replace("%pos%", index)
+								.orLiteral(player)));
 
-                VillagerShops.audit("%s removed the item %s from shop %s",
-                        Utilities.toString(src), auditRemoved, shopEntity.get().toString());
-                return CommandResult.success();
-            }
-        }
-    }
+				VillagerShops.audit("%s removed the item %s from shop %s",
+						Utilities.toString(src), auditRemoved, shopEntity.get().toString());
+				return CommandResult.success();
+			}
+		}
+	}
 
 }

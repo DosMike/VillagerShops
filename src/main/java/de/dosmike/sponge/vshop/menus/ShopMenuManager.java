@@ -34,264 +34,282 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-/** This class is building and updating menus by holding a list of {@link StockItem}s */
+/**
+ * This class is building and updating menus by holding a list of {@link StockItem}s
+ */
 public class ShopMenuManager {
 
-    public enum QuantityValues {
-        FULL(1f), HALF(0.5f), QUARTER(0.25f), SINGLE(0f);
-        /** not-throw string parser with FULL fallback */
-        public static QuantityValues fromString(String s) {
-            for (QuantityValues v : values()) {
-                if (v.name().equalsIgnoreCase(s)) return v;
-            }
-            return FULL;
-        }
-        public static QuantityValues getNth(int n) {
-            return values()[n];
-        }
-        private final float multiplier;
-        QuantityValues(float stackSizeMultiplier) {
-            multiplier = stackSizeMultiplier;
-        }
-        public int getStackSize(ItemType type) {
-            return Math.max(1, (int)Math.ceil(type.getMaxStackQuantity()*multiplier));
-        }
-        public int getStackSize(PluginItemFilter filter) {
-            return Math.max(1, (int)Math.ceil(filter.getMaxStackSize()*multiplier));
-        }
-    }
-    public static final String MENU_REMOVEMODE = "removemode";
-    public static final String MENU_REMOVESET = "removeindices";
+	public static final String MENU_REMOVEMODE = "removemode";
+	public static final String MENU_REMOVESET = "removeindices";
+	final MSpinnerIndex spnQuantity = MSpinnerIndex.builder()
+			.setName("shop.quantity.name")
+			.addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_BLOCK, 64)), "shop.quantity.items.full")
+			.addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_INGOT, 32)), "shop.quantity.items.half")
+			.addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_INGOT, 16)), "shop.quantity.items.quarter")
+			.addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_NUGGET, 1)), "shop.quantity.items.single")
+			.setOnChangeListener((oldValue, newValue, element, viewer) -> {
+				element.getParent()
+						.getPlayerState(viewer).set(
+						MShopSlot.MENU_SHOP_QUANTITY,
+						QuantityValues.getNth(newValue));
+				//update button for all pages
+				for (int page = 1; page <= element.getParent().pages(); page++) {
+					Optional<IElement> el = MenuUtil.getElementAt(element.getParent(), page, element.getPosition());
+					el.ifPresent(e -> {
+						if (e instanceof MSpinnerIndex) {
+							((MSpinnerIndex) e).setSelectedIndex(newValue);
+						}
+					});
+				}
+			})
+			.build();
+	private final UUID shopRef;
+	private final IMenu menu = MegaMenus.createMenu();
+	List<StockItem> items = new LinkedList<>();
+	final MTranslatableButton bnRemoveMode = MTranslatableButton.builder()
+			.setName("shop.removemode.name")
+			.setLore(Arrays.asList("shop.removemode.lore1", "shop.removemode.lore2"))
+			.setOnClickListener((element, player, button, shift) -> {
+				StateObject menuState = element.getParent().getPlayerState(player);
+				IIcon newButtonIcon;
+				boolean inRemoveMode = menuState.getBoolean(MENU_REMOVEMODE).orElse(false);
+				if (inRemoveMode) {
+					HashSet<Integer> indices = menuState.<HashSet<Integer>>get(MENU_REMOVESET).orElse(new HashSet<>());
+					menuState.remove(MENU_REMOVEMODE);
+					menuState.remove(MENU_REMOVESET);
 
-    List<StockItem> items = new LinkedList<>();
-    private final UUID shopRef;
-    public ShopMenuManager(UUID shopId) {
-        shopRef=shopId;
-    }
+					newButtonIcon = IIcon.of(ItemTypes.BUCKET);
+					UUID shopID = Utilities.getOpenShopFor(player);
+					if (shopID == null) { //Error
+						VillagerShops.l("Could not find open shop");
+						RenderManager.getRenderFor(player).ifPresent(MenuRenderer::closeAll);
+						return;
+					}
 
-    /** Don't forget to mark shops as modified */
-    public void addItem(StockItem stockitem) {
-        items.add(stockitem);
-        updateMenu(true);
-    }
+					if (!indices.isEmpty()) { //remove items
+						IMenu menu = (element.getParent() instanceof BoundMenuImpl)
+								? ((BoundMenuImpl) element.getParent()).getBaseMenu()
+								: element.getParent();
+						RenderManager.getRenderFor(menu).forEach(MenuRenderer::closeAll);
 
-    /** Don't forget to mark shops as modified */
-    public void removeIndex(int index) {
-        items.remove(index);
-        updateMenu(true);
-    }
+						TreeSet<Integer> sorted = new TreeSet<>(Comparator.reverseOrder());
+						sorted.addAll(indices);
 
-    /** Don't forget to mark shops as modified */
-    public void setItem(int index, StockItem stockitem) {
-        items.set(index, stockitem);
-        updateMenu(true);
-    }
+						VillagerShops.audit("%s", Utilities.toString(player) +
+								" deleted " + sorted.size() +
+								" items from shop " +
+								VillagerShops.getShopFromShopId(shopID)
+										.map(ShopEntity::toString)
+										.orElse("[" + shopID + "]") +
+								": " + indices.stream()
+								.map(i -> getItem(i).toString())
+								.collect(Collectors.joining(", ", "[ ", " ]"))
+						);
 
-    public StockItem getItem(int index) {
-        return items.get(index);
-    }
-    public List<StockItem> getAllItems() {
-        return items;
-    }
-    public void setAllItems(List<StockItem> items) {
-        this.items = new LinkedList<>(items);
-        updateMenu(true);
-    }
+						Iterator<Integer> ii = sorted.iterator();
+						ii.forEachRemaining(this::removeIndex);
+						VillagerShops.getInstance().markShopsDirty(player.getWorld().getUniqueId()); //save changes
 
-    public int size() {
-        return items.size();
-    }
+						Task.builder().name("Reopen Shop").delayTicks(2).execute(() ->
+								VillagerShops.getShopFromShopId(shopID)
+										.flatMap(ShopEntity::getEntityUniqueID)
+										.ifPresent(npc -> InteractionHandler.clickEntity(player, npc))
+						).submit(VillagerShops.getInstance());
 
-    private final IMenu menu = MegaMenus.createMenu();
-    public IMenu getMenu() {
-        return menu;
-    }
+						return;
+					}
+				} else {
+					menuState.set(MENU_REMOVEMODE, true);
+					menuState.set(MENU_REMOVESET, new HashSet<Integer>());
+					newButtonIcon = IIcon.of(ItemTypes.LAVA_BUCKET);
+				}
+				//update button for all pages
+				for (int page = 1; page <= element.getParent().pages(); page++) {
+					Optional<IElement> el = MenuUtil.getElementAt(element.getParent(), page, element.getPosition());
+					el.ifPresent(e -> {
+						if (e instanceof MTranslatableButton) {
+							((MTranslatableButton) e).setIcon(newButtonIcon);
+							e.invalidate();
+						}
+					});
+				}
+			})
+			.setIcon(IIcon.of(ItemTypes.BUCKET))
+			.build();
 
-    public void updateMenu(boolean fullRedraw) {
-        if (fullRedraw) {
-            for (int i = menu.pages(); i>0; i--) menu.clearPage(i);
-            int p=1, y=0, x=0;
-            boolean itemsOnLastPage = false;
-            for (int i = 0; i < items.size(); i++) {
-                StockItem item = items.get(i);
-                itemsOnLastPage = true;
-                if (item.getBuyPrice() != null ||
-                    item.getSellPrice() != null) {
-                    MShopSlot button = new MShopSlot(item, i, shopRef);
-                    button.setPosition(new SlotPos(x,y));
-                    menu.add(p, button);
-                }
-                if (++x > 8) {
-                    x = 0;
-                    if (++y > 4) {
-                        y = 0;
-                        p++;
-                        itemsOnLastPage = false;
-                    }
-                }
-            }
-            for (int i = menu.pages(); i>0; i--) {
-                if (menu.getPageElements(i).isEmpty())
-                    menu.removePage(i);
-            }
-            if (!itemsOnLastPage) p--;
-            //add quantity option toggle
-            int bottomY = Math.max(2, Math.min((int)Math.ceil(size()/9.0)+1, 6))-1;
+	public ShopMenuManager(UUID shopId) {
+		shopRef = shopId;
+	}
+
+	/**
+	 * Don't forget to mark shops as modified
+	 */
+	public void addItem(StockItem stockitem) {
+		items.add(stockitem);
+		updateMenu(true);
+	}
+
+	/**
+	 * Don't forget to mark shops as modified
+	 */
+	public void removeIndex(int index) {
+		items.remove(index);
+		updateMenu(true);
+	}
+
+	/**
+	 * Don't forget to mark shops as modified
+	 */
+	public void setItem(int index, StockItem stockitem) {
+		items.set(index, stockitem);
+		updateMenu(true);
+	}
+
+	public StockItem getItem(int index) {
+		return items.get(index);
+	}
+
+	public List<StockItem> getAllItems() {
+		return items;
+	}
+
+	public void setAllItems(List<StockItem> items) {
+		this.items = new LinkedList<>(items);
+		updateMenu(true);
+	}
+
+	public int size() {
+		return items.size();
+	}
+
+	public IMenu getMenu() {
+		return menu;
+	}
+
+	public void updateMenu(boolean fullRedraw) {
+		if (fullRedraw) {
+			for (int i = menu.pages(); i > 0; i--) menu.clearPage(i);
+			int p = 1, y = 0, x = 0;
+			boolean itemsOnLastPage = false;
+			for (int i = 0; i < items.size(); i++) {
+				StockItem item = items.get(i);
+				itemsOnLastPage = true;
+				if (item.getBuyPrice() != null ||
+						item.getSellPrice() != null) {
+					MShopSlot button = new MShopSlot(item, i, shopRef);
+					button.setPosition(new SlotPos(x, y));
+					menu.add(p, button);
+				}
+				if (++x > 8) {
+					x = 0;
+					if (++y > 4) {
+						y = 0;
+						p++;
+						itemsOnLastPage = false;
+					}
+				}
+			}
+			for (int i = menu.pages(); i > 0; i--) {
+				if (menu.getPageElements(i).isEmpty())
+					menu.removePage(i);
+			}
+			if (!itemsOnLastPage) p--;
+			//add quantity option toggle
+			int bottomY = Math.max(2, Math.min((int) Math.ceil(size() / 9.0) + 1, 6)) - 1;
 
 
-            for (int i = 1; i <= p; i++) {
-                MSpinnerIndex qcpy = spnQuantity.copy();
-                qcpy.setPosition(new SlotPos(8, bottomY));
-                menu.add(i, qcpy);
+			for (int i = 1; i <= p; i++) {
+				MSpinnerIndex qcpy = spnQuantity.copy();
+				qcpy.setPosition(new SlotPos(8, bottomY));
+				menu.add(i, qcpy);
 
-                //this button needs to be hidden (in bound renderer) then not admin/owner
-                MTranslatableButton bcpy = bnRemoveMode.copy();
-                bcpy.setPosition(new SlotPos(0, bottomY));
-                menu.add(i, bcpy);
-            }
-        }
-        menu.invalidate();
-    }
+				//this button needs to be hidden (in bound renderer) then not admin/owner
+				MTranslatableButton bcpy = bnRemoveMode.copy();
+				bcpy.setPosition(new SlotPos(0, bottomY));
+				menu.add(i, bcpy);
+			}
+		}
+		menu.invalidate();
+	}
 
-    public void updateStock(Inventory container) {
-        for (StockItem item : items) item.updateStock(container);
-        updateMenu(false);
-    }
+	public void updateStock(Inventory container) {
+		for (StockItem item : items) item.updateStock(container);
+		updateMenu(false);
+	}
 
-    final MSpinnerIndex spnQuantity = MSpinnerIndex.builder()
-            .setName("shop.quantity.name")
-            .addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_BLOCK, 64)), "shop.quantity.items.full")
-            .addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_INGOT, 32)), "shop.quantity.items.half")
-            .addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_INGOT, 16)), "shop.quantity.items.quarter")
-            .addValue(IIcon.of(ItemStack.of(ItemTypes.IRON_NUGGET, 1)), "shop.quantity.items.single")
-            .setOnChangeListener((oldValue, newValue, element, viewer) -> {
-                element.getParent()
-                        .getPlayerState(viewer).set(
-                        MShopSlot.MENU_SHOP_QUANTITY,
-                        QuantityValues.getNth(newValue));
-                //update button for all pages
-                for (int page = 1; page <= element.getParent().pages(); page++) {
-                    Optional<IElement> el = MenuUtil.getElementAt(element.getParent(), page, element.getPosition());
-                    el.ifPresent(e->{
-                        if (e instanceof MSpinnerIndex) {
-                            ((MSpinnerIndex) e).setSelectedIndex(newValue);
-                        }
-                    });
-                }
-            })
-            .build();
-    final MTranslatableButton bnRemoveMode = MTranslatableButton.builder()
-            .setName("shop.removemode.name")
-            .setLore(Arrays.asList("shop.removemode.lore1", "shop.removemode.lore2"))
-            .setOnClickListener((element, player, button, shift) -> {
-                StateObject menuState = element.getParent().getPlayerState(player);
-                IIcon newButtonIcon;
-                boolean inRemoveMode = menuState.getBoolean(MENU_REMOVEMODE).orElse(false);
-                if (inRemoveMode) {
-                    HashSet<Integer> indices = menuState.<HashSet<Integer>>get(MENU_REMOVESET).orElse(new HashSet<>());
-                    menuState.remove(MENU_REMOVEMODE);
-                    menuState.remove(MENU_REMOVESET);
+	public GuiRenderer createRenderer(Player source, @Nullable Text shopName, boolean administrativeInterface) {
+		int idealHeight = Math.max(2, Math.min((int) Math.ceil(size() / 9.0) + 1, 6)); // 2 - 6 rows
+		GuiRenderer renderer = (GuiRenderer) getMenu().createGuiRenderer(idealHeight, true);
+		renderer.getMenu().setTitle(Text.of(TextColors.DARK_AQUA,
+				((LocalizedText) VillagerShops.getTranslator().localText("shop.title"))
+						.replace("%name%", Text.of(TextColors.RESET, shopName == null ? Text.EMPTY : shopName))
+						.setContextColor(TextColors.DARK_AQUA)
+						.resolve(source).orElse(Text.of("[vShop] ", shopName == null ? Text.EMPTY : shopName))));
 
-                    newButtonIcon = IIcon.of(ItemTypes.BUCKET);
-                    UUID shopID = Utilities.getOpenShopFor(player);
-                    if (shopID == null) { //Error
-                        VillagerShops.l("Could not find open shop");
-                        RenderManager.getRenderFor(player).ifPresent(MenuRenderer::closeAll);
-                        return;
-                    }
+		//relink player state value to the spinner
+		IMenu minstance = renderer.getMenu();
+		SlotPos posBQ = new SlotPos(8, idealHeight - 1); //buy quantity spinner
+		SlotPos posRM = new SlotPos(0, idealHeight - 1); //remove button
+		int qsi = minstance.getPlayerState(source)
+				.getOfClass(MShopSlot.MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
+				.orElse(ConfigSettings.getShopsDefaultStackSize()).ordinal();
+		for (int i = 1; i <= minstance.pages(); i++) {
+			MenuUtil.getElementAt(minstance, i, posBQ).ifPresent(e -> {
+				if (e instanceof MSpinnerIndex) {
+					((MSpinnerIndex) e).setSelectedIndex(qsi);
+					e.invalidate();
+				}
+			});
+			if (!administrativeInterface) {
+				minstance.remove(i, posRM);
+			}
+		}
 
-                    if (!indices.isEmpty()) { //remove items
-                        IMenu menu = (element.getParent() instanceof BoundMenuImpl)
-                                ? ((BoundMenuImpl) element.getParent()).getBaseMenu()
-                                : element.getParent();
-                        RenderManager.getRenderFor(menu).forEach(MenuRenderer::closeAll);
+		renderer.setRenderListener(new OnRenderStateListener() {
+			@Override
+			public boolean closed(MenuRenderer render, IMenu menu, Player viewer) {
+				Utilities.actionUnstack.remove(viewer.getUniqueId());
+				Utilities._openShops_remove(viewer);
 
-                        TreeSet<Integer> sorted = new TreeSet<>(Comparator.reverseOrder());
-                        sorted.addAll(indices);
+				StateObject state = menu.getPlayerState(viewer);
+				state.remove(ShopMenuManager.MENU_REMOVEMODE);
+				state.remove(ShopMenuManager.MENU_REMOVESET);
+				return false;
+			}
+		});
+		return renderer;
+	}
 
-                        VillagerShops.audit("%s", Utilities.toString(player) +
-                                " deleted " + sorted.size() +
-                                " items from shop " +
-                                VillagerShops.getShopFromShopId(shopID)
-                                        .map(ShopEntity::toString)
-                                        .orElse("[" + shopID + "]") +
-                                ": " + indices.stream()
-                                        .map(i -> getItem(i).toString())
-                                        .collect(Collectors.joining(", ", "[ ", " ]"))
-                        );
+	public enum QuantityValues {
+		FULL(1f), HALF(0.5f), QUARTER(0.25f), SINGLE(0f);
 
-                        Iterator<Integer> ii = sorted.iterator();
-                        ii.forEachRemaining(this::removeIndex);
-                        VillagerShops.getInstance().markShopsDirty(player.getWorld().getUniqueId()); //save changes
+		private final float multiplier;
 
-                        Task.builder().name("Reopen Shop").delayTicks(2).execute(()->
-                                VillagerShops.getShopFromShopId(shopID)
-                                        .flatMap(ShopEntity::getEntityUniqueID)
-                                        .ifPresent(npc -> InteractionHandler.clickEntity(player, npc))
-                        ).submit(VillagerShops.getInstance());
+		QuantityValues(float stackSizeMultiplier) {
+			multiplier = stackSizeMultiplier;
+		}
 
-                        return;
-                    }
-                } else {
-                    menuState.set(MENU_REMOVEMODE, true);
-                    menuState.set(MENU_REMOVESET, new HashSet<Integer>());
-                    newButtonIcon = IIcon.of(ItemTypes.LAVA_BUCKET);
-                }
-                //update button for all pages
-                for (int page = 1; page <= element.getParent().pages(); page++) {
-                    Optional<IElement> el = MenuUtil.getElementAt(element.getParent(), page, element.getPosition());
-                    el.ifPresent(e->{
-                        if (e instanceof MTranslatableButton) {
-                            ((MTranslatableButton) e).setIcon(newButtonIcon);
-                            e.invalidate();
-                        }
-                    });
-                }
-            })
-            .setIcon(IIcon.of(ItemTypes.BUCKET))
-            .build();
+		/**
+		 * not-throw string parser with FULL fallback
+		 */
+		public static QuantityValues fromString(String s) {
+			for (QuantityValues v : values()) {
+				if (v.name().equalsIgnoreCase(s)) return v;
+			}
+			return FULL;
+		}
 
-    public GuiRenderer createRenderer(Player source, @Nullable Text shopName, boolean administrativeInterface) {
-        int idealHeight = Math.max(2, Math.min((int)Math.ceil(size()/9.0)+1, 6)); // 2 - 6 rows
-        GuiRenderer renderer = (GuiRenderer) getMenu().createGuiRenderer(idealHeight, true);
-        renderer.getMenu().setTitle(Text.of(TextColors.DARK_AQUA,
-                ((LocalizedText)VillagerShops.getTranslator().localText("shop.title"))
-                        .replace("%name%", Text.of(TextColors.RESET, shopName == null ? Text.EMPTY : shopName))
-                        .setContextColor(TextColors.DARK_AQUA)
-                        .resolve(source).orElse(Text.of("[vShop] ", shopName == null ? Text.EMPTY : shopName))));
+		public static QuantityValues getNth(int n) {
+			return values()[n];
+		}
 
-        //relink player state value to the spinner
-        IMenu minstance = renderer.getMenu();
-        SlotPos posBQ = new SlotPos(8,idealHeight-1); //buy quantity spinner
-        SlotPos posRM = new SlotPos(0,idealHeight-1); //remove button
-        int qsi = minstance.getPlayerState(source)
-                        .getOfClass(MShopSlot.MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
-                        .orElse(ConfigSettings.getShopsDefaultStackSize()).ordinal();
-        for (int i = 1; i <= minstance.pages(); i++) {
-            MenuUtil.getElementAt(minstance, i, posBQ).ifPresent(e -> {
-                if (e instanceof MSpinnerIndex) {
-                    ((MSpinnerIndex) e).setSelectedIndex(qsi);
-                    e.invalidate();
-                }
-            });
-            if (!administrativeInterface) {
-                minstance.remove(i, posRM);
-            }
-        }
+		public int getStackSize(ItemType type) {
+			return Math.max(1, (int) Math.ceil(type.getMaxStackQuantity() * multiplier));
+		}
 
-        renderer.setRenderListener(new OnRenderStateListener() {
-            @Override
-            public boolean closed(MenuRenderer render, IMenu menu, Player viewer) {
-                Utilities.actionUnstack.remove(viewer.getUniqueId());
-                Utilities._openShops_remove(viewer);
-
-                StateObject state = menu.getPlayerState(viewer);
-                state.remove(ShopMenuManager.MENU_REMOVEMODE);
-                state.remove(ShopMenuManager.MENU_REMOVESET);
-                return false;
-            }
-        });
-        return renderer;
-    }
+		public int getStackSize(PluginItemFilter filter) {
+			return Math.max(1, (int) Math.ceil(filter.getMaxStackSize() * multiplier));
+		}
+	}
 
 }

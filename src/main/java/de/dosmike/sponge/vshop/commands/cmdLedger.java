@@ -17,40 +17,40 @@ import org.spongepowered.api.text.Text;
 
 public class cmdLedger extends Command {
 
-    static CommandSpec getCommandSpec() {
-        return CommandSpec.builder()
-                .permission(PermissionRegistra.LEDGER_ME.getId())
-                .arguments(
-                        GenericArguments.flags().permissionFlag(PermissionRegistra.LEDGER_OTHERS.getId(), "t")
-                                .buildWith(GenericArguments.optional(
-                                        GenericArguments.user(Text.of("Target"))
-                                ))
-                ).executor(new cmdLedger()).build();
-    }
+	static CommandSpec getCommandSpec() {
+		return CommandSpec.builder()
+				.permission(PermissionRegistra.LEDGER_ME.getId())
+				.arguments(
+						GenericArguments.flags().permissionFlag(PermissionRegistra.LEDGER_OTHERS.getId(), "t")
+								.buildWith(GenericArguments.optional(
+										GenericArguments.user(Text.of("Target"))
+								))
+				).executor(new cmdLedger()).build();
+	}
 
-    @NotNull
-    @Override
-    public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
-        if (args.hasAny("Target") && args.hasAny("t")) {
-            throw new CommandException(localText("cmd.ledger.invalid").orLiteral(src));
-        } else if (!args.hasAny("Target") && !(src instanceof Player)) {
-            throw new CommandException(localText("cmd.missingargument").orLiteral(src));
-        } else {
-            User target;
-            if (src instanceof Player)
-                target = (User) args.getOne("Target").orElse(src);
-            else if (args.hasAny("Target"))
-                target = (User) args.getOne("Target").get();
-            else throw new CommandException(Text.of("No target console, shouldn't fail"));
-            src.sendMessage(Text.of("Searching Business Ledger, please wait.."));
-            LedgerManager.openLedgerFor(src, target);
-            if (src instanceof Player && ((Player) src).getUniqueId().equals(target.getUniqueId())) {
-                VillagerShops.audit("%s requested their business ledger", Utilities.toString(src));
-            } else {
-                VillagerShops.audit("%s requested the business ledger for %s", Utilities.toString(src), Utilities.toString(target));
-            }
-        }
-        return CommandResult.success();
-    }
+	@NotNull
+	@Override
+	public CommandResult execute(@NotNull CommandSource src, @NotNull CommandContext args) throws CommandException {
+		if (args.hasAny("Target") && args.hasAny("t")) {
+			throw new CommandException(localText("cmd.ledger.invalid").orLiteral(src));
+		} else if (!args.hasAny("Target") && !(src instanceof Player)) {
+			throw new CommandException(localText("cmd.missingargument").orLiteral(src));
+		} else {
+			User target;
+			if (src instanceof Player)
+				target = (User) args.getOne("Target").orElse(src);
+			else if (args.hasAny("Target"))
+				target = (User) args.getOne("Target").get();
+			else throw new CommandException(Text.of("No target console, shouldn't fail"));
+			src.sendMessage(Text.of("Searching Business Ledger, please wait.."));
+			LedgerManager.openLedgerFor(src, target);
+			if (src instanceof Player && ((Player) src).getUniqueId().equals(target.getUniqueId())) {
+				VillagerShops.audit("%s requested their business ledger", Utilities.toString(src));
+			} else {
+				VillagerShops.audit("%s requested the business ledger for %s", Utilities.toString(src), Utilities.toString(target));
+			}
+		}
+		return CommandResult.success();
+	}
 
 }
