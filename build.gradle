@@ -2,9 +2,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import de.dosmike.sponge.pluginpublisher.gradle.NotifyDiscordBotTask
 import de.dosmike.sponge.pluginpublisher.gradle.PublishToGitTask
 import de.dosmike.sponge.pluginpublisher.gradle.PublishToOreTask
-import de.dosmike.sponge.pluginpublisher.tasks.DiscordBotConfiguration
-import de.dosmike.sponge.pluginpublisher.tasks.GitConfiguration
-import de.dosmike.sponge.pluginpublisher.tasks.OreConfiguration
 import de.dosmike.sponge.pluginpublisher.tasks.TaskFunctors
 
 plugins {
@@ -13,7 +10,7 @@ plugins {
     id 'idea'
     id 'org.spongepowered.plugin' version '0.9.0'
     id 'com.github.johnrengelman.shadow' version '5.1.0'
-    id 'com.github.dosmike.PluginPublisher' version '1.2.2'
+    id 'com.github.dosmike.PluginPublisher' version '1.2.3'
 }
 group = 'com.github.dosmike'
 

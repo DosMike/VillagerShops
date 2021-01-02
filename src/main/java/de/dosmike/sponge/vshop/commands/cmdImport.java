@@ -4,7 +4,7 @@ import com.flowpowered.math.vector.Vector3d;
 import de.dosmike.sponge.vshop.PermissionRegistra;
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
-import de.dosmike.sponge.vshop.shops.FieldResolver;
+import de.dosmike.sponge.vshop.shops.FieldResolvers;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.api.command.CommandException;
@@ -83,17 +83,17 @@ public class cmdImport extends Command {
 
 		String skinVariant;
 		if (entity.getType().equals(EntityTypes.HORSE)) {
-			skinVariant = FieldResolver.HORSE_VARIANT.getVariant(entity);
+			skinVariant = FieldResolvers.HORSE_VARIANT.getVariant(entity);
 		} else if (entity.getType().equals(EntityTypes.LLAMA)) {
-			skinVariant = FieldResolver.LLAMA_VARIANT.getVariant(entity);
+			skinVariant = FieldResolvers.LLAMA_VARIANT.getVariant(entity);
 		} else if (entity.getType().equals(EntityTypes.OCELOT)) {
-			skinVariant = FieldResolver.OCELOT_VARIANT.getVariant(entity);
+			skinVariant = FieldResolvers.OCELOT_VARIANT.getVariant(entity);
 		} else if (entity.getType().equals(EntityTypes.PARROT)) {
-			skinVariant = FieldResolver.PARROT_VARIANT.getVariant(entity);
+			skinVariant = FieldResolvers.PARROT_VARIANT.getVariant(entity);
 		} else if (entity.getType().equals(EntityTypes.RABBIT)) {
-			skinVariant = FieldResolver.RABBIT_VARIANT.getVariant(entity);
+			skinVariant = FieldResolvers.RABBIT_VARIANT.getVariant(entity);
 		} else if (entity.getType().equals(EntityTypes.VILLAGER)) {
-			skinVariant = FieldResolver.VILLAGER_VARIANT.getVariant(entity);
+			skinVariant = FieldResolvers.VILLAGER_VARIANT.getVariant(entity);
 		} else {
 			skinVariant = "none";
 		}

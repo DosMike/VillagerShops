@@ -56,7 +56,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @SuppressWarnings("UnstableApiUsage")
-@Plugin(id = "vshop", name = "VillagerShops", version = "2.8.1")
+@Plugin(id = "vshop", name = "VillagerShops", version = "2.8.2")
 public class VillagerShops {
 
 	public static final Random rng = new Random(System.currentTimeMillis());

@@ -155,19 +155,19 @@ public class ShopEntity {
 			if (magicVariant.equalsIgnoreCase("none")) {
 				variant = null;
 			} else if (npcType.equals(EntityTypes.HUMAN)) {
-				variant = FieldResolver.PLAYER_SKIN.validate(magicVariant);
+				variant = FieldResolvers.PLAYER_SKIN.validate(magicVariant);
 			} else if (npcType.equals(EntityTypes.HORSE)) {
-				variant = FieldResolver.HORSE_VARIANT.validate(magicVariant);
+				variant = FieldResolvers.HORSE_VARIANT.validate(magicVariant);
 			} else if (npcType.equals(EntityTypes.OCELOT)) {
-				variant = FieldResolver.OCELOT_VARIANT.validate(magicVariant);
+				variant = FieldResolvers.OCELOT_VARIANT.validate(magicVariant);
 			} else if (npcType.equals(EntityTypes.VILLAGER)) {
-				variant = FieldResolver.VILLAGER_VARIANT.validate(magicVariant);
+				variant = FieldResolvers.VILLAGER_VARIANT.validate(magicVariant);
 			} else if (npcType.equals(EntityTypes.LLAMA)) {
-				variant = FieldResolver.LLAMA_VARIANT.validate(magicVariant);
+				variant = FieldResolvers.LLAMA_VARIANT.validate(magicVariant);
 			} else if (npcType.equals(EntityTypes.RABBIT)) {
-				variant = FieldResolver.RABBIT_VARIANT.validate(magicVariant);
+				variant = FieldResolvers.RABBIT_VARIANT.validate(magicVariant);
 			} else if (npcType.equals(EntityTypes.PARROT)) {
-				variant = FieldResolver.PARROT_VARIANT.validate(magicVariant);
+				variant = FieldResolvers.PARROT_VARIANT.validate(magicVariant);
 			} else {
 				variantName = "NONE";
 				variant = null;
