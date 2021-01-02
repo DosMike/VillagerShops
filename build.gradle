@@ -1,4 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import de.dosmike.sponge.pluginpublisher.gradle.NotifyDiscordBotTask
+import de.dosmike.sponge.pluginpublisher.gradle.PublishToGitTask
+import de.dosmike.sponge.pluginpublisher.gradle.PublishToOreTask
 import de.dosmike.sponge.pluginpublisher.tasks.DiscordBotConfiguration
 import de.dosmike.sponge.pluginpublisher.tasks.GitConfiguration
 import de.dosmike.sponge.pluginpublisher.tasks.OreConfiguration
@@ -10,7 +13,7 @@ plugins {
     id 'idea'
     id 'org.spongepowered.plugin' version '0.9.0'
     id 'com.github.johnrengelman.shadow' version '5.1.0'
-    id 'com.github.dosmike.PluginPublisher' version '1.2.1'
+    id 'com.github.dosmike.PluginPublisher' version '1.2.2'
 }
 group = 'com.github.dosmike'
 
@@ -130,10 +133,10 @@ task zReleaseZip(type: Zip, group:'_Plugin', dependsOn: uberJar) {
         into 'mods'
     }
 }
-
-task zPublish(group:'_Plugin', dependsOn:zReleaseZip) {
+task z_Publish(group:'_Plugin', dependsOn:zReleaseZip) {
     def keyfile = file('..\\PluginPublisher\\.apikeys')
     onlyIf { keyfile.exists() }
+    outputs.upToDateWhen {false}
     def props, versionDesc
     doFirst {
         props = new Properties()
@@ -141,39 +144,38 @@ task zPublish(group:'_Plugin', dependsOn:zReleaseZip) {
             props.load(it)
         }
         //show an input prompt
-        versionDesc = TaskFunctors.validateReleaseDescription(null, false);
+        versionDesc = TaskFunctors.validateReleaseDescription(null, false)
     }
     doLast {
-        TaskFunctors.runGitTask(new GitConfiguration(
-                apiKey: props.getProperty('gitkey'),
-                slug: 'DosMike/VillagerShops',
-                tag: version,
-                tagFull: "Release Build ${version}",
-                assets: zReleaseZip.outputs.files,
-                description: versionDesc
-        ), { -> files(it).files } )
-    }
+        project.zPub_Git.apiKey.set    ( props.getProperty('gitkey') )
+        project.zPub_Ore.apiKey.set    ( props.getProperty('orekey') )
+        project.zPub_Discord.apiKey.set( props.getProperty('discordkey') )
 
-    doLast {
-        TaskFunctors.runOreTask(new OreConfiguration(
-                apiKey: props.getProperty('orekey'),
-                project: 'DosMike/VillagerShops',
-                asset: uberJar.outputs.files,
-                description: versionDesc
-        ), { -> files(it).files } )
-    }
-
-    doLast {
-        TaskFunctors.runDiscordTask(new DiscordBotConfiguration(
-                apiKey: props.getProperty('discordkey'),
-                server: '342942444288999435',
-                channel: '352760019873169408',
-                header: "<@&644225680833249320> Version ${version} released on Ore and GitHub",
-                description: versionDesc
-        ))
-        TaskFunctors.terminateJDA()
+        project.zPub_Git.messageBody.set    ( versionDesc )
+        project.zPub_Ore.messageBody.set    ( versionDesc )
+        project.zPub_Discord.messageBody.set( versionDesc )
     }
 }
+task zPub_Git(type: PublishToGitTask, group:'_Plugin', dependsOn: z_Publish) {
+    gitSlug.set     ( 'DosMike/VillagerShops' )
+    versionTag.set  ( project.version.toString() )
+    versionName.set ( "Release Build ${project.version}" )
+    uploadAssets.set( zReleaseZip.outputs.files )
+}
+task zPub_Ore(type: PublishToOreTask, group:'_Plugin', dependsOn: z_Publish) {
+    projectId.set  ( pluginid.toString() )
+    channel.set    ( 'Release' )
+    uploadAsset.set( jar.outputs.files )
+}
+task zPub_Discord(type: NotifyDiscordBotTask, group:'_Plugin', dependsOn: z_Publish) {
+    guildId.set      ( '342942444288999435' )
+    channelId.set    ( '773123356722462752' )
+    messageHeader.set( "<@&794978576256335883> Version ${version} released on Ore and GitHub" )
+    finalizedBy(TerminateDiscordBot)
+}
+z_Publish.finalizedBy(zPub_Git)
+zPub_Git.finalizedBy(zPub_Ore)
+zPub_Ore.finalizedBy(zPub_Discord)
 
 //for generating the jar
 jar {
