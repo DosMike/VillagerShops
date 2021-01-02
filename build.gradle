@@ -166,8 +166,8 @@ task zPub_Ore(type: PublishToOreTask, group:'_Plugin', dependsOn: z_Publish) {
 }
 task zPub_Discord(type: NotifyDiscordBotTask, group:'_Plugin', dependsOn: z_Publish) {
     guildId.set      ( '342942444288999435' )
-    channelId.set    ( '773123356722462752' )
-    messageHeader.set( "<@&794978576256335883> Version ${version} released on Ore and GitHub" )
+    channelId.set    ( '773123574907011073' )
+    messageHeader.set( "<@&644225680833249320> Version ${version} released on Ore and GitHub" )
     finalizedBy(TerminateDiscordBot)
 }
 z_Publish.finalizedBy(zPub_Git)
