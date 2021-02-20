@@ -70,8 +70,14 @@ public class ShopEntity {
 	}
 
 	public void setLocation(Location<World> location) {
+		UUID oldExtent = this.location == null ? null : this.location.getExtent().getUniqueId();
+		UUID newExtent = location.getExtent().getUniqueId();
+
 		this.location = Utilities.centerOnBlock(location);
-		VillagerShops.getInstance().markShopsDirty(this);
+
+		if (oldExtent != null && !oldExtent.equals(newExtent))
+			VillagerShops.getInstance().markShopsDirty(oldExtent);
+		VillagerShops.getInstance().markShopsDirty(newExtent);
 	}
 
 	/**
@@ -86,10 +92,16 @@ public class ShopEntity {
 			if (!chunk.loadChunk(false))
 				throw new RuntimeException("Unable to load chunk for shop to remove old entity");
 		}
+		UUID oldExtent = location == null ? null : location.getExtent().getUniqueId();
+		UUID newExtent = newLocation.getExtent().getUniqueId();
+
 		Location<World> targetLocation = Utilities.centerOnBlock(newLocation);
 		getEntity().ifPresent(le -> le.setLocation(targetLocation));
 		location = targetLocation;
-		VillagerShops.getInstance().markShopsDirty(this);
+
+		if (oldExtent != null && !oldExtent.equals(newExtent))
+			VillagerShops.getInstance().markShopsDirty(oldExtent);
+		VillagerShops.getInstance().markShopsDirty(newExtent);
 	}
 
 	public Vector3d getRotation() {
