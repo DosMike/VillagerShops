@@ -4,6 +4,7 @@ import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.integrations.toomuchstock.Preview;
 import de.dosmike.sponge.vshop.systems.ShopType;
+import de.dosmike.sponge.vshop.systems.pluginfilter.FilterResolutionException;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.EntityTypes;
@@ -53,7 +54,7 @@ public class Purchase {
 	 * @param quantity the amount of items supposed to take, overriding the default in item
 	 * @return the ItemStacks taken from the inventory
 	 */
-	private Set<ItemStack> getFrom(Inventory inv, int quantity) {
+	private Set<ItemStack> getFrom(Inventory inv, int quantity) throws FilterResolutionException {
 		int ammountLeft = quantity;
 		Set<ItemStack> stacks = new HashSet<>();
 		Inventory result = stockItem.filterInventory(inv);
@@ -78,7 +79,7 @@ public class Purchase {
 		return stacks;
 	}
 
-	public Result buy(int maxAmount) {
+	public Result buy(int maxAmount) throws FilterResolutionException {
 
 		Inventory playerInv = player.getInventory()
 				.query(QueryOperationTypes.INVENTORY_TYPE.of(MainPlayerInventory.class))
@@ -153,7 +154,7 @@ public class Purchase {
 		return Result.OK(amount, price);
 	}
 
-	public Result sell(int maxAmount) {
+	public Result sell(int maxAmount) throws FilterResolutionException {
 
 		Inventory playerInv = player.getInventory()
 				.query(QueryOperationTypes.INVENTORY_TYPE.of(MainPlayerInventory.class))

@@ -3,6 +3,7 @@ package de.dosmike.sponge.vshop;
 import com.flowpowered.math.TrigMath;
 import com.flowpowered.math.vector.Vector3d;
 import de.dosmike.sponge.megamenus.impl.RenderManager;
+import de.dosmike.sponge.vshop.systems.pluginfilter.FilterResolutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.Sponge;
@@ -56,7 +57,13 @@ public class Utilities {
 		Set<UUID> prefilteredShops = openShops.values().stream()
 				.unordered().distinct()
 				.filter(uuid -> VillagerShops.getShopFromShopId(uuid)
-						.map(se -> se.getMenu().getAllItems().stream().anyMatch(si -> si.test(withItem)))
+						.map(se -> se.getMenu().getAllItems().stream().anyMatch(si -> {
+							try {
+								return si.test(withItem);
+							} catch (FilterResolutionException e) {
+								return false;
+							}
+						}))
 						.isPresent())
 				.collect(Collectors.toSet());
 		openShops.entrySet().stream()

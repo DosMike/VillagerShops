@@ -13,10 +13,14 @@ import de.dosmike.sponge.vshop.shops.InteractionHandler;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.shops.StockItem;
 import de.dosmike.sponge.vshop.systems.ShopType;
+import de.dosmike.sponge.vshop.systems.pluginfilter.FilterResolutionException;
 import org.apache.commons.lang3.NotImplementedException;
+import org.spongepowered.api.GameDictionary;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.text.Text;
@@ -65,20 +69,27 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
 		ShopEntity shop = VillagerShops.getShopFromShopId(shopIdBackRef).orElse(null);
 		if (shop == null) return;
 
-		ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(player).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
-				.orElse(ConfigSettings.getShopsDefaultStackSize());
-		int quantity;
-		ShopType shopType = ShopType.fromInstance(shop);
-		if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
-			quantity = stockItem.getPluginFilter().map(quantityValues::getStackSize)
-					.orElseGet(() -> quantityValues.getStackSize(stockItem.getItem(shopType).getType()));
-		} else {
-			quantity = quantityValues.getStackSize(stockItem.getItem(shopType).getType());
-		}
+		try {
+			ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(player).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
+					.orElse(ConfigSettings.getShopsDefaultStackSize());
+			int quantity;
+			ShopType shopType = ShopType.fromInstance(shop);
+			if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
+				ItemType itemType = stockItem.getItem(shopType).getType();
+				quantity = stockItem.getPluginFilter().map(quantityValues::getStackSize)
+						.orElseGet(() -> quantityValues.getStackSize(itemType));
+			} else {
+				quantity = quantityValues.getStackSize(stockItem.getItem(shopType).getType());
+			}
 
-		int change = InteractionHandler.shopItemClicked(player, shop, stockItem, doBuy, quantity);
-		if (change > 0 && stockItem.getMaxStock() > 0) {
-			shop.getStockInventory().ifPresent(stockItem::updateStock);
+			int change = InteractionHandler.shopItemClicked(player, shop, stockItem, doBuy, quantity);
+			if (change > 0 && stockItem.getMaxStock() > 0) {
+				Optional<Inventory> stock = shop.getStockInventory();
+				if (stock.isPresent()) stockItem.updateStock(stock.get());
+			}
+		} catch (FilterResolutionException e) {
+			VillagerShops.w("%s",e.getMessage());
+			removeFromShop();
 		}
 		element.invalidate();
 	};
@@ -113,7 +124,7 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
 		return copy;
 	}
 
-	private ItemStackSnapshot _getDisplayItem(Player viewer) {
+	private ItemStackSnapshot _getDisplayItem() throws FilterResolutionException {
 		ItemStackSnapshot displayItem = null;
 		{
 			if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
@@ -134,27 +145,36 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
 		if (markedForRemoval)
 			return removeMeIcon;
 
-		ItemStack displayItem = _getDisplayItem(viewer).createStack();
-
-		ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
-				.orElse(ConfigSettings.getShopsDefaultStackSize());
+		ItemStack displayItem;
 		int quantity;
-		if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
-			quantity = stockItem.getPluginFilter().map(quantityValues::getStackSize)
-					.orElse(quantityValues.getStackSize(displayItem.getType()));
-		} else {
-			quantity = quantityValues.getStackSize(displayItem.getType());
+		try {
+			displayItem = _getDisplayItem().createStack();
+
+			ShopMenuManager.QuantityValues quantityValues = getParent().getPlayerState(viewer).getOfClass(MENU_SHOP_QUANTITY, ShopMenuManager.QuantityValues.class)
+					.orElse(ConfigSettings.getShopsDefaultStackSize());
+
+			if (stockItem.getNbtFilter().equals(StockItem.FilterOptions.PLUGIN)) {
+				quantity = stockItem.getPluginFilter().map(quantityValues::getStackSize)
+						.orElse(quantityValues.getStackSize(displayItem.getType()));
+			} else {
+				quantity = quantityValues.getStackSize(displayItem.getType());
+			}
+		} catch (FilterResolutionException e) {
+			VillagerShops.w("%s", e.getMessage());
+			removeFromShop();
+			return IIcon.of(ItemStack.builder().itemType(ItemTypes.BARRIER).build());
 		}
 
 		if (icon == null || icon.render().getQuantity() != quantity) {
 			//rebuild icon only if necessary, otherwise the animation
 			// of the iicon will reset (and resources)
-			if (stockItem.getFilterNameExtra().isPresent()) {
-				icon = IIcon.builder().addFrameItemStacks(
-						stockItem.getAllOreDictEntries().stream()
-								.map(e -> ItemStack.builder().fromSnapshot(e.getTemplate()).quantity(quantity).build())
-								.collect(Collectors.toList())
-				).setFPS(1d).build();
+			if (stockItem.getFilterNameExtra().isPresent() && stockItem.getNbtFilter().equals(StockItem.FilterOptions.OREDICT)) {
+				List<ItemStack> frames = new LinkedList<>();
+				for (GameDictionary.Entry dicted : stockItem.getAllOreDictEntries())
+					frames.add(ItemStack.builder().fromSnapshot(dicted.getTemplate()).quantity(quantity).build());
+				if (frames.isEmpty())
+					frames.add(ItemStack.builder().from(displayItem).quantity(quantity).build());
+				icon = IIcon.builder().addFrameItemStacks(frames).setFPS(1d).build();
 			} else {
 				displayItem.setQuantity(quantity);
 				icon = IIcon.of(displayItem);
@@ -167,10 +187,14 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
 	public Text getName(Player viewer) {
 		//marked for removal replaces the icon with barrier, this we need to supply a custom name to not display "Barrier"
 		if (markedForRemoval) {
-			ItemStackSnapshot displayItem = _getDisplayItem(viewer);
-			return displayItem.get(Keys.DISPLAY_NAME).orElse(
-					Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(viewer)))
-			);
+			try {
+				ItemStackSnapshot displayItem = _getDisplayItem();
+				return displayItem.get(Keys.DISPLAY_NAME).orElse(
+						Text.of(displayItem.getType().getTranslation().get(Utilities.playerLocale(viewer)))
+				);
+			} catch (FilterResolutionException e) {
+				return Text.of(TextColors.RED, "Invalid");
+			}
 		} else {
 			return null;
 		}
@@ -186,7 +210,12 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
 					)
 			);
 		}
-		ItemStackSnapshot item = _getDisplayItem(viewer);
+		ItemStackSnapshot item;
+		try {
+			item = _getDisplayItem();
+		} catch (FilterResolutionException e) {
+			item = ItemStack.builder().itemType(ItemTypes.BARRIER).build().createSnapshot();
+		}
 		List<Text> lore = item.get(Keys.ITEM_LORE).orElse(new LinkedList<>());
 
 		Text currency = stockItem.getCurrency().getSymbol();
@@ -284,6 +313,15 @@ public final class MShopSlot extends IElementImpl implements IClickable<MShopSlo
 		}
 
 		return lore;
+	}
+
+	private void removeFromShop() {
+		VillagerShops.getShopFromShopId(shopIdBackRef).ifPresent(shop->{
+			if (shop.getMenu().items.remove(stockItem)) {
+				VillagerShops.closeShopInventories(shopIdBackRef);
+				VillagerShops.getInstance().markShopsDirty(shop);
+			};
+		});
 	}
 
 }
