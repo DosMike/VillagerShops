@@ -1,4 +1,4 @@
-package de.dosmike.sponge.vshop.systems;
+package de.dosmike.sponge.vshop.systems.pluginfilter;
 
 import de.dosmike.sponge.vshop.VillagerShops;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +29,8 @@ public class PluginItemServiceImpl implements PluginItemService {
 	}
 
 	public static Optional<String> getFilterID(PluginItemFilter filter) {
+		if (filter instanceof DummyItemFilter)
+			return Optional.of(((DummyItemFilter) filter).itemId);
 		return registry.entrySet().stream()
 				.filter(e -> e.getValue().equals(filter))
 				.map(Map.Entry::getKey)
@@ -48,8 +50,10 @@ public class PluginItemServiceImpl implements PluginItemService {
 		pluginItemId = pluginItemId.toLowerCase();
 		if (Sponge.getRegistry().getType(ItemType.class, pluginItemId).isPresent())
 			VillagerShops.w("PluginItemId %s is ItemType ID. This is probably incorrect.", pluginItemId);
-		if (registry.containsKey(pluginItemId))
-			throw new IllegalStateException("Tried to register " + pluginItemId + " twice");
+		if (registry.containsKey(pluginItemId)) {
+			VillagerShops.w("Tried to register %s twice", pluginItemId);
+			return;
+		}
 		if (filter.enforce())
 			enforcedFilters.add(filter);
 		registry.put(pluginItemId, filter);

@@ -1,6 +1,6 @@
 package de.dosmike.sponge.vshop.integrations.crateplugins;
 
-import de.dosmike.sponge.vshop.systems.PluginItemService;
+import de.dosmike.sponge.vshop.systems.pluginfilter.PluginItemService;
 import org.spongepowered.api.GameState;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
@@ -28,12 +28,12 @@ public interface KeysFilterProvider {
 
 		Set<KeysFilterProvider> kfp = new HashSet<>();
 
-//        try {
-//            Class.forName("Husky Crates main class");
-//            kfp.add(new HuskyCrateKeys());
-//        } catch (Throwable dependencyError) {
-//
-//        }
+        try {
+            Class.forName("com.codehusky.huskycrates.HuskyCrates");
+            kfp.add(new HuskyCrateKeys());
+        } catch (Throwable dependencyError) {
+
+        }
 
 		return kfp;
 	}

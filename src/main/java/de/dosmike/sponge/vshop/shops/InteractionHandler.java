@@ -6,6 +6,7 @@ import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.menus.MShopSlot;
 import de.dosmike.sponge.vshop.systems.LedgerManager;
 import de.dosmike.sponge.vshop.systems.ShopType;
+import de.dosmike.sponge.vshop.systems.pluginfilter.FilterResolutionException;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
@@ -50,7 +51,7 @@ public class InteractionHandler {
 	 * @param shop   is required by the calling method, and thus is passed to prevent double lookup
 	 * @param amount is no longer related to the stack size added, but a menu state value
 	 */
-	public static int shopItemClicked(Player player, ShopEntity shop, StockItem item, boolean doBuy, int amount) {
+	public static int shopItemClicked(Player player, ShopEntity shop, StockItem item, boolean doBuy, int amount) throws FilterResolutionException {
 		Optional<UniqueAccount> customerAccount = VillagerShops.getEconomy().getOrCreateAccount(player.getUniqueId());
 		if (!customerAccount.isPresent()) return 0;
 		Optional<UUID> shopOwnerId = shop.getShopOwner();

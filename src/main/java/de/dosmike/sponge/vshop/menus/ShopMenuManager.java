@@ -18,7 +18,8 @@ import de.dosmike.sponge.vshop.VillagerShops;
 import de.dosmike.sponge.vshop.shops.InteractionHandler;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.shops.StockItem;
-import de.dosmike.sponge.vshop.systems.PluginItemFilter;
+import de.dosmike.sponge.vshop.systems.pluginfilter.FilterResolutionException;
+import de.dosmike.sponge.vshop.systems.pluginfilter.PluginItemFilter;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemType;
@@ -233,8 +234,20 @@ public class ShopMenuManager {
 	}
 
 	public void updateStock(Inventory container) {
-		for (StockItem item : items) item.updateStock(container);
-		updateMenu(false);
+		List<StockItem> invalidated = new LinkedList<>();
+		for (StockItem item : items) try {
+			item.updateStock(container);
+		} catch (FilterResolutionException e) {
+			VillagerShops.w("%s", e.getMessage());
+			invalidated.add(item);
+		}
+		if (invalidated.isEmpty())
+			updateMenu(false);
+		else {
+			items.removeAll(invalidated);
+			updateMenu(true);
+			VillagerShops.getInstance().markShopsDirty(shopRef);
+		}
 	}
 
 	public GuiRenderer createRenderer(Player source, @Nullable Text shopName, boolean administrativeInterface) {

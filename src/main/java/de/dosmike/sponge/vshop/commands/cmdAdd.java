@@ -7,8 +7,9 @@ import de.dosmike.sponge.vshop.menus.ShopMenuManager;
 import de.dosmike.sponge.vshop.shops.ShopEntity;
 import de.dosmike.sponge.vshop.shops.StockItem;
 import de.dosmike.sponge.vshop.systems.GameDictHelper;
-import de.dosmike.sponge.vshop.systems.PluginItemFilter;
-import de.dosmike.sponge.vshop.systems.PluginItemServiceImpl;
+import de.dosmike.sponge.vshop.systems.pluginfilter.FilterResolutionException;
+import de.dosmike.sponge.vshop.systems.pluginfilter.PluginItemFilter;
+import de.dosmike.sponge.vshop.systems.pluginfilter.PluginItemServiceImpl;
 import de.dosmike.sponge.vshop.systems.ShopType;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.api.command.CommandException;
@@ -89,6 +90,13 @@ public class cmdAdd extends Command {
 	private static void _addItemToShop(CommandSource player, UUID shopid, StockItem item, int position) {
 		Optional<ShopEntity> shopEntity = VillagerShops.getShopFromShopId(shopid);
 		if (!shopEntity.isPresent()) return; //shop is gone
+		ItemStackSnapshot displayItem;
+		try {
+			displayItem = item.getItem(ShopType.fromInstance(shopEntity.get()));
+		} catch (FilterResolutionException e) {
+			VillagerShops.w("%s", e.getMessage());
+			return;
+		}
 
 		VillagerShops.closeShopInventories(shopEntity.get().getIdentifier()); //so players are forced to update
 		VillagerShops.getInstance().markShopsDirty(shopEntity.get()); //save changes
@@ -100,7 +108,6 @@ public class cmdAdd extends Command {
 			auditOverwrite = menu.getItem(position).toString();
 			menu.setItem(position, item);
 		}
-		ItemStackSnapshot displayItem = item.getItem(ShopType.fromInstance(shopEntity.get()));
 		player.sendMessage(Text.of(
 				TextColors.GREEN, "[vShop] ",
 				localText(position < 0 ? "cmd.add.success" : "cmd.add.replaced")
@@ -199,7 +206,6 @@ public class cmdAdd extends Command {
 		if (pluginItemFilter == null && args.hasAny("filter")) {
 			String filterName = args.<String>getOne("filter").get();
 			if (filterName.indexOf(':') >= 0) {
-				nbtfilter = StockItem.FilterOptions.PLUGIN;
 				if (!PluginItemServiceImpl.getItemFilter(filterName).isPresent())
 					throw new CommandException(Text.of(TextColors.RED, "Unknown Plugin Item - This should not be selectable?"));
 
@@ -210,6 +216,7 @@ public class cmdAdd extends Command {
 									.replace("%filter%", filterName)
 									.orLiteral(player)));
 
+				nbtfilter = StockItem.FilterOptions.PLUGIN;
 				pluginItemFilter = pif.get();
 			} else {
 				nbtfilter = StockItem.FilterOptions.valueOf(filterName);
@@ -221,6 +228,9 @@ public class cmdAdd extends Command {
 			}
 		} else if (pluginItemFilter != null) {
 			nbtfilter = StockItem.FilterOptions.PLUGIN;
+		}
+		if (pluginItemFilter == null && nbtfilter.equals(StockItem.FilterOptions.PLUGIN)) {
+			throw new CommandException(Text.of(TextColors.RED, "[vShop] FailState: Plugin Item-Filter was null?"));
 		}
 
 		StockItem newItem;

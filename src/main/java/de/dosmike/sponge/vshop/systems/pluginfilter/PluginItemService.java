@@ -1,4 +1,4 @@
-package de.dosmike.sponge.vshop.systems;
+package de.dosmike.sponge.vshop.systems.pluginfilter;
 
 import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;

@@ -2,7 +2,13 @@ package de.dosmike.sponge.vshop.shops;
 
 import de.dosmike.sponge.vshop.Utilities;
 import de.dosmike.sponge.vshop.VillagerShops;
-import de.dosmike.sponge.vshop.systems.*;
+import de.dosmike.sponge.vshop.systems.GameDictHelper;
+import de.dosmike.sponge.vshop.systems.ItemNBTCleaner;
+import de.dosmike.sponge.vshop.systems.ShopType;
+import de.dosmike.sponge.vshop.systems.pluginfilter.DummyItemFilter;
+import de.dosmike.sponge.vshop.systems.pluginfilter.FilterResolutionException;
+import de.dosmike.sponge.vshop.systems.pluginfilter.PluginItemFilter;
+import de.dosmike.sponge.vshop.systems.pluginfilter.PluginItemServiceImpl;
 import org.spongepowered.api.GameDictionary;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
@@ -83,11 +89,17 @@ public class StockItem {
 		if (buyfor != null && buyfor >= 0) this.buyprice = buyfor;
 		this.currency = currency;
 		this.maxStock = stockLimit;
-		this.nbtfilter = FilterOptions.OREDICT;
+		this.nbtfilter = FilterOptions.PLUGIN;
 	}
 
 	public List<GameDictionary.Entry> getAllOreDictEntries() {
 		return oreDictEntries;
+	}
+	private PluginItemFilter resolveFilter() throws FilterResolutionException {
+		if (pluginFilter instanceof DummyItemFilter) {
+			pluginFilter = ((DummyItemFilter) pluginFilter).get();
+		}
+		return pluginFilter;
 	}
 
 	/**
@@ -95,9 +107,9 @@ public class StockItem {
 	 *
 	 * @return itemstack for display and value extraction. To actually create items for the user, use createItem()
 	 */
-	public ItemStackSnapshot getItem(ShopType shopType) {
+	public ItemStackSnapshot getItem(ShopType shopType) throws FilterResolutionException {
 		if (pluginFilter != null) {
-			return pluginFilter.getDisplayItem(shopType).orElseGet(() -> item);
+			return resolveFilter().getDisplayItem(shopType).orElseGet(() -> item);
 		} else {
 			return item;
 		}
@@ -108,13 +120,13 @@ public class StockItem {
 	 * @param shopType carry information on whether this item is listed in an admin shop
 	 * @return a brand new item stack for the player with up to amount items
 	 */
-	public ItemStack createItem(int amount, ShopType shopType) {
+	public ItemStack createItem(int amount, ShopType shopType) throws FilterResolutionException {
 		if (pluginFilter == null) {
 			ItemStack amountCopy = item.createStack();
 			amountCopy.setQuantity(amount);
 			return amountCopy;
 		} else {
-			ItemStack amountCopy = pluginFilter.supply(amount, shopType);
+			ItemStack amountCopy = resolveFilter().supply(amount, shopType);
 			if (amountCopy == null) {
 				VillagerShops.audit("The item %s did not hand any items to the player! ", filterNameExtra);
 				VillagerShops.critical("The item %s did not hand any items to the player! ", filterNameExtra);
@@ -154,8 +166,8 @@ public class StockItem {
 		return Optional.ofNullable(filterNameExtra);
 	}
 
-	public Optional<PluginItemFilter> getPluginFilter() {
-		return Optional.ofNullable(pluginFilter);
+	public Optional<PluginItemFilter> getPluginFilter() throws FilterResolutionException {
+		return Optional.ofNullable(resolveFilter());
 	}
 
 	/**
@@ -180,7 +192,7 @@ public class StockItem {
 		return maxStock > 0 ? stocked : item.getQuantity();
 	}
 
-	public void updateStock(Inventory container) {
+	public void updateStock(Inventory container) throws FilterResolutionException {
 		Inventory result = filterInventory(container);
 		int count = 0;
 		for (Inventory s : result.slots()) count += s.totalItems();
@@ -203,8 +215,8 @@ public class StockItem {
 		);
 	}
 
-	public Purchase.Result buy(Player player, ShopEntity shop, int amount) {
-		if (getPluginFilter().map(pif -> pif.supportShopType(ShopType.fromInstance(shop))).orElse(false))
+	public Purchase.Result buy(Player player, ShopEntity shop, int amount) throws FilterResolutionException {
+		if (!getPluginFilter().map(pif -> pif.supportShopType(ShopType.fromInstance(shop))).orElse(true))
 			return Purchase.Result.INCOMPATIBLE_SHOPTYPE;
 		try {
 			return new Purchase(this, player, shop).buy(amount);
@@ -213,8 +225,8 @@ public class StockItem {
 		}
 	}
 
-	public Purchase.Result sell(Player player, ShopEntity shop, int amount) {
-		if (getPluginFilter().map(pif -> pif.supportShopType(ShopType.fromInstance(shop))).orElse(false))
+	public Purchase.Result sell(Player player, ShopEntity shop, int amount) throws FilterResolutionException {
+		if (!getPluginFilter().map(pif -> pif.supportShopType(ShopType.fromInstance(shop))).orElse(true))
 			return Purchase.Result.INCOMPATIBLE_SHOPTYPE;
 		try {
 			return new Purchase(this, player, shop).sell(amount);
@@ -226,7 +238,7 @@ public class StockItem {
 	/**
 	 * filter some inventory for the items represented by this StockItem
 	 */
-	public Inventory filterInventory(Inventory inv) {
+	public Inventory filterInventory(Inventory inv) throws FilterResolutionException {
 		Inventory filtered;
 		final ItemStack TEMPLATE = ItemNBTCleaner.filter(item.createStack());
 		switch (nbtfilter) {
@@ -253,6 +265,7 @@ public class StockItem {
 				break;
 			}
 			case PLUGIN: {
+				resolveFilter();
 				filtered = inv.query(QueryOperationTypes.ITEM_STACK_CUSTOM.of(item ->
 						pluginFilter.isItem(ItemNBTCleaner.filter(item)))
 				);
@@ -284,7 +297,7 @@ public class StockItem {
 	 * @param other the ItemStack to test
 	 * @return true if this stock item would trade the given stack
 	 */
-	public boolean test(ItemStack other) {
+	public boolean test(ItemStack other) throws FilterResolutionException {
 		final ItemStack TEMPLATE = ItemNBTCleaner.filter(item.createStack());
 		switch (nbtfilter) {
 			case IGNORE_NBT: {
@@ -303,7 +316,7 @@ public class StockItem {
 				return oreDictEntries.stream().anyMatch(e -> e.matches(other));
 			}
 			case PLUGIN: {
-				return pluginFilter.isItem(ItemNBTCleaner.filter(other));
+				return resolveFilter().isItem(ItemNBTCleaner.filter(other));
 			}
 			case TYPE_ONLY: {
 				ItemType type = item.getType();
@@ -324,7 +337,7 @@ public class StockItem {
 	 * it is only now, that I realize a inventory.tryOffer(ItemStack) or inventory.capacityFor(ItemStack) would be nice
 	 * count for each slot, how many of the item it could accept
 	 */
-	public int invSpace(Inventory inventory) {
+	public int invSpace(Inventory inventory) throws FilterResolutionException {
 		int maxStack = getPluginFilter().map(PluginItemFilter::getMaxStackSize).orElse(item.createStack().getMaxStackQuantity());
 		int space = 0, c;
 		Inventory result = filterInventory(inventory);
@@ -340,7 +353,7 @@ public class StockItem {
 	/**
 	 * figure out how much of item the inventory can supply
 	 */
-	public int invSupply(Inventory inventory) {
+	public int invSupply(Inventory inventory) throws FilterResolutionException {
 		return filterInventory(inventory).totalItems();
 	}
 

@@ -2,8 +2,10 @@ package de.dosmike.sponge.vshop.integrations.crateplugins;
 
 import com.codehusky.huskycrates.HuskyCrates;
 import com.codehusky.huskycrates.crate.virtual.Key;
-import de.dosmike.sponge.vshop.systems.PluginItemFilter;
+import de.dosmike.sponge.vshop.VillagerShops;
+import de.dosmike.sponge.vshop.systems.pluginfilter.PluginItemFilter;
 import de.dosmike.sponge.vshop.systems.ShopType;
+import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 
@@ -11,6 +13,14 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public class HuskyCrateKeyFilter implements PluginItemFilter {
+
+	private static long lastUpdate = 0L;
+	private static void updateKeys() {
+		long b = System.currentTimeMillis();
+		if (b-lastUpdate<1000) return;
+		lastUpdate = b;
+		VillagerShops.updateCratePlugins();
+	}
 
 	private final String huskeyCrateKeyID;
 
@@ -53,7 +63,10 @@ public class HuskyCrateKeyFilter implements PluginItemFilter {
 
 	@Override
 	public ItemStack supply(int amount, ShopType shopType) {
-		return physicalKey().map(key -> key.getKeyItemStack(amount)).orElse(ItemStack.empty());
+		return physicalKey().map(key -> {
+			VillagerShops.l("HuskyCrates: Created %s new key(s) with id %s", amount, key.getId());
+			return key.getKeyItemStack(amount);
+		}).orElse(ItemStack.empty());
 	}
 
 	@Override
@@ -63,11 +76,16 @@ public class HuskyCrateKeyFilter implements PluginItemFilter {
 
 	@Override
 	public void consume(ItemStack item, ShopType shopType) {
-		physicalKey().ifPresent(key -> HuskyCrates.registry.consumeSecureKey(item, item.getQuantity()));
+		physicalKey().ifPresent(key -> {
+			VillagerShops.l("HuskyCrates: Destroyed %d key(s) with id %s", item.getQuantity(), key.getId());
+			HuskyCrates.registry.consumeSecureKey(item, item.getQuantity());
+		});
 	}
 
 	@Override
 	public Optional<ItemStackSnapshot> getDisplayItem(ShopType shopType) {
-		return physicalKey().map(key -> key.getItem().toItemStack().createSnapshot());
+		return physicalKey()
+				.map(key -> key.getItem().toItemStack().createSnapshot())
+				.filter(item -> !item.isEmpty() && !item.getType().equals(ItemTypes.AIR));
 	}
 }

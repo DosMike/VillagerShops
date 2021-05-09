@@ -1,5 +1,6 @@
-package de.dosmike.sponge.vshop.systems;
+package de.dosmike.sponge.vshop.systems.pluginfilter;
 
+import de.dosmike.sponge.vshop.systems.ShopType;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;

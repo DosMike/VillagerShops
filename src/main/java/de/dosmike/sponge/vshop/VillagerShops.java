@@ -14,6 +14,8 @@ import de.dosmike.sponge.vshop.shops.ShopEntitySerializer;
 import de.dosmike.sponge.vshop.shops.StockItem;
 import de.dosmike.sponge.vshop.shops.StockItemSerializer;
 import de.dosmike.sponge.vshop.systems.*;
+import de.dosmike.sponge.vshop.systems.pluginfilter.PluginItemService;
+import de.dosmike.sponge.vshop.systems.pluginfilter.PluginItemServiceImpl;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -56,7 +58,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @SuppressWarnings("UnstableApiUsage")
-@Plugin(id = "vshop", name = "VillagerShops", version = "2.8.3")
+@Plugin(id = "vshop", name = "VillagerShops", version = "2.9")
 public class VillagerShops {
 
 	public static final Random rng = new Random(System.currentTimeMillis());
@@ -277,7 +279,13 @@ public class VillagerShops {
 	}
 
 	public static void updateCratePlugins() {
-		instance.keyFilterProviders.forEach(keys -> keys.updateFilters(instance.pluginItemService));
+			instance.keyFilterProviders.forEach(keys -> {
+				try {
+					keys.updateFilters(instance.pluginItemService);
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			});
 	}
 
 	@Listener
@@ -300,7 +308,6 @@ public class VillagerShops {
 			pluginItemService = (PluginItemService) event.getNewProvider();
 			l("Registering default PluginItem compatibility");
 			keyFilterProviders = KeysFilterProvider.scan();
-			updateCratePlugins();
 		}
 	}
 
@@ -681,6 +688,15 @@ public class VillagerShops {
 		//these two calls depend on loadConfig()
 		VersionChecker.checkPluginVersion(getContainer());
 		TranslationLoader.fetchTranslations(false);
+		//simple ticker for crate plugins to be somewhat up to date...
+		// can't just make a simple call here, because my main target is husky crates
+		// and that seems to load configs late and has no notifications for changes in the registry
+		Task.builder()
+				.name("VShop Crate Key Filter Updater")
+				.interval(1, TimeUnit.SECONDS)
+				.delay(1, TimeUnit.SECONDS)
+				.execute(VillagerShops::updateCratePlugins)
+				.submit(this);
 
 		l("VillagerShops is now ready!");
 	}
